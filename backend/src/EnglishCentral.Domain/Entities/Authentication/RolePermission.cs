@@ -1,4 +1,4 @@
-﻿namespace EnglishCentral.Domain.Entities
+﻿namespace EnglishCentral.Domain.Entities.Authentication
 {
     public class RolePermission
     {
