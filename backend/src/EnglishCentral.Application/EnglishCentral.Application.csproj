@@ -8,12 +8,17 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
+    <PackageReference Include="MediatR" Version="14.1.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EnglishCentral.Contracts\EnglishCentral.Contracts.csproj" />
     <ProjectReference Include="..\EnglishCentral.Domain\EnglishCentral.Domain.csproj" />
     <ProjectReference Include="..\EnglishCentral.Shared\EnglishCentral.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Features\Identity\DTOs\" />
   </ItemGroup>
 
 </Project>

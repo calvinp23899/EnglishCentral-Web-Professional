@@ -1,4 +1,5 @@
 ﻿using EnglishCentral.Domain.Common;
+using EnglishCentral.Domain.Enums.Academic;
 
 namespace EnglishCentral.Domain.Entities.Academic
 {
