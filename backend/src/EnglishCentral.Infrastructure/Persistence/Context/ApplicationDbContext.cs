@@ -1,5 +1,6 @@
 ﻿using EnglishCentral.Domain.Common;
-using EnglishCentral.Domain.Entities;
+using EnglishCentral.Domain.Entities.Academic;
+using EnglishCentral.Domain.Entities.Authentication;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -12,7 +13,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Context
         {
         }
 
-        #region ---- DBSets Authen Module ----
+        #region ---- Identity Module ----
         public DbSet<User> Users => Set<User>();
 
         public DbSet<Role> Roles => Set<Role>();
@@ -26,10 +27,34 @@ namespace EnglishCentral.Infrastructure.Persistence.Context
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         #endregion
 
+        #region ---- Academic Module ----
+
+        public DbSet<Student> Students => Set<Student>();
+
+        public DbSet<Teacher> Teachers => Set<Teacher>();
+
+        public DbSet<CourseCategory> CourseCategories => Set<CourseCategory>();
+
+        public DbSet<Course> Courses => Set<Course>();
+
+        public DbSet<AcademicTerm> AcademicTerms => Set<AcademicTerm>();
+
+        public DbSet<Room> Rooms => Set<Room>();
+
+        public DbSet<Class> Classes => Set<Class>();
+
+        public DbSet<Enrollment> Enrollments => Set<Enrollment>();
+
+        public DbSet<ClassSchedule> ClassSchedules => Set<ClassSchedule>();
+
+        public DbSet<ClassSession> ClassSessions => Set<ClassSession>();
+
+        public DbSet<Attendance> Attendances => Set<Attendance>();
+
+        #endregion
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasDefaultSchema("identity");
-
             modelBuilder.ApplyConfigurationsFromAssembly(
                 typeof(ApplicationDbContext).Assembly);
 

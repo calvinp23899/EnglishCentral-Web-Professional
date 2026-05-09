@@ -1,6 +1,6 @@
 ﻿using EnglishCentral.Domain.Common;
 
-namespace EnglishCentral.Domain.Entities
+namespace EnglishCentral.Domain.Entities.Authentication
 {
     public class User : BaseEntity
     {

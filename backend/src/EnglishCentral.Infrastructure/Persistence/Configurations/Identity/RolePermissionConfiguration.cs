@@ -1,4 +1,5 @@
-﻿using EnglishCentral.Domain.Entities;
+﻿using EnglishCentral.Domain.Constants;
+using EnglishCentral.Domain.Entities.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,7 +9,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Identity
     {
         public void Configure(EntityTypeBuilder<RolePermission> builder)
         {
-            builder.ToTable("role_permissions");
+            builder.ToTable("role_permissions", DatabaseSchemas.Identity);
 
             builder.HasKey(x => new { x.RoleId, x.PermissionId });
 
