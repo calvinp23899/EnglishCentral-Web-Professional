@@ -4,7 +4,7 @@ using MediatR;
 namespace EnglishCentral.Application.Features.Identity.Commands.Logout
 {
     public record LogoutCommand(
-        long userId,
+        string userPublicId,
         string rawRefreshToken
     ) : IRequest<Result<bool>>;
 }

@@ -24,7 +24,7 @@ namespace EnglishCentral.Application.Features.Identity.Commands.RefreshToken
 
         public async Task<Result<AuthResponse>> Handle(RefreshTokenCommand request, CancellationToken ct)
         {
-            var token = await _refreshTokenRepository.GetTokenByRefreshTokenAndUserIdAsync(request.UserId, request.RawRefreshToken, true, ct);
+            var token = await _refreshTokenRepository.GetTokenByRefreshTokenAndUserIdAsync(request.UserPublicId, request.RawRefreshToken, true, ct);
 
             if (token is null)
             {
