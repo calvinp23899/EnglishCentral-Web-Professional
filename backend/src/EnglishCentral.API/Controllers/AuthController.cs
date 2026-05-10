@@ -1,5 +1,6 @@
 ﻿using EnglishCentral.Application.Features.Identity.Commands.Login;
 using EnglishCentral.Application.Features.Identity.Commands.Logout;
+using EnglishCentral.Application.Features.Identity.Commands.RefreshToken;
 using EnglishCentral.Application.Features.Identity.Commands.Register;
 using EnglishCentral.Contracts.Requests.Identity;
 using MediatR;
@@ -50,6 +51,17 @@ namespace EnglishCentral.API.Controllers
         {
             var command = new LogoutCommand(request.UserId, request.RawRefreshToken);
             var result = await _mediator.Send(command, ct);
+
+            return result.IsSuccess
+                ? Ok(result.Data)
+                : StatusCode(result.StatusCode, new { error = result.Error });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh(RefreshTokenRequest request)
+        {
+            var command = new RefreshTokenCommand(request.UserId, request.RefreshToken);
+            var result = await _mediator.Send(command);
 
             return result.IsSuccess
                 ? Ok(result.Data)

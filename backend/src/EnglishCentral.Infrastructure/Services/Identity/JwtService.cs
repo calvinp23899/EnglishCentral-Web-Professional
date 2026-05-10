@@ -1,6 +1,7 @@
 ﻿using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Domain.Entities.Authentication;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
+using EnglishCentral.Shared.Common.Helpers;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -55,9 +56,7 @@ namespace EnglishCentral.Infrastructure.Services.Identity
         public async Task<string> GenerateRefreshTokenAsync(User user, CancellationToken ct = default)
         {
             var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            var tokenHash = Convert.ToBase64String(
-                SHA256.HashData(Encoding.UTF8.GetBytes(rawToken))
-            );
+            var tokenHash = TokenHashHelper.HashRefreshToken(rawToken);
 
             var refreshToken = new RefreshToken
             {

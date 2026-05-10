@@ -1,10 +1,13 @@
 ﻿using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Identity;
+using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Infrastructure.Persistence;
 using EnglishCentral.Infrastructure.Persistence.Context;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Identity;
 using EnglishCentral.Infrastructure.Services.Identity;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
+using EnglishCentral.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +23,29 @@ namespace EnglishCentral.Infrastructure
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
             #endregion
 
+            #region Authorization
+            services.AddAuthorization(options =>
+            {
+                var permissions = GetAllPermissions();
+
+                foreach (var permission in permissions)
+                {
+                    options.AddPolicy(
+                        $"Permission:{permission}",
+                        policy =>
+                        {
+                            policy.Requirements.Add(
+                                new PermissionRequirement(
+                                    permission));
+                        });
+                }
+            });
+            services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            #endregion
+
             #region Repositories DI
+
+
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPasswordService, PasswordService>();
@@ -35,5 +60,27 @@ namespace EnglishCentral.Infrastructure
 
             return services;
         }
+
+        private static List<string> GetAllPermissions()
+        {
+            return
+            [
+                SystemPermissions.StudentRead,
+                SystemPermissions.StudentDelete,
+                SystemPermissions.StudentCreate,
+                SystemPermissions.StudentUpdate,
+
+                SystemPermissions.TeacherRead,
+                SystemPermissions.TeacherUpdate,
+                SystemPermissions.TeacherDelete,
+                SystemPermissions.TeacherCreate,
+
+                SystemPermissions.CourseCreate,
+                SystemPermissions.CourseDelete,
+                SystemPermissions.CourseRead,
+                SystemPermissions.CourseUpdate,
+            ];
+        }
     }
+
 }

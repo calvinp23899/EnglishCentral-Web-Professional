@@ -1,4 +1,7 @@
-﻿using MediatR;
+﻿using EnglishCentral.Infrastructure.Authorization;
+using EnglishCentral.Shared.Constants;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EnglishCentral.API.Controllers.Admin
 {
@@ -10,6 +13,12 @@ namespace EnglishCentral.API.Controllers.Admin
             _mediator = mediator;
         }
 
+        [HasPermission(SystemPermissions.StudentCreate)]
+        [HttpPost("")]
+        public async Task<IActionResult> ExampleAPI(string request)
+        {
+            throw new NotImplementedException();
+        }
 
     }
 }
