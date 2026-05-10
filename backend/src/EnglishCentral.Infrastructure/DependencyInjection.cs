@@ -25,11 +25,14 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPasswordService, PasswordService>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IRoleRepository, RoleRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             #endregion
 
             #region JWT Setting
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
             #endregion
+
             return services;
         }
     }

@@ -5,19 +5,19 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
-        protected readonly ApplicationDbContext _db;
+        protected readonly ApplicationDbContext _dbContenxt;
 
-        public GenericRepository(ApplicationDbContext db) => _db = db;
+        public GenericRepository(ApplicationDbContext db) => _dbContenxt = db;
 
         public async Task<T?> GetByIdAsync(long id, CancellationToken ct = default)
         {
-            return await _db.Set<T>().FindAsync([id], ct);
+            return await _dbContenxt.Set<T>().FindAsync([id], ct);
         }
 
 
         public async Task AddAsync(T entity, CancellationToken ct = default)
         {
-            await _db.Set<T>().AddAsync(entity, ct);
+            await _dbContenxt.Set<T>().AddAsync(entity, ct);
         }
     }
 }
