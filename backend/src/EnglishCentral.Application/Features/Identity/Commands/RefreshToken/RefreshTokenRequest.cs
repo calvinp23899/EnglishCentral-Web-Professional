@@ -5,7 +5,7 @@ using MediatR;
 namespace EnglishCentral.Application.Features.Identity.Commands.RefreshToken
 {
     public record RefreshTokenCommand(
-        long UserId,
+        string UserPublicId,
         string RawRefreshToken
     ) : IRequest<Result<AuthResponse>>;
 }

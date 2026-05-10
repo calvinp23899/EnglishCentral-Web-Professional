@@ -49,7 +49,7 @@ namespace EnglishCentral.API.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> Logout(LogoutRequest request, CancellationToken ct)
         {
-            var command = new LogoutCommand(request.UserId, request.RawRefreshToken);
+            var command = new LogoutCommand(request.UserPublicId, request.RawRefreshToken);
             var result = await _mediator.Send(command, ct);
 
             return result.IsSuccess
@@ -60,7 +60,7 @@ namespace EnglishCentral.API.Controllers
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh(RefreshTokenRequest request)
         {
-            var command = new RefreshTokenCommand(request.UserId, request.RefreshToken);
+            var command = new RefreshTokenCommand(request.UserPublicId, request.RefreshToken);
             var result = await _mediator.Send(command);
 
             return result.IsSuccess
