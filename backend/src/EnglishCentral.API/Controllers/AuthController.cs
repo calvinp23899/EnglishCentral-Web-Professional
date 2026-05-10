@@ -1,4 +1,5 @@
 ﻿using EnglishCentral.Application.Features.Identity.Commands.Login;
+using EnglishCentral.Application.Features.Identity.Commands.Logout;
 using EnglishCentral.Application.Features.Identity.Commands.Register;
 using EnglishCentral.Contracts.Requests.Identity;
 using MediatR;
@@ -7,10 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace EnglishCentral.API.Controllers
 {
 
-    public class IdentityController : BaseController
+    public class AuthController : BaseController
     {
         private readonly IMediator _mediator;
-        public IdentityController(IMediator mediator)
+        public AuthController(IMediator mediator)
         {
             _mediator = mediator;
         }
@@ -37,6 +38,17 @@ namespace EnglishCentral.API.Controllers
         {
             var command = new LoginCommand(request.Email, request.Password);
 
+            var result = await _mediator.Send(command, ct);
+
+            return result.IsSuccess
+                ? Ok(result.Data)
+                : StatusCode(result.StatusCode, new { error = result.Error });
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(LogoutRequest request, CancellationToken ct)
+        {
+            var command = new LogoutCommand(request.UserId, request.RawRefreshToken);
             var result = await _mediator.Send(command, ct);
 
             return result.IsSuccess

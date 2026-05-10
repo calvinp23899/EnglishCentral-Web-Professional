@@ -8,17 +8,17 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
         {
             RuleFor(x => x.FullName)
                 .NotEmpty()
-                .MaximumLength(255);
+                .MaximumLength(50);
 
             RuleFor(x => x.Email)
                 .NotEmpty()
                 .EmailAddress()
-                .MaximumLength(255);
+                .MaximumLength(50);
 
             RuleFor(x => x.Password)
                 .NotEmpty()
                 .MinimumLength(8)
-                .MaximumLength(100);
+                .MaximumLength(150);
 
             RuleFor(x => x.PhoneNumber)
                 .MaximumLength(20)

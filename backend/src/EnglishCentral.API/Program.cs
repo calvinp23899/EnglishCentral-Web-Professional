@@ -1,18 +1,26 @@
+using EnglishCentral.API.Middlewares;
 using EnglishCentral.Application;
 using EnglishCentral.Infrastructure;
+using EnglishCentral.Infrastructure.Extensions;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using System.Text;
 
 namespace EnglishCentral.API
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
 
+            var builder = WebApplication.CreateBuilder(args);
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .WriteTo.Console()
+                .CreateLogger();
+            builder.Host.UseSerilog();
             // Add services to the container.
 
             builder.Services.AddControllers();
@@ -41,15 +49,17 @@ namespace EnglishCentral.API
             builder.Services.AddAuthorization();
 
             var app = builder.Build();
-
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
+            app.UseSerilogRequestLogging();
+            await app.Services.SeedDatabaseAsync();
             // Configure the HTTP request pipeline.
             app.UseSwagger();
             app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
-
 
             app.MapControllers();
 
