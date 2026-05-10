@@ -5,6 +5,7 @@ using EnglishCentral.Infrastructure.Extensions;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text;
 
@@ -16,37 +17,76 @@ namespace EnglishCentral.API
         {
 
             var builder = WebApplication.CreateBuilder(args);
+            var logPath = builder.Configuration["LoggingSettings:LogPath"];
+            var logDirectory = Path.GetDirectoryName(logPath);
+
+            if (!Directory.Exists(logDirectory))
+            {
+                Directory.CreateDirectory(logDirectory!);
+            }
             Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(builder.Configuration)
+                .Enrich.FromLogContext()
+                .MinimumLevel.Information()
                 .WriteTo.Console()
+                .WriteTo.File(
+                    logPath!,
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7)
                 .CreateLogger();
             builder.Host.UseSerilog();
             // Add services to the container.
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-            builder.Services.AddDIApplication();
-            builder.Services.AddDIInfrastructure(builder.Configuration);
-            var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "EnglishCentral.API", Version = "v1" });
+
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = jwtSettings.Issuer,
-                        ValidAudience = jwtSettings.Audience,
-                        IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(jwtSettings.SecretKey)
-                        )
-                    };
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter your JWT token. Example: eyJhbGci..."
                 });
-            builder.Services.AddAuthorization();
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
+            builder.Services.AddDIApplication();
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience = jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtSettings.SecretKey)
+                    )
+                };
+            });
+            builder.Services.AddDIInfrastructure(builder.Configuration);
 
             var app = builder.Build();
             app.UseMiddleware<ExceptionHandlingMiddleware>();

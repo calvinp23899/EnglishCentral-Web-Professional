@@ -4,6 +4,6 @@ namespace EnglishCentral.Application.Interfaces.Identity
 {
     public interface IRefreshTokenRepository : IGenericRepository<RefreshToken>
     {
-        Task<RefreshToken?> GetTokenByRefreshTokenAndUserIdAsync(long userId, string hashToken, CancellationToken ct = default);
+        Task<RefreshToken?> GetTokenByRefreshTokenAndUserIdAsync(long userId, string hashToken, bool isIncludeRolePermission = false, CancellationToken ct = default);
     }
 }
