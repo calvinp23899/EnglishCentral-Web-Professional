@@ -1,0 +1,215 @@
+.loginPage {
+  display: grid;
+
+  grid-template-columns: 1fr 520px;
+
+  min-height: 100vh;
+
+  background: #f8fafc;
+}
+
+.brandingSection {
+  position: relative;
+
+  overflow: hidden;
+
+  background:
+    url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070");
+
+  background-size: cover;
+
+  background-position: center;
+
+  display: flex;
+
+  align-items: center;
+
+  padding: 80px;
+}
+
+.overlay {
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.92),
+      rgba(37, 99, 235, 0.78)
+    );
+}
+
+.brandingContent {
+  position: relative;
+
+  z-index: 1;
+
+  max-width: 520px;
+
+  color: white;
+}
+
+.logo {
+  width: 72px;
+
+  height: 72px;
+
+  border-radius: 20px;
+
+  background: rgba(255, 255, 255, 0.15);
+
+  backdrop-filter: blur(10px);
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  font-size: 28px;
+
+  font-weight: 700;
+
+  margin-bottom: 32px;
+}
+
+.brandingContent h1 {
+  font-size: 64px;
+
+  line-height: 1.1;
+
+  margin-bottom: 24px;
+}
+
+.brandingContent p {
+  font-size: 18px;
+
+  line-height: 1.7;
+
+  opacity: 0.92;
+
+  margin-bottom: 40px;
+}
+
+.features {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 16px;
+}
+
+.featureItem {
+  padding: 12px 18px;
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.12);
+
+  backdrop-filter: blur(12px);
+
+  font-size: 14px;
+
+  font-weight: 500;
+}
+
+.formSection {
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  padding: 40px;
+}
+
+.formWrapper {
+  width: 100%;
+
+  min-width: 360px;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  background: rgba(37, 99, 235, 0.08);
+
+  color: #2563eb;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+
+  margin-bottom: 20px;
+}
+
+.header h2 {
+  font-size: 36px;
+
+  margin-bottom: 12px;
+
+  color: #0f172a;
+}
+
+.header p {
+  color: #64748b;
+
+  font-size: 15px;
+}
+
+.form {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.field label {
+  font-size: 14px;
+
+  font-weight: 600;
+
+  color: #334155;
+}
+
+.footer {
+  margin-top: 28px;
+
+  text-align: center;
+
+  color: #94a3b8;
+
+  font-size: 13px;
+}
+
+@media (max-width: 1024px) {
+  .loginPage {
+    grid-template-columns: 1fr;
+  }
+
+  .brandingSection {
+    display: none;
+  }
+}
