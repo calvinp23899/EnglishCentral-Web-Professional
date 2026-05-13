@@ -1,215 +1,297 @@
 .loginPage {
   display: grid;
-
-  grid-template-columns: 1fr 520px;
-
+  grid-template-columns: minmax(30%, 1fr) minmax(0, 40%);
   min-height: 100vh;
-
+  align-items: center;
   background: #f8fafc;
+  overflow-x: hidden;
 }
 
 .brandingSection {
-  position: relative;
-
-  overflow: hidden;
-
-  background:
-    url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070");
-
-  background-size: cover;
-
-  background-position: center;
-
   display: flex;
-
   align-items: center;
-
-  padding: 80px;
+  justify-content: center;
+  padding: 48px 40px;
 }
 
-.overlay {
-  position: absolute;
-
-  inset: 0;
-
-  background:
-    linear-gradient(
-      135deg,
-      rgba(15, 23, 42, 0.92),
-      rgba(37, 99, 235, 0.78)
-    );
-}
-
-.brandingContent {
-  position: relative;
-
-  z-index: 1;
-
+.brandingCard {
+  width: 100%;
   max-width: 520px;
-
-  color: white;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .logo {
-  width: 72px;
-
-  height: 72px;
-
-  border-radius: 20px;
-
-  background: rgba(255, 255, 255, 0.15);
-
-  backdrop-filter: blur(10px);
-
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
   display: flex;
-
-  justify-content: center;
-
   align-items: center;
-
-  font-size: 28px;
-
+  justify-content: center;
+  font-size: 24px;
   font-weight: 700;
-
-  margin-bottom: 32px;
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+  margin-bottom: 28px;
 }
 
-.brandingContent h1 {
-  font-size: 64px;
-
-  line-height: 1.1;
-
-  margin-bottom: 24px;
+.brandingCard h1 {
+  font-size: 44px;
+  margin-bottom: 12px;
+  color: #0f172a;
 }
 
-.brandingContent p {
-  font-size: 18px;
-
-  line-height: 1.7;
-
-  opacity: 0.92;
-
-  margin-bottom: 40px;
+.subtitle {
+  font-size: 16px;
+  color: #475569;
+  font-weight: 600;
+  margin-bottom: 20px;
 }
 
-.features {
-  display: flex;
+.tagline {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #475569;
+  margin-bottom: 34px;
+}
 
-  flex-wrap: wrap;
-
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+  justify-items: center;
 }
 
 .featureItem {
-  padding: 12px 18px;
-
-  border-radius: 999px;
-
-  background: rgba(255, 255, 255, 0.12);
-
-  backdrop-filter: blur(12px);
-
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  border-radius: 18px;
+  background: #f8fbff;
+  color: #0f172a;
+  font-weight: 600;
   font-size: 14px;
+}
 
-  font-weight: 500;
+.featureIcon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #eff6ff;
+  font-size: 16px;
 }
 
 .formSection {
   display: flex;
-
-  justify-content: center;
-
+  flex-direction: column;
   align-items: center;
-
-  padding: 40px;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 520px;
 }
 
 .formWrapper {
   width: 100%;
-
-  min-width: 360px;
+  max-width: 520px;
 }
 
+.securityCard {
+  width: 100%;
+  max-width: 520px;
+  margin-top: 12px;
+}
 .header {
   margin-bottom: 32px;
 }
 
 .badge {
   display: inline-flex;
-
   align-items: center;
-
   padding: 8px 14px;
-
   border-radius: 999px;
-
   background: rgba(37, 99, 235, 0.08);
-
   color: #2563eb;
-
   font-size: 12px;
-
   font-weight: 700;
-
   letter-spacing: 0.08em;
-
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .header h2 {
-  font-size: 36px;
-
-  margin-bottom: 12px;
-
+  font-size: 38px;
+  margin-bottom: 10px;
   color: #0f172a;
 }
 
 .header p {
   color: #64748b;
-
   font-size: 15px;
+  line-height: 1.7;
 }
 
 .form {
   display: flex;
-
   flex-direction: column;
-
-  gap: 20px;
+  gap: 22px;
 }
 
 .field {
   display: flex;
-
   flex-direction: column;
-
-  gap: 8px;
+  gap: 10px;
 }
 
 .field label {
   font-size: 14px;
-
   font-weight: 600;
-
   color: #334155;
 }
 
-.footer {
-  margin-top: 28px;
-
-  text-align: center;
-
-  color: #94a3b8;
-
-  font-size: 13px;
+.actionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-@media (max-width: 1024px) {
+.rememberMe {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #475569;
+  font-size: 14px;
+}
+
+.rememberMe input {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
+
+.forgotButton {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.helpText {
+  margin-top: 26px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.helpText a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.securityCard {
+  padding: 8px;
+  border-radius: 20px;
+  background: #f8fbff;
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+  max-width: 90%;
+}
+
+.securityNote {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.noteIcon {
+  width: 20px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: #eff6ff;
+  border-radius: 16px;
+  font-size: 18px;
+}
+
+.securityNote strong {
+  display: block;
+  color: #0f172a;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.securityNote p {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+@media (max-width: 1080px) {
   .loginPage {
     grid-template-columns: 1fr;
+    padding: 0 12px;
   }
 
   .brandingSection {
-    display: none;
+    padding: 40px 24px 24px;
+  }
+
+  .formSection {
+    padding: 32px 24px 40px;
+    max-width: 100%;
+  }
+
+  .formWrapper {
+    max-width: 100%;
+  }
+
+  .securityCard {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .loginPage {
+    padding: 0 8px;
+  }
+
+  .brandingSection {
+    padding: 32px 16px 16px;
+  }
+
+  .brandingCard {
+    padding: 32px 24px;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formSection {
+    padding: 24px 16px 24px;
+  }
+
+  .formWrapper {
+    max-width: 100%;
+  }
+
+  .securityCard {
+    padding: 16px;
+    margin-top: 12px;
+  }
+
+  .featureItem {
+    justify-content: center;
   }
 }

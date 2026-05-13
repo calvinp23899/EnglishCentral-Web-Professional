@@ -8,33 +8,30 @@ export function AdminLoginPage() {
   return (
     <div className={styles.loginPage}>
       <div className={styles.brandingSection}>
-        <div className={styles.overlay} />
+        <div className={styles.brandingCard}>
+          <div className={styles.logo}>EC</div>
 
-        <div className={styles.brandingContent}>
-          <div className={styles.logo}>
-            EC
-          </div>
+          <h1>English Central</h1>
+          <p className={styles.subtitle}>Administration Portal</p>
 
-          <h1>
-            EnglishCentral
-          </h1>
-
-          <p>
-            Smart English Learning &
-            Academic Management Platform
+          <p className={styles.tagline}>
+            Manage courses, students, teachers, and all educational content from one centralized platform.
           </p>
 
-          <div className={styles.features}>
+          <div className={styles.featureGrid}>
             <div className={styles.featureItem}>
-              Student Management
+              <div className={styles.featureIcon}>📘</div>
+              Course Management
             </div>
 
             <div className={styles.featureItem}>
-              Academic Tracking
+              <div className={styles.featureIcon}>🛡️</div>
+              User Control
             </div>
 
             <div className={styles.featureItem}>
-              Learning Analytics
+              <div className={styles.featureIcon}>✉️</div>
+              Communication
             </div>
           </div>
         </div>
@@ -44,45 +41,49 @@ export function AdminLoginPage() {
         <Card>
           <div className={styles.formWrapper}>
             <div className={styles.header}>
-              <span className={styles.badge}>
-                ADMIN PORTAL
-              </span>
+              <span className={styles.badge}>ADMIN PORTAL</span>
 
-              <h2>
-                Welcome Back
-              </h2>
-
-              <p>
-                Login to manage your
-                platform
-              </p>
+              <h2>Welcome Back</h2>
+              <p>Please sign in to access the admin dashboard</p>
             </div>
 
             <div className={styles.form}>
               <div className={styles.field}>
-                <label>Email</label>
-
-                <Input
-                  placeholder="admin@englishcentral.com"
-                />
+                <label>Email Address</label>
+                <Input placeholder="admin@englishcentral.com" />
               </div>
 
               <div className={styles.field}>
                 <label>Password</label>
-
-                <Input
-                  type="password"
-                  placeholder="Enter password"
-                />
+                <Input type="password" placeholder="Enter your password" showPasswordToggle />
               </div>
 
-              <Button>
-                Login
-              </Button>
+              <div className={styles.actionsRow}>
+                <label className={styles.rememberMe}>
+                  <input type="checkbox" />
+                  Remember me
+                </label>
+
+                <button className={styles.forgotButton} type="button">
+                  Forgot password?
+                </button>
+              </div>
+
+              <Button>Sign In to Dashboard</Button>
             </div>
 
-            <div className={styles.footer}>
-              EnglishCentral Admin System
+            <div className={styles.helpText}>
+              Need help? <a href="mailto:support@englishcentral.com">Contact IT Support</a>
+            </div>
+          </div>
+        </Card>
+
+        <Card className={styles.securityCard}>
+          <div className={styles.securityNote}>
+            <div className={styles.noteIcon}>🔒</div>
+            <div>
+              <strong>Secure Admin Access</strong>
+              <p>All login attempts are monitored and logged for security purposes.</p>
             </div>
           </div>
         </Card>
