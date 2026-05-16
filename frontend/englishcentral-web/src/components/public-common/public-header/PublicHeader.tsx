@@ -50,8 +50,8 @@ export function PublicHeader() {
             </div>
           </div>
 
-          <Link to="/mock-test">Thi thử</Link>
-          <Link to="/books">Sách</Link>
+          <Link to="/e-learning">Lớp Học</Link>
+          <Link to="/practice">Luyện Tập</Link>
           <Link to="/news">Tin tức</Link>
           <Link to="/contact">Liên hệ</Link>
         </nav>
