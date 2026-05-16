@@ -1,5 +1,17 @@
 @use "./breakpoints" as *;
 
+@mixin desktop {
+  @media (max-width: $desktop) {
+    @content;
+  }
+}
+
+@mixin laptop {
+  @media (max-width: $laptop) {
+    @content;
+  }
+}
+
 @mixin tablet {
   @media (max-width: $tablet) {
     @content;

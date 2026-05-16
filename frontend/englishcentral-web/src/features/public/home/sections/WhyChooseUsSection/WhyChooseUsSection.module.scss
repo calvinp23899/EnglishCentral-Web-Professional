@@ -1,0 +1,53 @@
+@use "/src/styles/abstracts/breakpoints" as *;
+
+.section {
+  padding: 80px 0;
+  background: #f8fafc;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 48px;
+  align-items: start;
+
+  @media (max-width: $tablet) {
+    grid-template-columns: 1fr;
+  }
+
+  h2 {
+    margin-top: 12px;
+    font-size: 36px;
+    line-height: 1.25;
+    color: #102033;
+  }
+}
+
+.label {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.reasonList {
+  display: grid;
+  gap: 16px;
+}
+
+.reasonItem {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px;
+  border-radius: 20px;
+  background: #25ceeb;
+
+  span {
+    color: #2563eb;
+    font-weight: 800;
+  }
+
+  strong {
+    color: #102033;
+    font-size: 18px;
+  }
+}

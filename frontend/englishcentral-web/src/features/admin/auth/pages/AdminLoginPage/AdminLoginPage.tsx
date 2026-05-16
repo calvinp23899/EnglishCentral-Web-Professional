@@ -3,6 +3,12 @@ import { Card } from "@/components/ui/card/Card";
 import { Input } from "@/components/ui/input/Input";
 
 import styles from "./AdminLoginPage.module.scss";
+import {
+  BookOpen,
+  ShieldCheck,
+  MessagesSquare,
+  Lock
+} from "lucide-react";
 
 export function AdminLoginPage() {
   return (
@@ -20,17 +26,23 @@ export function AdminLoginPage() {
 
           <div className={styles.featureGrid}>
             <div className={styles.featureItem}>
-              <div className={styles.featureIcon}>📘</div>
+              <div className={styles.featureIcon}>
+                <BookOpen size={18}/>
+              </div>
               Course Management
             </div>
 
             <div className={styles.featureItem}>
-              <div className={styles.featureIcon}>🛡️</div>
+              <div className={styles.featureIcon}>
+                <ShieldCheck size={18}/>
+              </div>
               User Control
             </div>
 
             <div className={styles.featureItem}>
-              <div className={styles.featureIcon}>✉️</div>
+              <div className={styles.featureIcon}>
+                <MessagesSquare size={18}/>
+              </div>
               Communication
             </div>
           </div>
@@ -64,7 +76,7 @@ export function AdminLoginPage() {
                   Remember me
                 </label>
 
-                <button className={styles.forgotButton} type="button">
+                <button className={styles.forgotButton} type="submit">
                   Forgot password?
                 </button>
               </div>
@@ -80,7 +92,9 @@ export function AdminLoginPage() {
 
         <Card className={styles.securityCard}>
           <div className={styles.securityNote}>
-            <div className={styles.noteIcon}>🔒</div>
+            <div className={styles.noteIcon}>
+              <Lock size={18} />
+            </div>
             <div>
               <strong>Secure Admin Access</strong>
               <p>All login attempts are monitored and logged for security purposes.</p>
