@@ -1,0 +1,108 @@
+@use "/src/styles/abstracts/breakpoints" as *;
+
+.page {
+  background: #f8fbff;
+}
+
+.hero {
+  padding: 88px 0 64px;
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 35%),
+    linear-gradient(135deg, #f8fbff 0%, #eef4ff 55%, #ffffff 100%);
+
+  span {
+    color: #2563eb;
+    font-weight: 800;
+  }
+
+  h1 {
+    margin: 16px 0;
+    color: #102033;
+    font-size: 48px;
+  }
+
+  p {
+    max-width: 640px;
+    color: #64748b;
+    font-size: 18px;
+    line-height: 1.7;
+  }
+}
+
+.content {
+  padding: 64px 0 96px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+
+  @media (max-width: $tablet) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.infoSection {
+  display: grid;
+  gap: 24px;
+}
+
+.infoCard,
+.formCard {
+  padding: 32px;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+
+  h3 {
+    margin-bottom: 24px;
+    color: #102033;
+    font-size: 24px;
+  }
+}
+
+.infoCard {
+  display: grid;
+  gap: 18px;
+
+  div {
+    display: grid;
+    gap: 6px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  strong {
+    color: #102033;
+  }
+
+  span {
+    color: #64748b;
+  }
+}
+
+.mapPlaceholder {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #dbeafe, #eef4ff);
+  color: #1d4ed8;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+
+  textarea {
+    width: 100%;
+    padding: 16px;
+    border: 1px solid #dbe3ef;
+    border-radius: 16px;
+    resize: vertical;
+    font: inherit;
+  }
+}

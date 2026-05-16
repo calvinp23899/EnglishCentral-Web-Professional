@@ -1,0 +1,47 @@
+@use "../../../styles/abstracts/variables" as *;
+@use "../../../styles/abstracts/mixins" as *;
+
+.footer {
+  margin-top: 80px;
+  background: $color-secondary;
+  color: $color-white;
+}
+
+.inner {
+  padding-top: 56px;
+  padding-bottom: 40px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.4fr;
+  gap: 40px;
+
+  p {
+    margin: 8px 0 0;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+
+  h4 {
+    margin: 0 0 12px;
+    font-size: 16px;
+  }
+}
+
+.brand {
+  margin-bottom: 12px;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.copyRight {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 18px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+@include tablet {
+  .inner {
+    grid-template-columns: 1fr;
+  }
+}

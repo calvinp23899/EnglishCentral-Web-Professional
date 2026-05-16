@@ -1,0 +1,64 @@
+@use "/src/styles/abstracts/breakpoints" as *;
+
+.section {
+  padding: 80px 0;
+  background: #ffffff;
+}
+
+.sectionHeader {
+  max-width: 680px;
+  margin-bottom: 40px;
+
+  span {
+    color: #2563eb;
+    font-weight: 700;
+  }
+
+  h2 {
+    margin-top: 12px;
+    font-size: 36px;
+    color: #102033;
+  }
+}
+
+.courseGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+
+  @media (max-width: $laptop) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: $mobile) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.courseCard {
+  padding: 28px;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  background: #ffffff;
+  transition: 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+  }
+
+  h3 {
+    margin: 18px 0 10px;
+    font-size: 22px;
+    color: #102033;
+  }
+
+  p {
+    color: #64748b;
+    line-height: 1.6;
+  }
+}
+
+.icon {
+  font-size: 36px;
+}
