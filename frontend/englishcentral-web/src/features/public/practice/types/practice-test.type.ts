@@ -51,6 +51,7 @@ export type IELTSReadingPassage = {
   part: number;
   title: string;
   instruction: string;
+  isDragHeadingOnParagraph?: boolean;
   paragraphs: {
     id: string;
     label: string;

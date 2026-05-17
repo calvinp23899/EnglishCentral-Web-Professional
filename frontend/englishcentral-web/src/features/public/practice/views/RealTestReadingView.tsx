@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getPassageQuestions } from "../components/QuestionBlock";
+import { RealExamPassagePanel } from "../components/RealExamPassagePanel";
 import { RealExamQuestionGroupBlock } from "../components/RealExamQuestionBlock";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
 import type { AnswerMap, IELTSReadingTest } from "../types/practice-test.type";
@@ -24,6 +25,7 @@ export function RealTestReadingView({
 }: RealTestReadingViewProps) {
   const [activePartIndex, setActivePartIndex] = useState(0);
   const [passageWidth, setPassageWidth] = useState(50);
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const activePassage = test.passages[activePartIndex] ?? test.passages[0];
   const { formattedTime } = useCountdownTimer({
     minutes: test.durationMinutes,
@@ -80,20 +82,12 @@ export function RealTestReadingView({
           className={styles.realPassage}
           style={{ flexBasis: `${passageWidth}%` }}
         >
-          <h2>{activePassage.title}</h2>
-
-          <div className={styles.passageText}>
-            {activePassage.paragraphs.map((paragraph, index) => (
-              <p key={index}>
-                {paragraph.label && (
-                  <strong className={styles.paragraphLabel}>
-                    {paragraph.label}.{" "}
-                  </strong>
-                )}
-                {paragraph.content}
-              </p>
-            ))}
-          </div>
+          <RealExamPassagePanel
+            passage={activePassage}
+            answers={answers}
+            onAnswer={onAnswer}
+            questionRefs={questionRefs}
+          />
         </section>
 
         <div
@@ -122,8 +116,22 @@ export function RealTestReadingView({
           ))}
 
           <div className={styles.floatingArrows}>
-            <button>←</button>
-            <button>→</button>
+            <button
+              disabled={activePartIndex === 0}
+              onClick={() => setActivePartIndex((prev) => Math.max(0, prev - 1))}
+            >
+              ←
+            </button>
+            <button
+              disabled={activePartIndex === test.passages.length - 1}
+              onClick={() =>
+                setActivePartIndex((prev) =>
+                  Math.min(test.passages.length - 1, prev + 1)
+                )
+              }
+            >
+              →
+            </button>
           </div>
         </section>
       </main>
@@ -136,7 +144,19 @@ export function RealTestReadingView({
           ).length;
 
           return (
-            <div key={passage.part}>
+            <div
+              key={passage.part}
+              className={styles.realPartGroup}
+              role="button"
+              tabIndex={0}
+              onClick={() => setActivePartIndex(index)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setActivePartIndex(index);
+                }
+              }}
+            >
               <button
                 className={activePartIndex === index ? styles.activePartButton : ""}
                 onClick={() => setActivePartIndex(index)}
@@ -151,8 +171,16 @@ export function RealTestReadingView({
                   return (
                     <button
                       key={question.id}
-                      className={isAnswered ? styles.answeredQuestion : ""}
-                      onClick={() => onScrollToQuestion(question.id)}
+                      className={`${styles.realQuestionNavButton} ${
+                        isAnswered ? styles.answeredQuestion : ""
+                      } ${
+                        activeQuestionId === question.id ? styles.activeQuestion : ""
+                      }`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setActiveQuestionId(question.id);
+                        onScrollToQuestion(question.id);
+                      }}
                     >
                       {question.number}
                     </button>

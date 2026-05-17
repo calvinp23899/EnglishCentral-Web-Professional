@@ -560,7 +560,7 @@ function InlineCompletionQuestion({
   questionRef,
   realMode,
 }: InlineCompletionQuestionProps) {
-  const parts = question.text.split("____");
+  const parts = question.text.split(/_{2,}/);
   const input = (
     <input
       type="text"
@@ -585,7 +585,7 @@ function InlineCompletionQuestion({
               <strong>{question.number}</strong>
               {input}
             </label>
-            {parts.slice(1).join("____")}
+            {parts.slice(1).join("")}
           </>
         ) : (
           <label className={styles.inlineBlank}>

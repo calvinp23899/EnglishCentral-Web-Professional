@@ -53,6 +53,7 @@ export interface PracticePassage {
     part: number;
     title: string;
     instruction: string;
+    isDragHeadingOnParagraph?: boolean;
     paragraphs: PracticePassageParagraph[];
     questionGroups: PracticeQuestionGroup[];
 }
@@ -281,6 +282,7 @@ export const mockPracticeTests: IELTSReadingTest[] = [
                 part: 2,
                 title: "The Science of Learning Spaces",
                 instruction: "Read Passage 2 and answer Questions 14-26.",
+                isDragHeadingOnParagraph: true,
                 paragraphs: [
                     {
                         id: "p2-a",

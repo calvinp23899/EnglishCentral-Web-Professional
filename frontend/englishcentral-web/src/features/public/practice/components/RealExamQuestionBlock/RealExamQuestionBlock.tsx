@@ -58,6 +58,7 @@ export function RealExamQuestionGroupBlock({
   if (isMatchingHeadingsGroup) {
     return (
       <MatchingHeadingsGroup
+        passage={passage}
         group={group}
         answers={answers}
         onAnswer={onAnswer}
@@ -151,6 +152,7 @@ export function RealExamQuestionGroupBlock({
 }
 
 type MatchingHeadingsGroupProps = {
+  passage: IELTSReadingPassage;
   group: IELTSReadingQuestionGroup;
   answers: AnswerMap;
   onAnswer: (questionId: string, value: string) => void;
@@ -159,6 +161,7 @@ type MatchingHeadingsGroupProps = {
 };
 
 function MatchingHeadingsGroup({
+  passage,
   group,
   answers,
   onAnswer,
@@ -193,7 +196,11 @@ function MatchingHeadingsGroup({
       <h3>{group.title}</h3>
       <p className={styles.questionIntro}>{group.instruction}</p>
 
-      <div className={styles.matchingHeadingsLayout}>
+      <div
+        className={`${styles.matchingHeadingsLayout} ${
+          passage.isDragHeadingOnParagraph ? styles.realHeadingOnlyBankLayout : ""
+        }`}
+      >
         <div className={styles.headingOptionBank}>
           <strong>List of Headings</strong>
           {headingOptions.map((option) => (
@@ -202,6 +209,10 @@ function MatchingHeadingsGroup({
               draggable
               onDragStart={(event) => handleDragStart(event, option.label)}
               onClick={() => {
+                if (passage.isDragHeadingOnParagraph) {
+                  return;
+                }
+
                 const firstEmptyQuestion = group.questions.find(
                   (question) => !answers[question.id]
                 );
@@ -217,7 +228,8 @@ function MatchingHeadingsGroup({
           ))}
         </div>
 
-        <div className={styles.headingDropList}>
+        {!passage.isDragHeadingOnParagraph && (
+          <div className={styles.headingDropList}>
           {group.questions.map((question) => {
             const selectedOption = headingOptions.find(
               (option) => option.label === answers[question.id]
@@ -260,7 +272,8 @@ function MatchingHeadingsGroup({
               </article>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -560,7 +573,7 @@ function InlineCompletionQuestion({
   questionRef,
   realMode,
 }: InlineCompletionQuestionProps) {
-  const parts = question.text.split("____");
+  const parts = question.text.split(/_{2,}/);
   const input = (
     <input
       type="text"
@@ -585,7 +598,7 @@ function InlineCompletionQuestion({
               <strong>{question.number}</strong>
               {input}
             </label>
-            {parts.slice(1).join("____")}
+            {parts.slice(1).join("")}
           </>
         ) : (
           <label className={styles.inlineBlank}>
