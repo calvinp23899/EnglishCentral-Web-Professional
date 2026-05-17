@@ -8,6 +8,8 @@ import { NewsDetailPage } from "@/features/public/news/pages/NewsDetailPage";
 import { LoginPage } from "@/features/public/auth/pages/LoginPage";
 import { RegisterPage } from "@/features/public/auth/pages/RegisterPage";
 import { ForgotPasswordPage } from "@/features/public/auth/pages/ForgotPasswordPage";
+import { PracticePage } from "@/features/public/practice/pages/PracticePage";
+import { PracticeDetailPage } from "@/features/public/practice/pages/PracticeDetailPage";
 
 import { NotFoundPage } from "@/pages/not-found/NotFoundPage";
 
@@ -26,6 +28,10 @@ export const publicRoutes = {
     {
       path: "/courses/:category/:slug",
       element: <CourseDetailPage />,
+    },
+    {
+      path: "/practice",
+      element: <PracticePage />,
     },
     {
       path: "/contact",
@@ -50,6 +56,10 @@ export const publicRoutes = {
     {
       path: "forgot-password",
       element: <ForgotPasswordPage />,
+    },
+    {
+      path: "/practice/:category/:slug",
+      element: <PracticeDetailPage />,
     },
     {
       path: "*",

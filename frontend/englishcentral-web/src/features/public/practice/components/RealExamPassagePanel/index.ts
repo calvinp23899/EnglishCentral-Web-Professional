@@ -1,0 +1,1 @@
+export { RealExamPassagePanel } from "./RealExamPassagePanel";
