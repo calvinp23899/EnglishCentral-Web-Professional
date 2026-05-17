@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Bell, Menu, Wifi } from "lucide-react";
 import { getPassageQuestions } from "../components/QuestionBlock";
 import { RealExamPassagePanel } from "../components/RealExamPassagePanel";
 import { RealExamQuestionGroupBlock } from "../components/RealExamQuestionBlock";
@@ -26,6 +27,9 @@ export function RealTestReadingView({
   const [activePartIndex, setActivePartIndex] = useState(0);
   const [passageWidth, setPassageWidth] = useState(50);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [markedQuestionIds, setMarkedQuestionIds] = useState<Record<string, boolean>>(
+    {}
+  );
   const activePassage = test.passages[activePartIndex] ?? test.passages[0];
   const { formattedTime } = useCountdownTimer({
     minutes: test.durationMinutes,
@@ -57,6 +61,13 @@ export function RealTestReadingView({
     window.addEventListener("pointerup", handlePointerUp);
   };
 
+  const handleToggleMark = (questionId: string) => {
+    setMarkedQuestionIds((prev) => ({
+      ...prev,
+      [questionId]: !prev[questionId],
+    }));
+  };
+
   return (
     <div className={styles.realPage}>
       <header className={styles.realHeader}>
@@ -66,9 +77,9 @@ export function RealTestReadingView({
         </div>
 
         <div className={styles.realIcons}>
-          <span>⌕</span>
-          <span>🔔</span>
-          <span>☰</span>
+          <Wifi aria-hidden="true" />
+          <Bell aria-hidden="true" />
+          <Menu aria-hidden="true" />
         </div>
       </header>
 
@@ -111,6 +122,8 @@ export function RealTestReadingView({
               answers={answers}
               onAnswer={onAnswer}
               questionRefs={questionRefs}
+              markedQuestionIds={markedQuestionIds}
+              onToggleMark={handleToggleMark}
               realMode
             />
           ))}
@@ -167,12 +180,15 @@ export function RealTestReadingView({
               {activePartIndex === index ? (
                 passageQuestions.map((question) => {
                   const isAnswered = Boolean(answers[question.id]);
+                  const isMarked = Boolean(markedQuestionIds[question.id]);
 
                   return (
                     <button
                       key={question.id}
                       className={`${styles.realQuestionNavButton} ${
                         isAnswered ? styles.answeredQuestion : ""
+                      } ${
+                        isMarked ? styles.markedQuestion : ""
                       } ${
                         activeQuestionId === question.id ? styles.activeQuestion : ""
                       }`}

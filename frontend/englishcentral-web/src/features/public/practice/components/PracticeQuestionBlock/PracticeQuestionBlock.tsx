@@ -653,8 +653,14 @@ function QuestionBlock({
               onChange={() => onAnswer(question.id, option.label)}
             />
             <span>
-              <strong>{option.label}</strong>
-              {option.content !== option.label && ` ${option.content}`}
+              {option.content === option.label ? (
+                option.label
+              ) : (
+                <>
+                  <strong>{option.label}</strong>
+                  {` ${option.content}`}
+                </>
+              )}
             </span>
           </label>
         ))}

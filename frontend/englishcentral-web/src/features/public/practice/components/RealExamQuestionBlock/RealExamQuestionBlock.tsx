@@ -1,3 +1,4 @@
+import { Bookmark } from "lucide-react";
 import type {
   AnswerMap,
   IELTSReadingPassage,
@@ -16,8 +17,36 @@ type RealExamQuestionGroupBlockProps = {
   answers: AnswerMap;
   onAnswer: (questionId: string, value: string) => void;
   questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
+  markedQuestionIds: Record<string, boolean>;
+  onToggleMark: (questionId: string) => void;
   realMode?: boolean;
 };
+
+type MarkQuestionProps = {
+  questionId: string;
+  isMarked: boolean;
+  onToggleMark: (questionId: string) => void;
+};
+
+function MarkQuestionButton({
+  questionId,
+  isMarked,
+  onToggleMark,
+}: MarkQuestionProps) {
+  return (
+    <button
+      type="button"
+      className={`${styles.markQuestionButton} ${
+        isMarked ? styles.markQuestionButtonActive : ""
+      }`}
+      onClick={() => onToggleMark(questionId)}
+      aria-pressed={isMarked}
+      aria-label="Mark question"
+    >
+      <Bookmark aria-hidden="true" />
+    </button>
+  );
+}
 
 export function RealExamQuestionGroupBlock({
   passage,
@@ -25,6 +54,8 @@ export function RealExamQuestionGroupBlock({
   answers,
   onAnswer,
   questionRefs,
+  markedQuestionIds,
+  onToggleMark,
   realMode,
 }: RealExamQuestionGroupBlockProps) {
   const groupOptions =
@@ -63,6 +94,8 @@ export function RealExamQuestionGroupBlock({
         answers={answers}
         onAnswer={onAnswer}
         questionRefs={questionRefs}
+        markedQuestionIds={markedQuestionIds}
+        onToggleMark={onToggleMark}
         realMode={realMode}
       />
     );
@@ -76,6 +109,8 @@ export function RealExamQuestionGroupBlock({
         answers={answers}
         onAnswer={onAnswer}
         questionRefs={questionRefs}
+        markedQuestionIds={markedQuestionIds}
+        onToggleMark={onToggleMark}
       />
     );
   }
@@ -87,6 +122,8 @@ export function RealExamQuestionGroupBlock({
         answers={answers}
         onAnswer={onAnswer}
         questionRefs={questionRefs}
+        markedQuestionIds={markedQuestionIds}
+        onToggleMark={onToggleMark}
         realMode={realMode}
       />
     );
@@ -99,6 +136,8 @@ export function RealExamQuestionGroupBlock({
         answers={answers}
         onAnswer={onAnswer}
         questionRefs={questionRefs}
+        markedQuestionIds={markedQuestionIds}
+        onToggleMark={onToggleMark}
         realMode={realMode}
       />
     );
@@ -112,6 +151,8 @@ export function RealExamQuestionGroupBlock({
         answers={answers}
         onAnswer={onAnswer}
         questionRefs={questionRefs}
+        markedQuestionIds={markedQuestionIds}
+        onToggleMark={onToggleMark}
         realMode={realMode}
       />
     );
@@ -141,6 +182,8 @@ export function RealExamQuestionGroupBlock({
           group={group}
           value={answers[question.id]}
           onAnswer={onAnswer}
+          isMarked={Boolean(markedQuestionIds[question.id])}
+          onToggleMark={onToggleMark}
           realMode={realMode}
           questionRef={(element) => {
             questionRefs.current[question.id] = element;
@@ -157,6 +200,8 @@ type MatchingHeadingsGroupProps = {
   answers: AnswerMap;
   onAnswer: (questionId: string, value: string) => void;
   questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
+  markedQuestionIds: Record<string, boolean>;
+  onToggleMark: (questionId: string) => void;
   realMode?: boolean;
 };
 
@@ -285,6 +330,8 @@ type MatchingInformationGroupProps = {
   answers: AnswerMap;
   onAnswer: (questionId: string, value: string) => void;
   questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
+  markedQuestionIds: Record<string, boolean>;
+  onToggleMark: (questionId: string) => void;
 };
 
 function MatchingInformationGroup({
@@ -293,6 +340,8 @@ function MatchingInformationGroup({
   answers,
   onAnswer,
   questionRefs,
+  markedQuestionIds,
+  onToggleMark,
 }: MatchingInformationGroupProps) {
   const paragraphOptions = getQuestionOptions(group.questions[0], group, passage) ?? [];
 
@@ -305,6 +354,7 @@ function MatchingInformationGroup({
         <table className={styles.matchingInfoTable}>
           <thead>
             <tr>
+              <th />
               <th />
               <th />
               {paragraphOptions.map((option) => (
@@ -323,6 +373,13 @@ function MatchingInformationGroup({
               >
                 <td>{question.number}</td>
                 <td>{question.text}</td>
+                <td>
+                  <MarkQuestionButton
+                    questionId={question.id}
+                    isMarked={Boolean(markedQuestionIds[question.id])}
+                    onToggleMark={onToggleMark}
+                  />
+                </td>
                 {paragraphOptions.map((option) => (
                   <td key={option.label}>
                     <label>
@@ -349,6 +406,8 @@ type MatchingFeaturesGroupProps = {
   answers: AnswerMap;
   onAnswer: (questionId: string, value: string) => void;
   questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
+  markedQuestionIds: Record<string, boolean>;
+  onToggleMark: (questionId: string) => void;
   realMode?: boolean;
 };
 
@@ -357,6 +416,8 @@ function MatchingFeaturesGroup({
   answers,
   onAnswer,
   questionRefs,
+  markedQuestionIds,
+  onToggleMark,
   realMode,
 }: MatchingFeaturesGroupProps) {
   const featureOptions = group.options ?? [];
@@ -421,6 +482,11 @@ function MatchingFeaturesGroup({
                 </div>
 
                 <p>{question.text}</p>
+                <MarkQuestionButton
+                  questionId={question.id}
+                  isMarked={Boolean(markedQuestionIds[question.id])}
+                  onToggleMark={onToggleMark}
+                />
               </div>
             </article>
           );
@@ -450,6 +516,8 @@ type MultipleChoiceGroupProps = {
   answers: AnswerMap;
   onAnswer: (questionId: string, value: string) => void;
   questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
+  markedQuestionIds: Record<string, boolean>;
+  onToggleMark: (questionId: string) => void;
   realMode?: boolean;
 };
 
@@ -458,6 +526,8 @@ function MultipleChoiceGroup({
   answers,
   onAnswer,
   questionRefs,
+  markedQuestionIds,
+  onToggleMark,
   realMode,
 }: MultipleChoiceGroupProps) {
   const options = group.options ?? [];
@@ -490,7 +560,11 @@ function MultipleChoiceGroup({
             <div className={styles.questionTitle}>
               <span>{question.number}</span>
               <p>{question.text}</p>
-              <button>♡</button>
+              <MarkQuestionButton
+                questionId={question.id}
+                isMarked={Boolean(markedQuestionIds[question.id])}
+                onToggleMark={onToggleMark}
+              />
             </div>
 
             <div className={styles.checkboxOptionList}>
@@ -518,6 +592,8 @@ type CompletionQuestionGroupProps = {
   answers: AnswerMap;
   onAnswer: (questionId: string, value: string) => void;
   questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
+  markedQuestionIds: Record<string, boolean>;
+  onToggleMark: (questionId: string) => void;
   realMode?: boolean;
 };
 
@@ -527,6 +603,8 @@ function CompletionQuestionGroup({
   answers,
   onAnswer,
   questionRefs,
+  markedQuestionIds,
+  onToggleMark,
   realMode,
 }: CompletionQuestionGroupProps) {
   const isTableLike = group.questions.some((question) =>
@@ -547,6 +625,8 @@ function CompletionQuestionGroup({
             question={question}
             value={answers[question.id]}
             onAnswer={onAnswer}
+            isMarked={Boolean(markedQuestionIds[question.id])}
+            onToggleMark={onToggleMark}
             questionRef={(element) => {
               questionRefs.current[question.id] = element;
             }}
@@ -563,6 +643,8 @@ type InlineCompletionQuestionProps = {
   value?: string;
   onAnswer: (questionId: string, value: string) => void;
   questionRef?: (element: HTMLElement | null) => void;
+  isMarked?: boolean;
+  onToggleMark?: (questionId: string) => void;
   realMode?: boolean;
 };
 
@@ -571,6 +653,8 @@ function InlineCompletionQuestion({
   value,
   onAnswer,
   questionRef,
+  isMarked,
+  onToggleMark,
   realMode,
 }: InlineCompletionQuestionProps) {
   const parts = question.text.split(/_{2,}/);
@@ -591,20 +675,29 @@ function InlineCompletionQuestion({
       }`}
     >
       <span className={styles.inlineCompletionText}>
-        {parts[0]}
-        {parts.length > 1 ? (
-          <>
+        <span>
+          {parts[0]}
+          {parts.length > 1 ? (
+            <>
+              <label className={styles.inlineBlank}>
+                <strong>{question.number}</strong>
+                {input}
+              </label>
+              {parts.slice(1).join("")}
+            </>
+          ) : (
             <label className={styles.inlineBlank}>
               <strong>{question.number}</strong>
               {input}
             </label>
-            {parts.slice(1).join("")}
-          </>
-        ) : (
-          <label className={styles.inlineBlank}>
-            <strong>{question.number}</strong>
-            {input}
-          </label>
+          )}
+        </span>
+        {onToggleMark && (
+          <MarkQuestionButton
+            questionId={question.id}
+            isMarked={Boolean(isMarked)}
+            onToggleMark={onToggleMark}
+          />
         )}
       </span>
     </article>
@@ -617,6 +710,8 @@ type QuestionBlockProps = {
   group?: IELTSReadingQuestionGroup;
   value?: string;
   onAnswer: (questionId: string, value: string) => void;
+  isMarked: boolean;
+  onToggleMark: (questionId: string) => void;
   realMode?: boolean;
   questionRef?: (element: HTMLElement | null) => void;
 };
@@ -627,6 +722,8 @@ function QuestionBlock({
   group,
   value,
   onAnswer,
+  isMarked,
+  onToggleMark,
   realMode,
   questionRef,
 }: QuestionBlockProps) {
@@ -639,6 +736,8 @@ function QuestionBlock({
         question={question}
         value={value}
         onAnswer={onAnswer}
+        isMarked={isMarked}
+        onToggleMark={onToggleMark}
         questionRef={questionRef}
         realMode={realMode}
       />
@@ -653,7 +752,11 @@ function QuestionBlock({
       <div className={styles.questionTitle}>
         <span>{question.number}</span>
         <p>{question.text}</p>
-        <button>♡</button>
+        <MarkQuestionButton
+          questionId={question.id}
+          isMarked={isMarked}
+          onToggleMark={onToggleMark}
+        />
       </div>
 
       <div className={styles.optionList}>
@@ -666,8 +769,14 @@ function QuestionBlock({
               onChange={() => onAnswer(question.id, option.label)}
             />
             <span>
-              <strong>{option.label}</strong>
-              {option.content !== option.label && ` ${option.content}`}
+              {option.content === option.label ? (
+                option.label
+              ) : (
+                <>
+                  <strong>{option.label}</strong>
+                  {` ${option.content}`}
+                </>
+              )}
             </span>
           </label>
         ))}

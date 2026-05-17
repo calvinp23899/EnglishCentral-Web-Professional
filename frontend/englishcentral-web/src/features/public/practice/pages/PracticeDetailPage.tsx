@@ -1,5 +1,12 @@
-import { useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Link,
+  useNavigate,
+  useOutletContext,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+import type { PublicLayoutOutletContext } from "@/app/layouts/public-layout/PublicLayout";
 import { SubmitResultModal } from "../components/SubmitResultModal/SubmitResultModal";
 import { getAllQuestions } from "../components/QuestionBlock";
 import { mockPracticeTests } from "../data/mockPracticeTests";
@@ -22,6 +29,8 @@ export function PracticeDetailPage() {
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [openResultModal, setOpenResultModal] = useState(false);
   const navigate = useNavigate();
+  const { setPublicChromeVisible } =
+    useOutletContext<PublicLayoutOutletContext>();
   const questionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const test = useMemo(
@@ -35,6 +44,16 @@ export function PracticeDetailPage() {
   const handleBackToPractice = () => {
     navigate("/practice");
   };
+
+  useEffect(() => {
+    const shouldUseFullscreen =
+      mode === "real" &&
+      ["exam", "continue", "loading"].includes(realSubmitStep);
+
+    setPublicChromeVisible(!shouldUseFullscreen);
+
+    return () => setPublicChromeVisible(true);
+  }, [mode, realSubmitStep, setPublicChromeVisible]);
 
   const handleAnswer = (questionId: string, value: string) => {
     setAnswers((prev) => {

@@ -25,20 +25,27 @@
 
   h1 {
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 800;
   }
 
   p {
     margin: 4px 0 0;
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 
 .realIcons {
   display: flex;
+  align-items: center;
   gap: 18px;
-  font-size: 20px;
+  color: #000000;
+
+  svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 2.4;
+  }
 }
 
 .realInstruction {
@@ -117,12 +124,12 @@
 
   h3 {
     margin: 0 0 12px;
-    font-size: 15px;
+    font-size: 14px;
   }
 }
 
 .questionIntro {
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.45;
   margin: 0 0 18px;
 }
@@ -150,7 +157,7 @@
 
   p {
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1.45;
   }
 
@@ -158,6 +165,33 @@
     border: 0;
     background: transparent;
     cursor: pointer;
+  }
+}
+
+.markQuestionButton {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #000000;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+
+  svg {
+    width: 17px;
+    height: 17px;
+    stroke-width: 2;
+    fill: transparent;
+  }
+}
+
+.markQuestionButtonActive {
+  color: #ff1b1b;
+
+  svg {
+    fill: currentColor;
   }
 }
 
@@ -170,10 +204,12 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 54px;
+    min-height: 42px;
     padding: 0 10px;
     border-radius: 4px;
-    font-size: 22px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.35;
     cursor: pointer;
     transition: background 0.15s ease;
 
@@ -196,23 +232,26 @@
 
 .floatingArrows {
   position: sticky;
-  right: 0;
-  bottom: 16px;
+  right: 12px;
+  bottom: 14px;
+  width: max-content;
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 24px;
+  gap: 8px;
+  margin: 20px 12px 0 auto;
   z-index: 2;
+  pointer-events: none;
 
   button {
-    width: 58px;
-    height: 58px;
+    width: 44px;
+    height: 44px;
     border: 0;
     border-radius: 4px;
     background: #111827;
     color: #ffffff;
-    font-size: 32px;
+    font-size: 26px;
+    line-height: 1;
     cursor: pointer;
+    pointer-events: auto;
 
     &:disabled {
       opacity: 0.35;
@@ -222,35 +261,38 @@
 }
 
 .realFooter {
-  height: 48px;
+  height: 56px;
   border-top: 1px solid #d6d6d6;
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 70px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 70px;
   align-items: center;
   background: #f8fafc;
 
   > div {
     height: 100%;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 5px;
-    padding: 0 6px;
+    padding: 16px 6px 7px;
+    box-sizing: border-box;
+    min-width: 0;
   }
 
   button {
     position: relative;
-    min-width: 17px;
-    height: 24px;
-    padding: 0 2px;
+    min-width: 22px;
+    margin-top: 0;
+    padding: 0;
     border: 0;
     background: transparent;
+    box-sizing: border-box;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
     color: #000000;
   }
 
   span {
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 
@@ -267,11 +309,28 @@
     outline: 2px solid #2563eb;
     outline-offset: -2px;
   }
+
+  > button:first-child {
+    flex: 0 0 54px;
+    min-width: 54px;
+    padding: 0 !important;
+    text-align: left;
+  }
+}
+
+.realQuestionNavButton {
+  flex: 0 0 22px;
+  width: 22px;
+  min-width: 22px !important;
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
 }
 
 .activeQuestion {
-  min-width: 20px;
-  height: 24px;
+  width: 22px;
+  min-width: 22px;
+  height: 26px;
   background: transparent !important;
   color: #000000;
   border: 1px solid #1a73e8 !important;
@@ -280,9 +339,10 @@
 
 .activePartButton {
   color: #000000 !important;
-  min-width: 62px !important;
+  min-width: 54px !important;
   height: 24px !important;
-  margin-right: 8px;
+  margin-right: 2px;
+  margin-top: 0 !important;
   padding: 0 !important;
   text-align: left;
   font-size: 14px !important;
@@ -291,7 +351,7 @@
 .checkButton {
   height: 100%;
   background: #f1f5f9 !important;
-  font-size: 22px !important;
+  font-size: 20px !important;
 }
 
 .realPage {
@@ -302,7 +362,7 @@
   }
 
   .questionIntro {
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.4;
     margin-bottom: 14px;
   }
@@ -318,11 +378,11 @@
     span {
       width: 24px;
       height: 24px;
-      font-size: 13px;
+      font-size: 14px;
     }
 
     p {
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.4;
     }
   }
@@ -332,7 +392,7 @@
     gap: 6px;
 
     label {
-      min-height: 36px;
+      min-height: 34px;
       font-size: 14px;
     }
 
@@ -348,7 +408,7 @@
   }
 
   .matchingInfoTable {
-    font-size: 13px;
+    font-size: 14px;
 
     th,
     td {
@@ -357,12 +417,16 @@
   }
 
   .inlineCompletionText {
-    font-size: 13px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 24px;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
     line-height: 1.5;
   }
 
   .completionPanel h4 {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .realPassageParagraph {
@@ -385,7 +449,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
 
     > strong {
@@ -445,7 +509,7 @@
 
   h1 {
     margin: 0;
-    font-size: 20px;
+    font-size: 18px;
   }
 }
 
@@ -499,11 +563,11 @@
 .practicePassage {
   h2 {
     margin: 0 0 20px;
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .passageText p {
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.65;
   }
 }
@@ -588,7 +652,7 @@
   &::before {
     content: "";
     position: absolute;
-    top: -8px;
+    top: -15px;
     left: 1px;
     right: 1px;
     height: 3px;
@@ -597,17 +661,44 @@
 }
 
 .realQuestionNavButton::after {
-    content: "";
-    position: absolute;
-    top: -8px;
-    left: 1px;
-    right: 1px;
-    height: 3px;
-    background: #d8d8d8;
+  display: none;
 }
 
-.answeredQuestion::after {
-  display: none;
+.realQuestionNavButton::before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  width: 18px;
+  height: 3px;
+  background: #d8d8d8;
+  transform: translateX(-50%);
+}
+
+.realQuestionNavButton.answeredQuestion::before {
+  background: #2e9d46;
+}
+
+.markedQuestion::after {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 6px;
+  height: 7px;
+  background: #ff1b1b;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
+  display: block;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.answeredQuestion.markedQuestion::before {
+  display: block;
+}
+
+.realQuestionNavButton.answeredQuestion.markedQuestion::before {
+  background: #2e9d46;
 }
 
 
@@ -801,7 +892,7 @@
   span {
     display: block;
     color: #64748b;
-    font-size: 13px;
+    font-size: 14px;
   }
 
   strong {
@@ -1000,7 +1091,7 @@
     border-radius: 4px;
     background: #ffffff;
     color: #0f172a;
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.35;
   }
 
@@ -1029,7 +1120,7 @@
 
   > strong {
     margin-bottom: 4px;
-    font-size: 15px;
+    font-size: 14px;
   }
 
   button {
@@ -1078,7 +1169,7 @@
 
   p {
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1.45;
   }
 }
@@ -1143,8 +1234,8 @@
     border-bottom: 1px solid #111827;
   }
 
-  th:nth-child(n + 3),
-  td:nth-child(n + 3) {
+  th:nth-child(n + 4),
+  td:nth-child(n + 4) {
     width: 56px;
     border-left: 1px solid #111827;
     text-align: center;
@@ -1152,13 +1243,13 @@
 
   th {
     height: 44px;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 900;
   }
 
   td {
     padding: 14px 10px;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1.42;
   }
 
@@ -1190,13 +1281,13 @@
 
 .featureDropRow {
   display: grid;
-  grid-template-columns: minmax(170px, 220px) 1fr;
+  grid-template-columns: minmax(170px, 220px) 1fr 24px;
   gap: 18px;
   align-items: start;
 
   p {
     margin: 0;
-    font-size: 17px;
+    font-size: 14px;
     line-height: 1.45;
   }
 }
@@ -1214,7 +1305,7 @@
 
   strong {
     color: #111827;
-    font-size: 16px;
+    font-size: 14px;
   }
 
   span {
@@ -1245,7 +1336,7 @@
   > strong {
     display: block;
     margin-bottom: 10px;
-    font-size: 16px;
+    font-size: 14px;
   }
 
   > div {
@@ -1261,7 +1352,7 @@
     border-radius: 4px;
     background: #ffffff;
     cursor: grab;
-    font-size: 15px;
+    font-size: 14px;
   }
 }
 
@@ -1278,7 +1369,7 @@
     gap: 12px;
     border-radius: 3px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 14px;
 
     &:hover,
     &:has(input:checked) {
@@ -1311,7 +1402,7 @@
 
   p {
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1.5;
   }
 
@@ -1322,7 +1413,7 @@
     padding: 0 10px;
     border: 1px solid #111827;
     border-radius: 3px;
-    font-size: 15px;
+    font-size: 14px;
   }
 }
 
@@ -1343,7 +1434,7 @@
   h4 {
     margin: 0 0 12px;
     text-align: center;
-    font-size: 18px;
+    font-size: 14px;
     line-height: 1.3;
   }
 }
@@ -1358,9 +1449,16 @@
 }
 
 .inlineCompletionText {
-  display: block;
-  font-size: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
   line-height: 1.62;
+
+  > span {
+    min-width: 0;
+  }
 }
 
 .inlineBlank {
@@ -1390,7 +1488,7 @@
     border: 0;
     border-left: 1px solid #cbd5e1;
     outline: 0;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     text-align: center;
   }
@@ -1412,7 +1510,7 @@
   strong {
     display: block;
     margin-top: 2px;
-    font-size: 18px;
+    font-size: 14px;
   }
 }
 
@@ -1438,7 +1536,7 @@
   padding: 24px 30px;
 
   .passageText p {
-    font-size: 20px;
+    font-size: 14px;
     line-height: 1.52;
   }
 }
@@ -1452,14 +1550,14 @@
 
   span {
     color: #2563eb;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 900;
     text-transform: uppercase;
   }
 
   h2 {
     margin: 6px 0 0;
-    font-size: 24px;
+    font-size: 20px;
   }
 }
 
@@ -1516,14 +1614,14 @@
 
   h2 {
     margin: 5px 0 0;
-    font-size: 28px;
+    font-size: 22px;
   }
 
   p {
     max-width: 540px;
     margin: 8px 0 0;
     color: #0f172a;
-    font-size: 20px;
+    font-size: 14px;
     line-height: 1.42;
   }
 }
@@ -1575,7 +1673,7 @@
   th {
     height: 56px;
     color: #111827;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 900;
     text-align: center;
   }
@@ -1595,7 +1693,7 @@
   td {
     min-height: 86px;
     padding: 14px 10px;
-    font-size: 18px;
+    font-size: 14px;
     line-height: 1.45;
     vertical-align: middle;
   }
@@ -1624,7 +1722,7 @@
   border: 0;
   border-radius: 999px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 900;
 }
 
@@ -1636,7 +1734,7 @@
   background: #111827;
   color: #ffffff;
   cursor: pointer;
-  font-size: 17px;
+  font-size: 14px;
 }
 
 .correctAnswerCell {
@@ -1676,7 +1774,7 @@
   strong {
     display: block;
     color: #0f172a;
-    font-size: 16px;
+    font-size: 14px;
   }
 
   span {
@@ -1689,7 +1787,7 @@
   p {
     margin: 10px 0 0;
     color: #1f2937;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1.55;
   }
 }
@@ -1732,7 +1830,7 @@
 
   > p {
     margin: 14px 0;
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1.5;
     font-weight: 800;
   }
@@ -1870,3 +1968,4 @@
     overflow: visible;
   }
 }
+
