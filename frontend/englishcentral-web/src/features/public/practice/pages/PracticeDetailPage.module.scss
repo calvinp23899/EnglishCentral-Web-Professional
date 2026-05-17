@@ -792,11 +792,13 @@
 .resultPage {
   min-height: 100vh;
   background: #f3f4f6;
-  padding: 16px;
+  padding: 16px 24px 32px;
   color: #0f172a;
 }
 
 .resultTopGrid {
+  width: min(100%, 1180px);
+  margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
@@ -951,7 +953,8 @@
 }
 
 .resultTableCard {
-  margin-top: 14px;
+  width: min(100%, 1180px);
+  margin: 14px auto 0;
   overflow: hidden;
 
   h3 {

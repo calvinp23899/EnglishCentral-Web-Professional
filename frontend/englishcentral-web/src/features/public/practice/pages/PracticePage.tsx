@@ -70,7 +70,7 @@ export function PracticePage() {
       </section>
 
       <section className={styles.content}>
-        <Container>
+        <div className={styles.contentShell}>
           <div className={styles.layout}>
             <aside className={styles.sidebar}>
               <h3>Nội dung</h3>
@@ -168,7 +168,7 @@ export function PracticePage() {
               )}
             </div>
           </div>
-        </Container>
+        </div>
       </section>
     </div>
   );
