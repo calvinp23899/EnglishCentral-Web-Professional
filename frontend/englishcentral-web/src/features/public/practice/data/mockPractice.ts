@@ -66,7 +66,7 @@ export const practiceMenus = [
 export const mockPractices: PublicPractice[] = [
   {
     id: 1,
-    slug: "ielts-reading-cambridge-18-test-1",
+    slug: "ielts-reading-full-mock-test-1",
     category: "ielts",
     skill: "reading",
     title: "IELTS Reading - Cambridge 18 Test 1",
