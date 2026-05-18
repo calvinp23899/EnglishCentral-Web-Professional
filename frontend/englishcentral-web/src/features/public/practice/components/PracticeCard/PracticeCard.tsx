@@ -38,7 +38,7 @@ export function PracticeCard({ practice }: PracticeCardProps) {
           <span>{practice.duration}</span>
         </div>
 
-        <Button fullWidth onClick={() => setOpenModal(true)}>
+        <Button fullWidth size="sm" onClick={() => setOpenModal(true)}>
           Luyện tập
         </Button>
       </article>

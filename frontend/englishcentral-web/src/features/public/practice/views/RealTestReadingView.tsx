@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Bell, Menu, Wifi } from "lucide-react";
+import { Bell, Eye, Menu, Wifi, X } from "lucide-react";
 import { getPassageQuestions } from "../components/QuestionBlock";
 import { RealExamPassagePanel } from "../components/RealExamPassagePanel";
+import type { PassageAnnotation } from "../components/RealExamPassagePanel";
 import { RealExamQuestionGroupBlock } from "../components/RealExamQuestionBlock";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
 import type { AnswerMap, IELTSReadingTest } from "../types/practice-test.type";
@@ -27,10 +28,18 @@ export function RealTestReadingView({
   const [activePartIndex, setActivePartIndex] = useState(0);
   const [passageWidth, setPassageWidth] = useState(50);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [passageAnnotations, setPassageAnnotations] = useState<
+    PassageAnnotation[]
+  >([]);
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [markedQuestionIds, setMarkedQuestionIds] = useState<Record<string, boolean>>(
     {}
   );
   const activePassage = test.passages[activePartIndex] ?? test.passages[0];
+  const noteAnnotations = passageAnnotations.filter(
+    (annotation) => annotation.type === "note"
+  );
+  const isNotePanelOpen = Boolean(activeNoteId) && noteAnnotations.length > 0;
   const { formattedTime } = useCountdownTimer({
     minutes: test.durationMinutes,
     onTimeUp: () => {
@@ -68,6 +77,26 @@ export function RealTestReadingView({
     }));
   };
 
+  const handleUpdateNote = (noteId: string, note: string) => {
+    setPassageAnnotations((prev) =>
+      prev.map((annotation) =>
+        annotation.id === noteId ? { ...annotation, note } : annotation
+      )
+    );
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    setPassageAnnotations((prev) =>
+      prev.filter((annotation) => annotation.id !== noteId)
+    );
+
+    if (activeNoteId === noteId) {
+      const nextNote = noteAnnotations.find((annotation) => annotation.id !== noteId);
+
+      setActiveNoteId(nextNote?.id ?? null);
+    }
+  };
+
   return (
     <div className={styles.realPage}>
       <header className={styles.realHeader}>
@@ -98,6 +127,9 @@ export function RealTestReadingView({
             answers={answers}
             onAnswer={onAnswer}
             questionRefs={questionRefs}
+            annotations={passageAnnotations}
+            onAnnotationsChange={setPassageAnnotations}
+            onActiveNoteIdChange={setActiveNoteId}
           />
         </section>
 
@@ -147,6 +179,70 @@ export function RealTestReadingView({
             </button>
           </div>
         </section>
+
+        {isNotePanelOpen && (
+          <aside className={styles.realNotePanel} aria-label="Note panel">
+            <div className={styles.realNotePanelHeader}>
+              <span>Note</span>
+              <div>
+                <button type="button" aria-label="Preview note">
+                  <Eye aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Close note"
+                  onClick={() => setActiveNoteId(null)}
+                >
+                  <X aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.realNotePanelBody}>
+              {noteAnnotations.map((noteAnnotation) => {
+                const notePassage = test.passages.find(
+                  (passage) => passage.id === noteAnnotation.passageId
+                );
+                const isActiveNote = noteAnnotation.id === activeNoteId;
+
+                return (
+                  <div
+                    key={noteAnnotation.id}
+                    className={`${styles.realNoteCard} ${
+                      isActiveNote ? styles.realNoteCardActive : ""
+                    }`}
+                    onClick={() => setActiveNoteId(noteAnnotation.id)}
+                  >
+                    <p>
+                      <strong>
+                        Part {notePassage?.part ?? activePassage.part}
+                      </strong>{" "}
+                      {noteAnnotation.selectedText}
+                    </p>
+                    <textarea
+                      value={noteAnnotation.note ?? ""}
+                      aria-label="Note content"
+                      autoFocus={isActiveNote}
+                      onFocus={() => setActiveNoteId(noteAnnotation.id)}
+                      onChange={(event) =>
+                        handleUpdateNote(noteAnnotation.id, event.target.value)
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeleteNote(noteAnnotation.id);
+                      }}
+                    >
+                      DELETE
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </aside>
+        )}
       </main>
 
       <footer className={styles.realFooter}>
