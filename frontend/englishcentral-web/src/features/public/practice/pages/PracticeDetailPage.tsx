@@ -20,12 +20,15 @@ import type { AnswerMap, ExamResult } from "../types/practice-test.type";
 import styles from "./PracticeDetailPage.module.scss";
 
 type RealSubmitStep = "exam" | "continue" | "loading" | "result" | "review";
+type PracticeSubmitStep = "exam" | "result" | "review";
 
 export function PracticeDetailPage() {
   const { category, slug } = useParams();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get("mode") ?? "practice";
   const [realSubmitStep, setRealSubmitStep] = useState<RealSubmitStep>("exam");
+  const [practiceSubmitStep, setPracticeSubmitStep] =
+    useState<PracticeSubmitStep>("exam");
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [openResultModal, setOpenResultModal] = useState(false);
   const navigate = useNavigate();
@@ -188,6 +191,29 @@ export function PracticeDetailPage() {
     );
   }
 
+  if (practiceSubmitStep === "result") {
+    return (
+      <RealExamResultView
+        {...getExamResult()}
+        time="00:00:00"
+        onReview={() => setPracticeSubmitStep("review")}
+      />
+    );
+  }
+
+  if (practiceSubmitStep === "review") {
+    return (
+      <RealExamReviewView
+        test={test}
+        answers={answers}
+        result={getExamResult()}
+        time="00:00:00"
+        onBackToResult={() => setPracticeSubmitStep("result")}
+        onBackToPractice={handleBackToPractice}
+      />
+    );
+  }
+
   return (
     <>
       <PracticeReadingView
@@ -200,10 +226,11 @@ export function PracticeDetailPage() {
       />
       {openResultModal && (
         <SubmitResultModal
-          totalQuestions={getAllQuestions(test).length}
-          answeredQuestions={Object.keys(answers).length}
           onClose={() => setOpenResultModal(false)}
-          onBackToPractice={handleBackToPractice}
+          onComplete={() => {
+            setOpenResultModal(false);
+            setPracticeSubmitStep("result");
+          }}
         />
       )}
     </>

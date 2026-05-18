@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Highlighter, MessageSquare } from "lucide-react";
+import { Eraser, Highlighter, MessageSquare } from "lucide-react";
 import type { ReactNode } from "react";
 import type {
   AnswerMap,
@@ -102,6 +102,7 @@ export function RealExamPassagePanel({
     passageId: string;
     top: number;
     left: number;
+    canClearHighlight: boolean;
   } | null>(null);
   const headingGroup = passage.isDragHeadingOnParagraph
     ? passage.questionGroups.find((group) => group.type === "matching-headings")
@@ -176,17 +177,28 @@ export function RealExamPassagePanel({
       return;
     }
 
-    setSelectionPopover({
-      passageId: passage.id,
-      top: rect.top - 8,
-      left: rect.left + rect.width / 2,
-    });
-    pendingSelectionRef.current = {
+    const nextSelection = {
       passageId: passage.id,
       paragraphId: startContentElement.dataset.passageContentId ?? "",
       start: Math.min(start, end),
       end: Math.max(start, end),
     };
+    const canClearHighlight = annotations.some(
+      (annotation) =>
+        annotation.type === "highlight" &&
+        annotation.passageId === nextSelection.passageId &&
+        annotation.paragraphId === nextSelection.paragraphId &&
+        annotation.start < nextSelection.end &&
+        annotation.end > nextSelection.start
+    );
+
+    setSelectionPopover({
+      passageId: passage.id,
+      top: rect.top - 8,
+      left: rect.left + rect.width / 2,
+      canClearHighlight,
+    });
+    pendingSelectionRef.current = nextSelection;
   };
 
   const hideSelectionPopover = () => {
@@ -234,6 +246,32 @@ export function RealExamPassagePanel({
 
   const handleNoteSelection = () => {
     applySelectionAnnotation("note", "");
+  };
+
+  const handleClearSelectionHighlight = () => {
+    const selection = pendingSelectionRef.current;
+
+    if (!selection) {
+      hideSelectionPopover();
+      return;
+    }
+
+    onAnnotationsChange((prev) =>
+      prev.filter(
+        (annotation) =>
+          !(
+            annotation.type === "highlight" &&
+            annotation.passageId === selection.passageId &&
+            annotation.paragraphId === selection.paragraphId &&
+            annotation.start < selection.end &&
+            annotation.end > selection.start
+          )
+      )
+    );
+
+    window.getSelection()?.removeAllRanges();
+    pendingSelectionRef.current = null;
+    hideSelectionPopover();
   };
 
   const renderAnnotatedContent = (
@@ -391,6 +429,12 @@ export function RealExamPassagePanel({
             <Highlighter aria-hidden="true" />
             <span>Highlight</span>
           </button>
+          {selectionPopover.canClearHighlight && (
+            <button type="button" onClick={handleClearSelectionHighlight}>
+              <Eraser aria-hidden="true" />
+              <span>Clear highlight</span>
+            </button>
+          )}
         </div>
       )}
     </>

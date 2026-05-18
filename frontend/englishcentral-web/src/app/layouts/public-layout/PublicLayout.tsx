@@ -12,8 +12,11 @@ export type PublicLayoutOutletContext = {
 
 export function PublicLayout() {
   const location = useLocation();
+  const isPracticeDetailRoute = /^\/practice\/[^/]+\/[^/]+/.test(
+    location.pathname
+  );
   const shouldStartFullscreen =
-    location.pathname.includes("/practice/") &&
+    isPracticeDetailRoute &&
     new URLSearchParams(location.search).get("mode") === "real";
   const [isPublicChromeVisible, setPublicChromeVisible] = useState(
     !shouldStartFullscreen
@@ -25,21 +28,28 @@ export function PublicLayout() {
 
   useEffect(() => {
     const isRealExamRoute =
-      location.pathname.includes("/practice/") &&
+      isPracticeDetailRoute &&
       new URLSearchParams(location.search).get("mode") === "real";
 
     setPublicChromeVisible(!isRealExamRoute);
-  }, [location.pathname, location.search]);
+  }, [isPracticeDetailRoute, location.search]);
+
+  const shouldShowPublicFooter =
+    isPublicChromeVisible && !isPracticeDetailRoute;
 
   return (
-    <div className={styles.layout}>
+    <div
+      className={`${styles.layout} ${
+        isPracticeDetailRoute ? styles.practiceDetailLayout : ""
+      }`}
+    >
       {isPublicChromeVisible && <PublicHeader />}
 
       <main className={styles.main}>
         <Outlet context={outletContext} />
       </main>
 
-      {isPublicChromeVisible && <PublicFooter />}
+      {shouldShowPublicFooter && <PublicFooter />}
     </div>
   );
 }

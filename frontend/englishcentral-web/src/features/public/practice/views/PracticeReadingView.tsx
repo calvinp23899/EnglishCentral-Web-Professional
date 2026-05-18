@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { useState } from "react";
 import { getPassageQuestions } from "../components/QuestionBlock";
 import { PracticeQuestionGroupBlock } from "../components/PracticeQuestionBlock";
@@ -56,14 +55,11 @@ export function PracticeReadingView({
   return (
     <div className={styles.practicePage}>
       <header className={styles.practiceHeader}>
-        <Link to="/practice" className={styles.backButton}>
-          ←
-        </Link>
 
         <h1>Luyện tập</h1>
 
         <div className={styles.practiceActions}>
-          <span>⏱ {formattedTime}</span>
+          <span>{formattedTime}</span>
           <button onClick={onSubmit}>Kết thúc</button>
         </div>
       </header>
@@ -73,12 +69,11 @@ export function PracticeReadingView({
           className={styles.practicePassage}
           style={{ flexBasis: `${passageWidth}%` }}
         >
-          <div className={styles.panelTitle}>Passage</div>
           <h2>{activePassage.title}</h2>
 
           <div className={styles.passageText}>
-            {activePassage.paragraphs.map((paragraph, index) => (
-              <p key={index}>
+            {activePassage.paragraphs.map((paragraph) => (
+              <p key={paragraph.id}>
                 {paragraph.label && (
                   <strong className={styles.paragraphLabel}>
                     {paragraph.label}.{" "}
@@ -96,17 +91,13 @@ export function PracticeReadingView({
           aria-orientation="vertical"
           onPointerDown={handleResizeStart}
         >
-          <button>↔</button>
+          <button>{"<>"}</button>
         </div>
 
         <section
           className={styles.practiceQuestions}
           style={{ flexBasis: `${100 - passageWidth}%` }}
         >
-          <div className={styles.tabs}>
-            <button className={styles.activeTab}>Câu hỏi</button>
-          </div>
-
           {activePassage.questionGroups.map((group) => (
             <PracticeQuestionGroupBlock
               key={group.id}
@@ -118,6 +109,7 @@ export function PracticeReadingView({
             />
           ))}
         </section>
+
       </main>
 
       <footer className={styles.practiceFooter}>
@@ -152,7 +144,7 @@ export function PracticeReadingView({
             )
           }
         >
-          Câu tiếp theo →
+          Câu tiếp theo {">"}
         </button>
       </footer>
     </div>
