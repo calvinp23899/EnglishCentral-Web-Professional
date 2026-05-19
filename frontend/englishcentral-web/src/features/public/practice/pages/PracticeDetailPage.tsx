@@ -11,10 +11,12 @@ import { SubmitResultModal } from "../components/SubmitResultModal/SubmitResultM
 import { getAllQuestions } from "../components/QuestionBlock";
 import { mockPracticeTests } from "../data/mockPracticeTests";
 import { PracticeReadingView } from "../views/PracticeReadingView";
+import { PracticeListeningView } from "../views/PracticeListeningView";
 import { RealExamResultView } from "../views/RealExamResultView";
 import { RealExamReviewView } from "../views/RealExamReviewView";
 import { RealSubmitContinueView } from "../views/RealSubmitContinueView";
 import { RealSubmitLoadingView } from "../views/RealSubmitLoadingView";
+import { RealTestListeningView } from "../views/RealTestListeningView";
 import { RealTestReadingView } from "../views/RealTestReadingView";
 import type { AnswerMap, ExamResult } from "../types/practice-test.type";
 import styles from "./PracticeDetailPage.module.scss";
@@ -179,6 +181,19 @@ export function PracticeDetailPage() {
       );
     }
 
+    if (test.category === "ielts" && test.skill === "listening") {
+      return (
+        <RealTestListeningView
+          test={test}
+          answers={answers}
+          questionRefs={questionRefs}
+          onAnswer={handleAnswer}
+          onScrollToQuestion={scrollToQuestion}
+          onSubmit={() => setRealSubmitStep("continue")}
+        />
+      );
+    }
+
     return (
       <RealTestReadingView
         test={test}
@@ -211,6 +226,30 @@ export function PracticeDetailPage() {
         onBackToResult={() => setPracticeSubmitStep("result")}
         onBackToPractice={handleBackToPractice}
       />
+    );
+  }
+
+  if (test.category === "ielts" && test.skill === "listening") {
+    return (
+      <>
+        <PracticeListeningView
+          test={test}
+          answers={answers}
+          questionRefs={questionRefs}
+          onAnswer={handleAnswer}
+          onScrollToQuestion={scrollToQuestion}
+          onSubmit={() => setOpenResultModal(true)}
+        />
+        {openResultModal && (
+          <SubmitResultModal
+            onClose={() => setOpenResultModal(false)}
+            onComplete={() => {
+              setOpenResultModal(false);
+              setPracticeSubmitStep("result");
+            }}
+          />
+        )}
+      </>
     );
   }
 

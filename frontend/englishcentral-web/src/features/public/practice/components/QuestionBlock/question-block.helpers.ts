@@ -2,7 +2,7 @@ import type {
   IELTSReadingPassage,
   IELTSReadingQuestion,
   IELTSReadingQuestionGroup,
-  IELTSReadingTest,
+  IELTSMockTest,
 } from "../../types/practice-test.type";
 
 export const textAnswerQuestionTypes = new Set([
@@ -19,7 +19,7 @@ const truthOptionMap: Record<string, string[]> = {
   "yes-no-not-given": ["YES", "NO", "NOT GIVEN"],
 };
 
-export function getAllQuestions(test: IELTSReadingTest) {
+export function getAllQuestions(test: IELTSMockTest) {
   return test.passages.flatMap((passage) =>
     passage.questionGroups.flatMap((group) => group.questions)
   );

@@ -8,13 +8,13 @@ import {
 import type {
   AnswerMap,
   ExamResult,
+  IELTSMockTest,
   IELTSReadingQuestion,
-  IELTSReadingTest,
 } from "../types/practice-test.type";
 import styles from "../pages/PracticeDetailPage.module.scss";
 
 type RealExamReviewViewProps = {
-  test: IELTSReadingTest;
+  test: IELTSMockTest;
   answers: AnswerMap;
   result: ExamResult;
   time: string;

@@ -5,11 +5,11 @@ import { RealExamPassagePanel } from "../components/RealExamPassagePanel";
 import type { PassageAnnotation } from "../components/RealExamPassagePanel";
 import { RealExamQuestionGroupBlock } from "../components/RealExamQuestionBlock";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
-import type { AnswerMap, IELTSReadingTest } from "../types/practice-test.type";
+import type { AnswerMap, IELTSMockTest } from "../types/practice-test.type";
 import styles from "../pages/PracticeDetailPage.module.scss";
 
 type RealTestReadingViewProps = {
-  test: IELTSReadingTest;
+  test: IELTSMockTest;
   answers: AnswerMap;
   questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
   onAnswer: (questionId: string, value: string) => void;
