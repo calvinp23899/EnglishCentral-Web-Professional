@@ -877,6 +877,385 @@
   font-weight: 700 !important;
 }
 
+/* Writing practice */
+
+.writingPracticePage {
+  height: calc(100vh - 79px);
+  background: #f8fafc;
+  color: #1e293b;
+  display: grid;
+  gap: 0;
+  padding: 16px 8px;
+  overflow: hidden;
+}
+
+.writingPromptPane,
+.writingAnswerPane {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 26px;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.writingPromptPane {
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.writingPromptBox {
+  min-height: 106px;
+  padding: 16px;
+  border: 1px solid #94a3b8;
+  display: flex;
+  align-items: center;
+
+  p {
+    max-width: 760px;
+    margin: 0;
+    color: #111827;
+    font-size: 14px;
+    font-style: italic;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+}
+
+.writingMapCard {
+  margin-top: 50px;
+  padding: 26px 20px 22px;
+  border-radius: 24px;
+  background: #fff8ed;
+  text-align: center;
+
+  h2 {
+    margin: 0 0 24px;
+    color: #ff9900;
+    font-size: 28px;
+    line-height: 1.2;
+  }
+}
+
+.writingChartCard {
+  margin-top: 50px;
+  padding: 10px 14px;
+  border: 1px solid #d9d9d9;
+  background: #ffffff;
+
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+
+  text {
+    fill: #666666;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+  }
+
+  line {
+    stroke: #d7d7d7;
+    stroke-width: 1;
+  }
+}
+
+.chartInPerson,
+.chartLetter,
+.chartTelephone {
+  fill: none;
+  stroke-width: 4;
+}
+
+.chartInPerson {
+  stroke: #f47c2c !important;
+}
+
+.chartLetter {
+  stroke: #ffc000 !important;
+}
+
+.chartTelephone {
+  stroke: #70ad47 !important;
+}
+
+.chartInPersonMarker {
+  fill: #f47c2c;
+}
+
+.chartLetterMarker {
+  fill: #ffc000;
+}
+
+.chartTelephoneMarker {
+  fill: #70ad47;
+}
+
+.chartMonth {
+  text-anchor: middle;
+}
+
+.chartLegend {
+  text {
+    font-size: 13px;
+  }
+}
+
+.writingDivider {
+  width: 18px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  cursor: col-resize;
+  user-select: none;
+
+  span {
+    width: 7px;
+    height: 34px;
+    border: 1px solid #94a3b8;
+    border-radius: 999px;
+    background: #ffffff;
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 7px 2px;
+      border-left: 1px dotted #64748b;
+      border-right: 1px dotted #64748b;
+    }
+  }
+}
+
+.mapCanvas {
+  position: relative;
+  height: 445px;
+  margin-bottom: 30px;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.mapCanvas::before {
+  content: "toupa";
+  position: absolute;
+  left: 135px;
+  top: 100px;
+  color: rgba(15, 23, 42, 0.07);
+  font-size: 150px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  transform: rotate(-18deg);
+}
+
+.mapTree {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #b9e64e;
+  box-shadow: 0 46px 0 -30px #6b2f1a;
+}
+
+.mapTreeOne {
+  left: 34px;
+  top: 60px;
+}
+
+.mapTreeTwo {
+  left: 135px;
+  top: 150px;
+}
+
+.mapTreeThree {
+  left: 34px;
+  top: 238px;
+}
+
+.mapRoad {
+  position: absolute;
+  left: 72px;
+  top: 262px;
+  width: 220px;
+  height: 64px;
+  border-top: 28px solid #f3f4f6;
+  transform: rotate(-26deg);
+}
+
+.mapMountain {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 48px solid transparent;
+  border-right: 48px solid transparent;
+  border-bottom: 70px solid #15803d;
+}
+
+.mapMountainOne {
+  left: 390px;
+  top: 38px;
+}
+
+.mapMountainTwo {
+  left: 470px;
+  top: 38px;
+}
+
+.mapSea {
+  position: absolute;
+  right: -58px;
+  top: 80px;
+  width: 168px;
+  height: 360px;
+  border-radius: 50% 0 0 50%;
+  background: #abc8f4;
+  color: #1f2937;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+}
+
+.mapHouse,
+.mapTemple {
+  position: absolute;
+  color: #1f2937;
+  font-size: 20px;
+}
+
+.mapHouse::before,
+.mapTemple::before {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 48px;
+  margin: 0 auto 4px;
+  border: 4px solid #f59e0b;
+  border-top: 16px solid #334155;
+  background: #facc15;
+}
+
+.mapHouseOne {
+  left: 430px;
+  top: 105px;
+}
+
+.mapHouseTwo {
+  left: 570px;
+  top: 138px;
+}
+
+.mapTemple {
+  left: 495px;
+  top: 286px;
+}
+
+.writingAnswerPane {
+  display: flex;
+  flex-direction: column;
+}
+
+.writingAnswerHeader {
+  height: 54px;
+  padding: 0 20px;
+  border-bottom: 1px solid #d1d5db;
+  background: #f4f4f5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  strong {
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 500;
+  }
+}
+
+.writingAnswerBody {
+  flex: 1;
+  min-height: 0;
+  padding: 20px;
+  overflow-y: auto;
+  display: grid;
+  gap: 22px;
+}
+
+.writingSection {
+  display: grid;
+  gap: 12px;
+
+  span {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 78px;
+    padding: 14px;
+    border: 1px solid #dbe1ea;
+    border-radius: 8px;
+    resize: vertical;
+    color: #1e293b;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+
+    &::placeholder {
+      color: #9ca3af;
+      font-weight: 600;
+    }
+
+    &:focus {
+      border-color: #0ea5a4;
+      outline: 2px solid rgba(14, 165, 164, 0.14);
+    }
+  }
+
+  &:nth-child(3) textarea {
+    min-height: 190px;
+  }
+}
+
+.writingAnswerFooter {
+  min-height: 70px;
+  padding: 8px 20px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+
+  > div {
+    display: grid;
+    justify-self: start;
+    color: #6b7280;
+    font-size: 14px;
+
+    strong {
+      color: #111827;
+      font-size: 16px;
+    }
+  }
+
+  button {
+    min-width: 128px;
+    height: 36px;
+    border: 1px solid #0ea5a4;
+    border-radius: 999px;
+    background: #e6fffb;
+    color: #0f766e;
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+
+    &:hover {
+      background: #ccfbf1;
+    }
+  }
+}
+
 .practiceBody {
   flex: 1;
   display: flex;

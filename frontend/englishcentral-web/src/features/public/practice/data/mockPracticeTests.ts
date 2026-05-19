@@ -851,6 +851,21 @@ export const mockPracticeTests: IELTSMockTest[] = [
             },
         ],
     },
+    {
+        id: "ielts-writing-task-2-opinion",
+        category: "ielts",
+        slug: "ielts-writing-task-2-opinion",
+        title: "IELTS Writing Task 1 - Maps",
+        skill: "writing",
+        durationMinutes: 60,
+        sourceLabel: "IELTS Academic Writing - Task 1",
+        level: "Academic",
+        description:
+            "Practice IELTS Academic Writing with a split prompt and answer layout.",
+        note:
+            "The following maps show recent archaeological findings at a historic site in the year 2004 and 2014.",
+        passages: [],
+    },
 ];
 
 export const getAllQuestions = (test: IELTSMockTest): PracticeQuestion[] => {

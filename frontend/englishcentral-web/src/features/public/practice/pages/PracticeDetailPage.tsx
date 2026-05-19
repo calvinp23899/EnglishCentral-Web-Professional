@@ -12,6 +12,7 @@ import { getAllQuestions } from "../components/QuestionBlock";
 import { mockPracticeTests } from "../data/mockPracticeTests";
 import { PracticeReadingView } from "../views/PracticeReadingView";
 import { PracticeListeningView } from "../views/PracticeListeningView";
+import { PracticeWritingView } from "../views/PracticeWritingView";
 import { RealExamResultView } from "../views/RealExamResultView";
 import { RealExamReviewView } from "../views/RealExamReviewView";
 import { RealSubmitContinueView } from "../views/RealSubmitContinueView";
@@ -139,7 +140,11 @@ export function PracticeDetailPage() {
     );
   }
 
-  if (mode === "real") {
+  const supportsRealExam =
+    test.category === "ielts" &&
+    (test.skill === "reading" || test.skill === "listening");
+
+  if (mode === "real" && supportsRealExam) {
     if (realSubmitStep === "continue") {
       return (
         <RealSubmitContinueView
@@ -238,6 +243,26 @@ export function PracticeDetailPage() {
           questionRefs={questionRefs}
           onAnswer={handleAnswer}
           onScrollToQuestion={scrollToQuestion}
+          onSubmit={() => setOpenResultModal(true)}
+        />
+        {openResultModal && (
+          <SubmitResultModal
+            onClose={() => setOpenResultModal(false)}
+            onComplete={() => {
+              setOpenResultModal(false);
+              setPracticeSubmitStep("result");
+            }}
+          />
+        )}
+      </>
+    );
+  }
+
+  if (test.category === "ielts" && test.skill === "writing") {
+    return (
+      <>
+        <PracticeWritingView
+          test={test}
           onSubmit={() => setOpenResultModal(true)}
         />
         {openResultModal && (
