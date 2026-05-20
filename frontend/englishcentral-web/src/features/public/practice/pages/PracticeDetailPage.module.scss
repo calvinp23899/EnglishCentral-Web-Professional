@@ -1909,7 +1909,7 @@
 
 .bandScoreCard {
   min-height: 132px;
-  background: #ff623e;
+  background: #0ea5a4;
   color: #ffffff;
   display: grid;
   place-items: center;
@@ -1931,8 +1931,9 @@
   padding: 18px;
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) 190px;
   align-items: center;
+  column-gap: 20px;
 
   h2 {
     margin: 0;
@@ -1946,29 +1947,34 @@
     padding: 0 24px;
     border: 0;
     border-radius: 999px;
-    background: #ff623e;
+    background: #0ea5a4;
     color: #ffffff;
     font-size: 15px;
     font-weight: 900;
     cursor: pointer;
+
+    &:hover {
+      background: #0f766e;
+    }
   }
 }
 
 .timeBox {
   position: absolute;
-  top: 16px;
-  right: 18px;
+  top: 14px;
+  right: 22px;
   text-align: right;
+  z-index: 1;
 
   span {
     display: block;
     color: #64748b;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   strong {
     color: #000000;
-    font-size: 15px;
+    font-size: 14px;
   }
 }
 
@@ -1981,6 +1987,7 @@
   place-items: center;
   align-content: center;
   justify-self: center;
+  margin-top: 30px;
 
   strong {
     font-size: 22px;

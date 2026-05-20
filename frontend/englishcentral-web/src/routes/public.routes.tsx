@@ -10,6 +10,8 @@ import { RegisterPage } from "@/features/public/auth/pages/RegisterPage";
 import { ForgotPasswordPage } from "@/features/public/auth/pages/ForgotPasswordPage";
 import { PracticePage } from "@/features/public/practice/pages/PracticePage";
 import { PracticeDetailPage } from "@/features/public/practice/pages/PracticeDetailPage";
+import { UserProfilePage } from "@/features/public/profile/pages/UserProfilePage";
+import { PracticeHistoryPage } from "@/features/public/profile/pages/PracticeHistoryPage";
 
 import { NotFoundPage } from "@/pages/not-found/NotFoundPage";
 
@@ -32,6 +34,14 @@ export const publicRoutes = {
     {
       path: "/practice",
       element: <PracticePage />,
+    },
+    {
+      path: "/profile",
+      element: <UserProfilePage />,
+    },
+    {
+      path: "/practice-history",
+      element: <PracticeHistoryPage />,
     },
     {
       path: "/contact",

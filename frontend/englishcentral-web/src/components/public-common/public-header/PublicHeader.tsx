@@ -1,9 +1,51 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button, Container } from "@/components/ui";
 
 import styles from "./PublicHeader.module.scss";
 
+type HeaderUser = {
+  name: string;
+  email: string;
+  level: string;
+};
+
+const getStoredUser = (): HeaderUser | null => {
+  const rawUser = window.localStorage.getItem("englishcentral-user");
+
+  if (!rawUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawUser) as HeaderUser;
+  } catch {
+    return null;
+  }
+};
+
 export function PublicHeader() {
+  const [user, setUser] = useState<HeaderUser | null>(() => getStoredUser());
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const syncUser = () => setUser(getStoredUser());
+
+    window.addEventListener("storage", syncUser);
+    window.addEventListener("englishcentral-auth-change", syncUser);
+
+    return () => {
+      window.removeEventListener("storage", syncUser);
+      window.removeEventListener("englishcentral-auth-change", syncUser);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    window.localStorage.removeItem("englishcentral-user");
+    window.dispatchEvent(new Event("englishcentral-auth-change"));
+    navigate("/");
+  };
+
   return (
     <header className={styles.header}>
       <Container className={styles.headerInner}>
@@ -56,19 +98,41 @@ export function PublicHeader() {
           <Link to="/contact">Liên hệ</Link>
         </nav>
 
-        <div className={styles.actions}>
-          <Link to="/login">
-            <Button variant="outline" size="sm">
-              Đăng nhập
-            </Button>
-          </Link>
+        {user ? (
+          <div className={styles.profileMenu}>
+            <button className={styles.profileButton}>
+              <span>{user.name.charAt(0)}</span>
+              Profile
+            </button>
 
-          <Link to="/register">
-            <Button size="sm">
-              Đăng ký 
-            </Button>
-          </Link>
-        </div>
+            <div className={styles.profileDropdown}>
+              <div className={styles.profileSummary}>
+                <span>{user.name.charAt(0)}</span>
+                <div>
+                  <strong>{user.name}</strong>
+                  <small>{user.email}</small>
+                </div>
+              </div>
+              <Link to="/profile">Hồ Sơ</Link>
+              <Link to="/practice-history">Lịch Sử Bài Làm</Link>
+              <button onClick={handleLogout}>Đăng Xuất</button>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.actions}>
+            <Link to="/login">
+              <Button variant="outline" size="sm">
+                Đăng nhập
+              </Button>
+            </Link>
+
+            <Link to="/register">
+              <Button size="sm">
+                Đăng ký 
+              </Button>
+            </Link>
+          </div>
+        )}
       </Container>
     </header>
   );

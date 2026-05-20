@@ -1,9 +1,24 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button, Container, Input } from "@/components/ui";
 
 import styles from "./LoginPage.module.scss";
 
 export function LoginPage() {
+  const navigate = useNavigate();
+  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    window.localStorage.setItem(
+      "englishcentral-user",
+      JSON.stringify({
+        name: "Nguyễn Minh Anh",
+        email: "minhanh@englishcentral.vn",
+        level: "IELTS 6.5",
+      })
+    );
+    window.dispatchEvent(new Event("englishcentral-auth-change"));
+    navigate("/practice");
+  };
+
   return (
     <section className={styles.page}>
       <Container className={styles.inner}>
@@ -27,7 +42,7 @@ export function LoginPage() {
         <div className={styles.formCard}>
           <h2>Đăng nhập</h2>
 
-          <form className={styles.form}>
+          <form className={styles.form} onSubmit={handleLogin}>
             <Input placeholder="Email" type="email" />
             <Input placeholder="Mật khẩu" type="password" />
 
@@ -40,7 +55,7 @@ export function LoginPage() {
               <Link to="/forgot-password">Quên mật khẩu?</Link>
             </div>
 
-            <Button fullWidth size="lg">
+            <Button fullWidth size="lg" type="submit">
               Đăng nhập
             </Button>
           </form>
