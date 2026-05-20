@@ -26,6 +26,7 @@ export interface PracticeQuestion {
     id: string;
     number: number;
     text: string;
+    options?: PracticeQuestionOption[];
     correctAnswer: string;
     explanation?: string;
     passageRef?: string;
@@ -58,7 +59,7 @@ export interface PracticePassage {
     questionGroups: PracticeQuestionGroup[];
 }
 
-export interface IELTSReadingTest {
+export interface IELTSMockTest {
     id: string;
     category: PracticeCategory;
     slug: string;
@@ -72,7 +73,7 @@ export interface IELTSReadingTest {
     passages: PracticePassage[];
 }
 
-export const mockPracticeTests: IELTSReadingTest[] = [
+export const mockPracticeTests: IELTSMockTest[] = [
     {
         id: "ielts-reading-full-mock-test-1",
         category: "ielts",
@@ -618,14 +619,261 @@ export const mockPracticeTests: IELTSReadingTest[] = [
             },
         ],
     },
+    {
+        id: "ielts-listening-full-mock-test-1",
+        category: "ielts",
+        slug: "ielts-listening-cambridge-17-test-2",
+        title: "IELTS Listening Full Mock Test 1",
+        skill: "listening",
+        durationMinutes: 40,
+        sourceLabel: "IELTS Listening - Original Mock Test 1",
+        level: "Academic",
+        description:
+            "A full IELTS Listening mock test for UI development, including 4 parts and 40 questions.",
+        note:
+            "This original listening dataset is structured for computer-based IELTS UI development.",
+        passages: [
+            {
+                id: "listening-part-1",
+                part: 1,
+                title: "Bankside Recruitment Agency",
+                instruction: "Read the text and answer questions 1-10",
+                paragraphs: [
+                    {
+                        id: "l1-transcript",
+                        label: "Transcript",
+                        isHiddenLabel: true,
+                        content:
+                            "A conversation between a job seeker and a recruitment agent about registration details, job preferences and interview preparation.",
+                    },
+                ],
+                questionGroups: [
+                    {
+                        id: "l1-q1-10",
+                        title: "Questions 1-10",
+                        type: "notes-completion",
+                        instruction:
+                            "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+                        questions: [
+                            { id: "lq1", number: 1, text: "Name of agent: Becky ____", correctAnswer: "Jones" },
+                            { id: "lq2", number: 2, text: "Best to call her in the ____", correctAnswer: "morning" },
+                            { id: "lq3", number: 3, text: "Must have good ____ skills", correctAnswer: "computer" },
+                            { id: "lq4", number: 4, text: "Jobs are usually for at least one ____", correctAnswer: "month" },
+                            { id: "lq5", number: 5, text: "Pay is usually £ ____ per hour", correctAnswer: "10" },
+                            { id: "lq6", number: 6, text: "Wear a ____ to the interview", correctAnswer: "suit" },
+                            { id: "lq7", number: 7, text: "Must bring your ____ to the interview", correctAnswer: "passport" },
+                            { id: "lq8", number: 8, text: "They will ask questions about each applicant's ____", correctAnswer: "experience" },
+                            { id: "lq9", number: 9, text: "The ____ you receive at interview will benefit you", correctAnswer: "advice" },
+                            { id: "lq10", number: 10, text: "You can update your details by ____", correctAnswer: "email" },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: "listening-part-2",
+                part: 2,
+                title: "Island Holiday Tours",
+                instruction: "Read the text and answer questions 11-20",
+                paragraphs: [
+                    {
+                        id: "l2-transcript",
+                        label: "Transcript",
+                        isHiddenLabel: true,
+                        content:
+                            "A travel company representative describes holiday arrangements, transport and activities for a tour group.",
+                    },
+                ],
+                questionGroups: [
+                    {
+                        id: "l2-q11-20",
+                        title: "Questions 11-20",
+                        type: "multiple-choice",
+                        instruction: "Choose the correct answer.",
+                        questions: [
+                            {
+                                id: "lq11",
+                                number: 11,
+                                text: "According to the speaker, the company",
+                                correctAnswer: "A",
+                                options: [
+                                    { label: "A", content: "has been in business for longer than most of its competitors." },
+                                    { label: "B", content: "arranges holidays to more destinations than its competitors." },
+                                    { label: "C", content: "has more customers than its competitors." },
+                                ],
+                            },
+                            {
+                                id: "lq12",
+                                number: 12,
+                                text: "Where can customers meet the tour manager before travelling to the Isle of Man?",
+                                correctAnswer: "B",
+                                options: [
+                                    { label: "A", content: "Liverpool" },
+                                    { label: "B", content: "Heysham" },
+                                    { label: "C", content: "Luton" },
+                                ],
+                            },
+                            {
+                                id: "lq13",
+                                number: 13,
+                                text: "How many lunches are included in the price of the holiday?",
+                                correctAnswer: "A",
+                                options: [
+                                    { label: "A", content: "three" },
+                                    { label: "B", content: "four" },
+                                    { label: "C", content: "five" },
+                                ],
+                            },
+                            {
+                                id: "lq14",
+                                number: 14,
+                                text: "Customers have to pay extra for",
+                                correctAnswer: "C",
+                                options: [
+                                    { label: "A", content: "museum entrance fees." },
+                                    { label: "B", content: "coach transfers." },
+                                    { label: "C", content: "evening entertainment." },
+                                ],
+                            },
+                            { id: "lq15", number: 15, text: "The first evening meal will be served at", correctAnswer: "B", options: [{ label: "A", content: "6.00" }, { label: "B", content: "6.30" }, { label: "C", content: "7.00" }] },
+                            { id: "lq16", number: 16, text: "On Tuesday morning, the group will visit", correctAnswer: "A", options: [{ label: "A", content: "a castle" }, { label: "B", content: "a harbour" }, { label: "C", content: "a theatre" }] },
+                            { id: "lq17", number: 17, text: "The optional walk is suitable for people who", correctAnswer: "C", options: [{ label: "A", content: "have specialist equipment." }, { label: "B", content: "are experienced climbers." }, { label: "C", content: "have average fitness." }] },
+                            { id: "lq18", number: 18, text: "The speaker recommends taking", correctAnswer: "B", options: [{ label: "A", content: "a packed lunch." }, { label: "B", content: "waterproof clothing." }, { label: "C", content: "a local map." }] },
+                            { id: "lq19", number: 19, text: "The hotel is close to", correctAnswer: "C", options: [{ label: "A", content: "the railway station." }, { label: "B", content: "the main shopping street." }, { label: "C", content: "the sea front." }] },
+                            { id: "lq20", number: 20, text: "Feedback forms should be returned", correctAnswer: "A", options: [{ label: "A", content: "before the ferry leaves." }, { label: "B", content: "at the hotel reception." }, { label: "C", content: "by post after the holiday." }] },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: "listening-part-3",
+                part: 3,
+                title: "Birth Order Research",
+                instruction: "Read the text and answer questions 21-30",
+                paragraphs: [
+                    {
+                        id: "l3-transcript",
+                        label: "Transcript",
+                        isHiddenLabel: true,
+                        content:
+                            "Two students discuss research on birth order, personality and academic outcomes before planning a seminar presentation.",
+                    },
+                ],
+                questionGroups: [
+                    {
+                        id: "l3-q21-26",
+                        title: "Questions 21-26",
+                        type: "matching-features",
+                        instruction:
+                            "What did findings of previous research claim about personality traits? Choose the correct answer and move it into the gap.",
+                        options: [
+                            { label: "A", content: "outgoing" },
+                            { label: "B", content: "selfish" },
+                            { label: "C", content: "independent" },
+                            { label: "D", content: "attention-seeking" },
+                            { label: "E", content: "introverted" },
+                            { label: "F", content: "co-operative" },
+                            { label: "G", content: "caring" },
+                            { label: "H", content: "competitive" },
+                        ],
+                        questions: [
+                            { id: "lq21", number: 21, text: "The eldest child", correctAnswer: "H" },
+                            { id: "lq22", number: 22, text: "A middle child", correctAnswer: "F" },
+                            { id: "lq23", number: 23, text: "The youngest child", correctAnswer: "D" },
+                            { id: "lq24", number: 24, text: "A twin", correctAnswer: "C" },
+                            { id: "lq25", number: 25, text: "An only child", correctAnswer: "B" },
+                            { id: "lq26", number: 26, text: "A child with much older siblings", correctAnswer: "G" },
+                        ],
+                    },
+                    {
+                        id: "l3-q27-28",
+                        title: "Questions 27-28",
+                        type: "multiple-choice",
+                        instruction: "Choose the correct answer.",
+                        questions: [
+                            { id: "lq27", number: 27, text: "What do the speakers say about the evidence relating to birth order and academic success?", correctAnswer: "B", options: [{ label: "A", content: "It is supported by all recent studies." }, { label: "B", content: "It is less reliable than people assume." }, { label: "C", content: "It applies only to large families." }] },
+                            { id: "lq28", number: 28, text: "What will the students include in the introduction?", correctAnswer: "A", options: [{ label: "A", content: "a short definition of birth order" }, { label: "B", content: "a detailed statistical table" }, { label: "C", content: "a personal family story" }] },
+                        ],
+                    },
+                    {
+                        id: "l3-q29-30",
+                        title: "Questions 29-30",
+                        type: "multiple-choice",
+                        instruction: "Choose TWO letters, A-E.",
+                        options: [
+                            { label: "A", content: "Repeat the survey with younger participants" },
+                            { label: "B", content: "Compare families from different cultures" },
+                            { label: "C", content: "Interview only first-born children" },
+                            { label: "D", content: "Look at the influence of family income" },
+                            { label: "E", content: "Remove personality questions from the study" },
+                        ],
+                        questions: [
+                            { id: "lq29", number: 29, text: "Which TWO improvements do the speakers suggest for future research?", correctAnswer: "B,D" },
+                            { id: "lq30", number: 30, text: "Which TWO improvements do the speakers suggest for future research?", correctAnswer: "B,D" },
+                        ],
+                    },
+                ],
+            },
+            {
+                id: "listening-part-4",
+                part: 4,
+                title: "The Eucalyptus Tree in Australia",
+                instruction: "Read the text and answer questions 31-40",
+                paragraphs: [
+                    {
+                        id: "l4-transcript",
+                        label: "Transcript",
+                        isHiddenLabel: true,
+                        content:
+                            "A lecture about eucalyptus trees, their ecological importance and the causes of decline in different regions of Australia.",
+                    },
+                ],
+                questionGroups: [
+                    {
+                        id: "l4-q31-40",
+                        title: "Questions 31-40",
+                        type: "notes-completion",
+                        instruction:
+                            "Complete the notes below. Write ONE WORD ONLY for each answer.",
+                        questions: [
+                            { id: "lq31", number: 31, text: "It provides ____ and food for a wide range of species", correctAnswer: "shelter", wordLimit: 1 },
+                            { id: "lq32", number: 32, text: "Its leaves provide ____ which is used to make a disinfectant", correctAnswer: "oil", wordLimit: 1 },
+                            { id: "lq33", number: 33, text: "Lime used for making ____ was absorbed", correctAnswer: "cement", wordLimit: 1 },
+                            { id: "lq34", number: 34, text: "____ feed on eucalyptus leaves", correctAnswer: "insects", wordLimit: 1 },
+                            { id: "lq35", number: 35, text: "High-frequency bushfires result in the growth of ____", correctAnswer: "grass", wordLimit: 1 },
+                            { id: "lq36", number: 36, text: "Young trees are damaged by ____", correctAnswer: "animals", wordLimit: 1 },
+                            { id: "lq37", number: 37, text: "Some forests receive too little ____", correctAnswer: "rainfall", wordLimit: 1 },
+                            { id: "lq38", number: 38, text: "Researchers monitor changes using ____", correctAnswer: "satellites", wordLimit: 1 },
+                            { id: "lq39", number: 39, text: "Local communities collect ____ for conservation teams", correctAnswer: "seeds", wordLimit: 1 },
+                            { id: "lq40", number: 40, text: "Future plans include creating wildlife ____", correctAnswer: "corridors", wordLimit: 1 },
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        id: "ielts-writing-task-2-opinion",
+        category: "ielts",
+        slug: "ielts-writing-task-2-opinion",
+        title: "IELTS Writing Task 1 - Maps",
+        skill: "writing",
+        durationMinutes: 60,
+        sourceLabel: "IELTS Academic Writing - Task 1",
+        level: "Academic",
+        description:
+            "Practice IELTS Academic Writing with a split prompt and answer layout.",
+        note:
+            "The following maps show recent archaeological findings at a historic site in the year 2004 and 2014.",
+        passages: [],
+    },
 ];
 
-export const getAllQuestions = (test: IELTSReadingTest): PracticeQuestion[] => {
+export const getAllQuestions = (test: IELTSMockTest): PracticeQuestion[] => {
     return test.passages.flatMap((passage) =>
         passage.questionGroups.flatMap((group) => group.questions)
     );
 };
 
-export const getQuestionCount = (test: IELTSReadingTest): number => {
+export const getQuestionCount = (test: IELTSMockTest): number => {
     return getAllQuestions(test).length;
 };

@@ -6,4 +6,14 @@
 
 .main {
   flex: 1;
+  min-height: 0;
+}
+
+.practiceDetailLayout {
+  height: 100vh;
+  overflow: hidden;
+
+  .main {
+    overflow: hidden;
+  }
 }

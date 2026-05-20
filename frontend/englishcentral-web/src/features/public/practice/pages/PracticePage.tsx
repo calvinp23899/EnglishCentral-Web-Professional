@@ -9,7 +9,7 @@ import {
 } from "../data/mockPractice";
 
 import styles from "./PracticePage.module.scss";
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 4;
 
 export function PracticePage() {
   const [selectedCategory, setSelectedCategory] =

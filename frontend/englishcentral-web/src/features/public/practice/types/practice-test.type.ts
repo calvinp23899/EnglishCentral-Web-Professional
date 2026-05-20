@@ -61,7 +61,7 @@ export type IELTSReadingPassage = {
   questionGroups: IELTSReadingQuestionGroup[];
 };
 
-export type IELTSReadingTest = {
+export type IELTSMockTest = {
   id: string;
   category: PracticeCategory;
   slug: string;

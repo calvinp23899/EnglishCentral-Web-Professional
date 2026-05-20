@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui";
 
 import styles from "./PracticeCard.module.scss";
@@ -11,6 +12,18 @@ type PracticeCardProps = {
 
 export function PracticeCard({ practice }: PracticeCardProps) {
   const [openModal, setOpenModal] = useState(false);
+  const navigate = useNavigate();
+  const canChooseExamMode =
+    practice.category === "ielts" &&
+    ["reading", "listening"].includes(practice.skill);
+  const handlePracticeClick = () => {
+    if (canChooseExamMode) {
+      setOpenModal(true);
+      return;
+    }
+
+    navigate(`/practice/${practice.category}/${practice.slug}?mode=practice`);
+  };
 
   return (
     <>
@@ -38,12 +51,12 @@ export function PracticeCard({ practice }: PracticeCardProps) {
           <span>{practice.duration}</span>
         </div>
 
-        <Button fullWidth onClick={() => setOpenModal(true)}>
+        <Button fullWidth size="sm" onClick={handlePracticeClick}>
           Luyện tập
         </Button>
       </article>
 
-      {openModal && (
+      {canChooseExamMode && openModal && (
         <PracticeModeModal
           practice={practice}
           onClose={() => setOpenModal(false)}

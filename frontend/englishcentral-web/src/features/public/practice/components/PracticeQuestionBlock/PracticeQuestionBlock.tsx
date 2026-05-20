@@ -477,7 +477,6 @@ function MultipleChoiceGroup({
             <div className={styles.questionTitle}>
               <span>{question.number}</span>
               <p>{question.text}</p>
-              <button>♡</button>
             </div>
 
             <div className={styles.checkboxOptionList}>
@@ -640,7 +639,6 @@ function QuestionBlock({
       <div className={styles.questionTitle}>
         <span>{question.number}</span>
         <p>{question.text}</p>
-        <button>♡</button>
       </div>
 
       <div className={styles.optionList}>

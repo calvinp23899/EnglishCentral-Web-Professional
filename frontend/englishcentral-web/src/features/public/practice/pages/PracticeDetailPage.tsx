@@ -11,21 +11,27 @@ import { SubmitResultModal } from "../components/SubmitResultModal/SubmitResultM
 import { getAllQuestions } from "../components/QuestionBlock";
 import { mockPracticeTests } from "../data/mockPracticeTests";
 import { PracticeReadingView } from "../views/PracticeReadingView";
+import { PracticeListeningView } from "../views/PracticeListeningView";
+import { PracticeWritingView } from "../views/PracticeWritingView";
 import { RealExamResultView } from "../views/RealExamResultView";
 import { RealExamReviewView } from "../views/RealExamReviewView";
 import { RealSubmitContinueView } from "../views/RealSubmitContinueView";
 import { RealSubmitLoadingView } from "../views/RealSubmitLoadingView";
+import { RealTestListeningView } from "../views/RealTestListeningView";
 import { RealTestReadingView } from "../views/RealTestReadingView";
 import type { AnswerMap, ExamResult } from "../types/practice-test.type";
 import styles from "./PracticeDetailPage.module.scss";
 
 type RealSubmitStep = "exam" | "continue" | "loading" | "result" | "review";
+type PracticeSubmitStep = "exam" | "result" | "review";
 
 export function PracticeDetailPage() {
   const { category, slug } = useParams();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get("mode") ?? "practice";
   const [realSubmitStep, setRealSubmitStep] = useState<RealSubmitStep>("exam");
+  const [practiceSubmitStep, setPracticeSubmitStep] =
+    useState<PracticeSubmitStep>("exam");
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [openResultModal, setOpenResultModal] = useState(false);
   const navigate = useNavigate();
@@ -134,7 +140,11 @@ export function PracticeDetailPage() {
     );
   }
 
-  if (mode === "real") {
+  const supportsRealExam =
+    test.category === "ielts" &&
+    (test.skill === "reading" || test.skill === "listening");
+
+  if (mode === "real" && supportsRealExam) {
     if (realSubmitStep === "continue") {
       return (
         <RealSubmitContinueView
@@ -176,6 +186,19 @@ export function PracticeDetailPage() {
       );
     }
 
+    if (test.category === "ielts" && test.skill === "listening") {
+      return (
+        <RealTestListeningView
+          test={test}
+          answers={answers}
+          questionRefs={questionRefs}
+          onAnswer={handleAnswer}
+          onScrollToQuestion={scrollToQuestion}
+          onSubmit={() => setRealSubmitStep("continue")}
+        />
+      );
+    }
+
     return (
       <RealTestReadingView
         test={test}
@@ -185,6 +208,73 @@ export function PracticeDetailPage() {
         onScrollToQuestion={scrollToQuestion}
         onSubmit={() => setRealSubmitStep("continue")}
       />
+    );
+  }
+
+  if (practiceSubmitStep === "result") {
+    return (
+      <RealExamResultView
+        {...getExamResult()}
+        time="00:00:00"
+        onReview={() => setPracticeSubmitStep("review")}
+      />
+    );
+  }
+
+  if (practiceSubmitStep === "review") {
+    return (
+      <RealExamReviewView
+        test={test}
+        answers={answers}
+        result={getExamResult()}
+        time="00:00:00"
+        onBackToResult={() => setPracticeSubmitStep("result")}
+        onBackToPractice={handleBackToPractice}
+      />
+    );
+  }
+
+  if (test.category === "ielts" && test.skill === "listening") {
+    return (
+      <>
+        <PracticeListeningView
+          test={test}
+          answers={answers}
+          questionRefs={questionRefs}
+          onAnswer={handleAnswer}
+          onScrollToQuestion={scrollToQuestion}
+          onSubmit={() => setOpenResultModal(true)}
+        />
+        {openResultModal && (
+          <SubmitResultModal
+            onClose={() => setOpenResultModal(false)}
+            onComplete={() => {
+              setOpenResultModal(false);
+              setPracticeSubmitStep("result");
+            }}
+          />
+        )}
+      </>
+    );
+  }
+
+  if (test.category === "ielts" && test.skill === "writing") {
+    return (
+      <>
+        <PracticeWritingView
+          test={test}
+          onSubmit={() => setOpenResultModal(true)}
+        />
+        {openResultModal && (
+          <SubmitResultModal
+            onClose={() => setOpenResultModal(false)}
+            onComplete={() => {
+              setOpenResultModal(false);
+              setPracticeSubmitStep("result");
+            }}
+          />
+        )}
+      </>
     );
   }
 
@@ -200,10 +290,11 @@ export function PracticeDetailPage() {
       />
       {openResultModal && (
         <SubmitResultModal
-          totalQuestions={getAllQuestions(test).length}
-          answeredQuestions={Object.keys(answers).length}
           onClose={() => setOpenResultModal(false)}
-          onBackToPractice={handleBackToPractice}
+          onComplete={() => {
+            setOpenResultModal(false);
+            setPracticeSubmitStep("result");
+          }}
         />
       )}
     </>
