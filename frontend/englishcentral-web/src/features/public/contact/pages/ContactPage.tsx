@@ -10,7 +10,8 @@ export function ContactPage() {
           <span>Liên hệ</span>
           <h1>Liên hệ với English Central</h1>
           <p>
-            Đội ngũ của chúng tôi luôn sẵn sàng hỗ trợ bạn lựa chọn lộ trình học phù hợp nhất.
+            Đội ngũ của chúng tôi luôn sẵn sàng hỗ trợ bạn lựa chọn lộ trình học
+            phù hợp nhất.
           </p>
         </Container>
       </section>
@@ -53,7 +54,6 @@ export function ContactPage() {
             <form className={styles.form}>
               <Input placeholder="Họ và tên" />
               <Input placeholder="Số điện thoại" />
-              <Input placeholder="Email" />
               <Input placeholder="Mục tiêu học (IELTS, TOEIC...)" />
               <textarea placeholder="Tin nhắn của bạn" rows={5} />
 

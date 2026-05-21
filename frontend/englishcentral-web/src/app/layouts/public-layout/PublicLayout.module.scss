@@ -17,3 +17,218 @@
     overflow: hidden;
   }
 }
+
+.floatingContact {
+  position: fixed;
+  left: 16px;
+  bottom: 22px;
+  z-index: 1200;
+  display: grid;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.zaloButton,
+.phoneButton {
+  pointer-events: auto;
+  text-decoration: none;
+}
+
+.zaloButton {
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  background: rgba(74, 169, 242, 0.28);
+  display: grid;
+  place-items: center;
+  animation: contactPulse 2.2s ease-in-out infinite;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+
+  span {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #2f9df4;
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 900;
+    box-shadow: 0 8px 18px rgba(47, 157, 244, 0.32);
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    filter: saturate(1.08);
+  }
+}
+
+.phoneButton {
+  min-width: 150px;
+  height: 46px;
+  margin-left: 18px;
+  padding: 0 14px 0 0;
+  border-radius: 999px;
+  background: #e93437;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 12px 30px rgba(233, 52, 55, 0.28);
+  animation: phoneShake 2.6s ease-in-out infinite;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  strong {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 36px rgba(233, 52, 55, 0.34);
+  }
+}
+
+.phoneIcon {
+  width: 62px;
+  height: 62px;
+  margin-left: -18px;
+  border-radius: 50%;
+  background: rgba(233, 52, 55, 0.68);
+  display: grid;
+  place-items: center;
+
+  svg {
+    width: 24px;
+    height: 24px;
+    color: #ffffff;
+    fill: #ffffff;
+  }
+}
+
+.backToTop {
+  position: fixed;
+  right: 22px;
+  bottom: 28px;
+  z-index: 1200;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.28);
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  &:hover {
+    background: #1d4ed8;
+    transform: translateY(-3px);
+    box-shadow: 0 18px 38px rgba(37, 99, 235, 0.34);
+  }
+}
+
+@keyframes contactPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(47, 157, 244, 0.28);
+  }
+
+  45% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 12px rgba(47, 157, 244, 0);
+  }
+}
+
+@keyframes phoneShake {
+  0%,
+  72%,
+  100% {
+    transform: translateX(0);
+  }
+
+  78% {
+    transform: translateX(-3px) rotate(-1deg);
+  }
+
+  84% {
+    transform: translateX(3px) rotate(1deg);
+  }
+
+  90% {
+    transform: translateX(-2px) rotate(-0.6deg);
+  }
+
+  96% {
+    transform: translateX(2px) rotate(0.6deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .floatingContact {
+    left: 12px;
+    bottom: 18px;
+    gap: 12px;
+  }
+
+  .zaloButton,
+  .phoneIcon {
+    width: 54px;
+    height: 54px;
+  }
+
+  .zaloButton span {
+    width: 34px;
+    height: 34px;
+    font-size: 10px;
+  }
+
+  .phoneButton {
+    min-width: 132px;
+    height: 42px;
+    margin-left: 16px;
+    gap: 8px;
+
+    strong {
+      font-size: 13px;
+    }
+  }
+
+  .phoneIcon {
+    margin-left: -16px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .backToTop {
+    right: 14px;
+    bottom: 18px;
+    width: 42px;
+    height: 42px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}

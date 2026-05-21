@@ -38,6 +38,15 @@ const ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY =
   "englishcentral-access-token-expires-at";
 export const AUTH_CHANGE_EVENT = "englishcentral-auth-change";
 
+const getStorage = (rememberLogin: boolean) =>
+  rememberLogin ? window.localStorage : window.sessionStorage;
+
+const removeAuthSessionFromStorage = (storage: Storage) => {
+  storage.removeItem(USER_STORAGE_KEY);
+  storage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+  storage.removeItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+};
+
 const isObject = (value: unknown): value is RawObject =>
   typeof value === "object" && value !== null;
 
@@ -172,15 +181,44 @@ export const getAuthErrorMessage = (error: unknown) => {
   return "Không thể kết nối backend. Vui lòng thử lại.";
 };
 
-export const saveAuthSession = (session: AuthSession) => {
-  window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(session.user));
+const hasStoredSession = (storage: Storage) =>
+  Boolean(storage.getItem(USER_STORAGE_KEY) ?? storage.getItem(ACCESS_TOKEN_STORAGE_KEY));
+
+const shouldRememberLogin = (rememberLogin?: boolean) => {
+  if (typeof rememberLogin === "boolean") {
+    return rememberLogin;
+  }
+
+  if (hasStoredSession(window.localStorage)) {
+    return true;
+  }
+
+  if (hasStoredSession(window.sessionStorage)) {
+    return false;
+  }
+
+  return true;
+};
+
+export const saveAuthSession = (
+  session: AuthSession,
+  rememberLogin?: boolean
+) => {
+  const shouldPersist = shouldRememberLogin(rememberLogin);
+  const storage = getStorage(shouldPersist);
+  const otherStorage = shouldPersist
+    ? window.sessionStorage
+    : window.localStorage;
+
+  removeAuthSessionFromStorage(otherStorage);
+  storage.setItem(USER_STORAGE_KEY, JSON.stringify(session.user));
 
   if (session.accessToken) {
-    window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, session.accessToken);
+    storage.setItem(ACCESS_TOKEN_STORAGE_KEY, session.accessToken);
   }
 
   if (session.accessTokenExpiresAt) {
-    window.localStorage.setItem(
+    storage.setItem(
       ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY,
       session.accessTokenExpiresAt
     );
@@ -190,14 +228,15 @@ export const saveAuthSession = (session: AuthSession) => {
 };
 
 export const clearAuthSession = () => {
-  window.localStorage.removeItem(USER_STORAGE_KEY);
-  window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-  window.localStorage.removeItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+  removeAuthSessionFromStorage(window.localStorage);
+  removeAuthSessionFromStorage(window.sessionStorage);
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
 };
 
 export const getStoredUser = (): AuthUser | null => {
-  const rawUser = window.localStorage.getItem(USER_STORAGE_KEY);
+  const rawUser =
+    window.localStorage.getItem(USER_STORAGE_KEY) ??
+    window.sessionStorage.getItem(USER_STORAGE_KEY);
 
   if (!rawUser) {
     return null;

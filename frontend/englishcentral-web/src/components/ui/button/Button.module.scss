@@ -13,6 +13,29 @@
   &:hover {
     transform: translateY(-1px);
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.82;
+    transform: none;
+  }
+
+  &:disabled::before {
+    content: "";
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: buttonSpin 0.75s linear infinite;
+  }
+}
+
+@keyframes buttonSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .fullWidth {

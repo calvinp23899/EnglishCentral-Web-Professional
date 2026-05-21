@@ -28,7 +28,7 @@ export function LoginPage() {
         password: String(formData.get("password") ?? ""),
       });
 
-      saveAuthSession(session);
+      saveAuthSession(session, formData.get("rememberLogin") === "on");
       navigate("/practice");
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error));
@@ -72,7 +72,7 @@ export function LoginPage() {
 
             <div className={styles.options}>
               <label>
-                <input type="checkbox" />
+                <input name="rememberLogin" type="checkbox" />
                 Ghi nhớ đăng nhập
               </label>
 
@@ -85,6 +85,7 @@ export function LoginPage() {
               {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
           </form>
+
           <button type="button" className={styles.googleButton}>
             <svg
               aria-hidden="true"
@@ -110,6 +111,7 @@ export function LoginPage() {
             </svg>
             Đăng nhập với Google
           </button>
+
           <p className={styles.footerText}>
             Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
           </p>
