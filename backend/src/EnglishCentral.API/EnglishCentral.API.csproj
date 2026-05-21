@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>1599b4ed-06fc-4329-b893-02eaba4de4be</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EnglishCentral.Application\EnglishCentral.Application.csproj" />
+    <ProjectReference Include="..\EnglishCentral.Contracts\EnglishCentral.Contracts.csproj" />
     <ProjectReference Include="..\EnglishCentral.Infrastructure\EnglishCentral.Infrastructure.csproj" />
     <ProjectReference Include="..\EnglishCentral.Shared\EnglishCentral.Shared.csproj" />
   </ItemGroup>

@@ -1,6 +1,6 @@
-﻿using EnglishCentral.Application.Interfaces;
+using EnglishCentral.Application.Features.Identity.DTOs;
+using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Identity;
-using EnglishCentral.Contracts.Responses.Identity;
 using EnglishCentral.Domain.Entities.Authentication;
 using EnglishCentral.Shared.Constants;
 using EnglishCentral.Shared.Results;
@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EnglishCentral.Application.Features.Identity.Commands.Register
 {
-    public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<AuthResponse>>
+    public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<AuthTokenResult>>
     {
         private readonly IUserRepository _userRepository;
         private readonly IRoleRepository _roleRepository;
@@ -35,18 +35,15 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
 
         }
 
-        public async Task<Result<AuthResponse>> Handle(RegisterCommand request, CancellationToken ct)
+        public async Task<Result<AuthTokenResult>> Handle(RegisterCommand request, CancellationToken ct)
         {
             _logger.LogInformation($"-----Starting running {typeof(RegisterCommandHandler)} -----");
-            _logger.LogInformation("Checking exist email - {Email}", request.Email);
             var exists = await _userRepository.ExistsByEmailAsync(request.Email, ct);
             if (exists)
             {
                 _logger.LogWarning("Register failed because email already exists {0}", request.Email);
-                return Result<AuthResponse>.Failure("Email already in use.", 409);
+                return Result<AuthTokenResult>.Failure("Email already in use.", 409);
             }
-            _logger.LogInformation("Trying Adding UserEmail - {0}", request.Email);
-            // 2. Create user entity
             var user = new User
             {
                 PublicId = Guid.NewGuid(),
@@ -62,7 +59,7 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
 
             if (studentRole is null)
             {
-                return Result<AuthResponse>
+                return Result<AuthTokenResult>
                     .Failure("Default role not found.", 500);
             }
 
@@ -71,18 +68,17 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
                 RoleId = studentRole.Id,
                 User = user
             });
-            await _userRepository.AddAsync(user, ct);
 
+            await _userRepository.AddAsync(user, ct);
             _logger.LogInformation("Adding successfully user with email - {0}", request.Email);
 
-            _logger.LogInformation("Trying generating Token");
             var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(user);
             var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user, ct);
             _logger.LogInformation("Generating token successfuly accessToken - {0}", string.Empty);
 
             await _unitOfWork.SaveChangesAsync(ct);
             _logger.LogInformation($"-----Ending running {typeof(RegisterCommandHandler)} ------");
-            return Result<AuthResponse>.Success(new AuthResponse(
+            return Result<AuthTokenResult>.Success(new AuthTokenResult(
                 user.PublicId,
                 user.FullName,
                 user.Email,
