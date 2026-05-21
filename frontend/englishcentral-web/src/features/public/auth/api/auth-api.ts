@@ -178,7 +178,7 @@ export const getAuthErrorMessage = (error: unknown) => {
     }
   }
 
-  return "Không thể kết nối backend. Vui lòng thử lại.";
+  return "Không thể kết nối tới server";
 };
 
 const hasStoredSession = (storage: Storage) =>
