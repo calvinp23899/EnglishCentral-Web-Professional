@@ -43,28 +43,11 @@ export function CourseDetailPage() {
             <p>{course.description}</p>
 
             <div className={styles.actions}>
-              <Button size="lg">Đăng ký tư vấn</Button>
               <Button variant="outline" size="lg">
                 Nhận kiểm tra đầu vào
               </Button>
             </div>
           </div>
-
-          <aside className={styles.summaryCard}>
-            <h3>Thông tin khóa học</h3>
-
-            <div>
-              <span>Thời lượng</span>
-              <strong>{course.duration}</strong>
-            </div>
-
-            <div>
-              <span>Hình thức</span>
-              <strong>Online / Offline</strong>
-            </div>
-
-            <Button fullWidth>Đăng ký ngay</Button>
-          </aside>
         </Container>
       </section>
 
@@ -91,35 +74,57 @@ export function CourseDetailPage() {
                 <div>
                   <span>01</span>
                   <strong>Kiểm tra đầu vào</strong>
-                  <p>Đánh giá trình độ hiện tại và xác định mục tiêu học tập.</p>
+                  <p>
+                    Đánh giá trình độ hiện tại và xác định mục tiêu học tập.
+                  </p>
                 </div>
 
                 <div>
                   <span>02</span>
                   <strong>Xây nền kỹ năng</strong>
-                  <p>Củng cố kiến thức cốt lõi, từ vựng, ngữ pháp và phương pháp học.</p>
+                  <p>
+                    Củng cố kiến thức cốt lõi, từ vựng, ngữ pháp và phương pháp
+                    học.
+                  </p>
                 </div>
 
                 <div>
                   <span>03</span>
                   <strong>Luyện tập chuyên sâu</strong>
-                  <p>Luyện bài theo format thực tế, nhận feedback và sửa lỗi liên tục.</p>
+                  <p>
+                    Luyện bài theo format thực tế, nhận feedback và sửa lỗi liên
+                    tục.
+                  </p>
                 </div>
 
                 <div>
                   <span>04</span>
                   <strong>Thi thử & tối ưu điểm</strong>
-                  <p>Mock test định kỳ và điều chỉnh chiến lược trước kỳ thi thật.</p>
+                  <p>
+                    Mock test định kỳ và điều chỉnh chiến lược trước kỳ thi thật.
+                  </p>
                 </div>
               </div>
             </section>
           </div>
 
           <aside className={styles.sideContent}>
-            <div className={styles.contactCard}>
-              <h3>Cần tư vấn lộ trình?</h3>
-              <p>Đội ngũ English Central sẽ giúp bạn chọn khóa học phù hợp nhất.</p>
-              <Button fullWidth>Liên hệ tư vấn</Button>
+            <div className={styles.summaryCard}>
+              <h3>Thông tin khóa học</h3>
+
+              <div>
+                <span>Thời lượng</span>
+                <strong>{course.duration}</strong>
+              </div>
+
+              <div>
+                <span>Hình thức</span>
+                <strong>Online / Offline</strong>
+              </div>
+
+              <Link to="/contact">
+                <Button fullWidth>Đăng ký ngay</Button>
+              </Link>
             </div>
           </aside>
         </Container>

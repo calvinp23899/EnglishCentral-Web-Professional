@@ -6,7 +6,9 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const accessToken = window.localStorage.getItem("englishcentral-access-token");
+  const accessToken =
+    window.localStorage.getItem("englishcentral-access-token") ??
+    window.sessionStorage.getItem("englishcentral-access-token");
 
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;

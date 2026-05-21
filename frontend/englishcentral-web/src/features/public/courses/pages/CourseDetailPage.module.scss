@@ -13,13 +13,9 @@
 
 .heroInner {
   display: grid;
-  grid-template-columns: 1fr 360px;
+  grid-template-columns: 1fr;
   gap: 48px;
   align-items: start;
-
-  @media (max-width: $laptop) {
-    grid-template-columns: 1fr;
-  }
 
   h1 {
     max-width: 760px;
@@ -71,8 +67,7 @@
   flex-wrap: wrap;
 }
 
-.summaryCard,
-.contactCard {
+.summaryCard {
   padding: 28px;
   border-radius: 28px;
   background: #ffffff;
@@ -88,6 +83,10 @@
 .summaryCard {
   display: grid;
   gap: 18px;
+
+  a {
+    text-decoration: none;
+  }
 
   div {
     display: flex;
@@ -206,14 +205,6 @@
 
   @media (max-width: $laptop) {
     position: static;
-  }
-}
-
-.contactCard {
-  p {
-    margin-bottom: 24px;
-    color: #64748b;
-    line-height: 1.6;
   }
 }
 
