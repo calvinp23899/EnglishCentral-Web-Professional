@@ -1,0 +1,126 @@
+@use "/src/styles/abstracts/breakpoints" as *;
+
+.page {
+  display: grid;
+  gap: 16px;
+}
+
+.settingList {
+  display: grid;
+  gap: 16px;
+}
+
+.settingRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+
+  strong {
+    display: block;
+    color: #0f172a;
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+}
+
+.switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #e5e7eb;
+  cursor: pointer;
+  transition: background 0.18s ease;
+
+  span {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+    transition: transform 0.18s ease;
+  }
+}
+
+.switchOn {
+  background: #2563eb;
+
+  span {
+    transform: translateX(20px);
+  }
+}
+
+.outlineButton {
+  min-width: 72px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #93c5fd;
+    color: #2563eb;
+  }
+}
+
+.formGrid {
+  display: grid;
+  gap: 16px;
+
+  label {
+    display: grid;
+    gap: 8px;
+  }
+
+  span {
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  select {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #0f172a;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+
+    &:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+  }
+}
+
+@media (max-width: $tablet) {
+  .settingRow {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .outlineButton {
+    justify-self: start;
+  }
+}

@@ -1,5 +1,6 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Lock,
@@ -18,6 +19,7 @@ type AdminLoginErrors = {
 const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value);
 
 export function AdminLoginPage() {
+  const navigate = useNavigate();
   const [errors, setErrors] = useState<AdminLoginErrors>({});
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -38,6 +40,12 @@ export function AdminLoginPage() {
     }
 
     setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    navigate("/admin");
   };
 
   return (
