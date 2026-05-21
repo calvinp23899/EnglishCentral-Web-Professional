@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle2, Pencil, X } from "lucide-react";
-import { Container } from "@/components/ui";
+import { Container, ErrorMessage } from "@/components/ui";
 import {
   authApi,
   getStoredUser,
@@ -35,6 +35,11 @@ const getEncouragement = (band: number) => {
 
 const getInitial = (name: string) => name.trim().charAt(0).toUpperCase() || "E";
 
+type PasswordErrors = {
+  password?: string;
+  confirmPassword?: string;
+};
+
 const formatValue = (value?: string) => value || "Chưa cập nhật";
 
 export function UserProfilePage() {
@@ -42,6 +47,7 @@ export function UserProfilePage() {
   const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
   const [isLoading, setIsLoading] = useState(!getStoredUser());
   const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<PasswordErrors>({});
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
@@ -85,6 +91,29 @@ export function UserProfilePage() {
 
   const handlePasswordSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const password = String(formData.get("password") ?? "").trim();
+    const confirmPassword = String(formData.get("confirmPassword") ?? "").trim();
+    const nextErrors: PasswordErrors = {};
+
+    if (!password) {
+      nextErrors.password = "Vui lòng nhập mật khẩu mới.";
+    } else if (password.length < 6) {
+      nextErrors.password = "Mật khẩu phải có ít nhất 6 ký tự.";
+    }
+
+    if (!confirmPassword) {
+      nextErrors.confirmPassword = "Vui lòng nhập lại mật khẩu mới.";
+    } else if (password !== confirmPassword) {
+      nextErrors.confirmPassword = "Mật khẩu nhập lại không khớp.";
+    }
+
+    setPasswordErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
     setPasswordModalOpen(false);
     setShowSuccessMessage(true);
     window.setTimeout(() => setShowSuccessMessage(false), 2600);
@@ -153,7 +182,10 @@ export function UserProfilePage() {
                   ********
                   <button
                     type="button"
-                    onClick={() => setPasswordModalOpen(true)}
+                  onClick={() => {
+                    setPasswordErrors({});
+                    setPasswordModalOpen(true);
+                  }}
                   >
                     <Pencil aria-hidden="true" />
                     Thay đổi
@@ -198,12 +230,16 @@ export function UserProfilePage() {
         <div className={styles.modalOverlay}>
           <form
             className={styles.passwordModal}
+            noValidate
             onSubmit={handlePasswordSubmit}
           >
             <button
               type="button"
               className={styles.closeButton}
-              onClick={() => setPasswordModalOpen(false)}
+              onClick={() => {
+                setPasswordErrors({});
+                setPasswordModalOpen(false);
+              }}
             >
               <X aria-hidden="true" />
             </button>
@@ -211,12 +247,45 @@ export function UserProfilePage() {
             <h3>Thay đổi mật khẩu</h3>
             <label>
               <span>Mật khẩu mới</span>
-              <input type="password" required minLength={6} />
+              <input
+                aria-describedby={
+                  passwordErrors.password ? "profile-password-error" : undefined
+                }
+                aria-invalid={Boolean(passwordErrors.password)}
+                name="password"
+                onChange={() =>
+                  setPasswordErrors((current) => ({
+                    ...current,
+                    password: undefined,
+                  }))
+                }
+                type="password"
+              />
             </label>
+            <ErrorMessage id="profile-password-error" message={passwordErrors.password} />
             <label>
               <span>Nhập lại mật khẩu mới</span>
-              <input type="password" required minLength={6} />
+              <input
+                aria-describedby={
+                  passwordErrors.confirmPassword
+                    ? "profile-confirm-password-error"
+                    : undefined
+                }
+                aria-invalid={Boolean(passwordErrors.confirmPassword)}
+                name="confirmPassword"
+                onChange={() =>
+                  setPasswordErrors((current) => ({
+                    ...current,
+                    confirmPassword: undefined,
+                  }))
+                }
+                type="password"
+              />
             </label>
+            <ErrorMessage
+              id="profile-confirm-password-error"
+              message={passwordErrors.confirmPassword}
+            />
 
             <button type="submit">Đổi mật khẩu</button>
           </form>

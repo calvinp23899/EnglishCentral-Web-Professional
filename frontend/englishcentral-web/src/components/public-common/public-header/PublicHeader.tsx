@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Button, Container } from "@/components/ui";
+import { Button, Container, toastDanger } from "@/components/ui";
 import {
   AUTH_CHANGE_EVENT,
   authApi,
@@ -14,7 +14,6 @@ import styles from "./PublicHeader.module.scss";
 
 export function PublicHeader() {
   const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
-  const [dangerToastMessage, setDangerToastMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,36 +28,19 @@ export function PublicHeader() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!dangerToastMessage) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => setDangerToastMessage(""), 3600);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [dangerToastMessage]);
-
   const handleLogout = async () => {
     try {
       await authApi.logout();
       clearAuthSession();
       navigate("/");
     } catch (error) {
-      setDangerToastMessage(getAuthErrorMessage(error));
+      toastDanger(getAuthErrorMessage(error));
     }
   };
 
   return (
-    <>
-      {dangerToastMessage && (
-        <div className={styles.dangerToast} role="alert">
-          {dangerToastMessage}
-        </div>
-      )}
-
-      <header className={styles.header}>
-        <Container className={styles.headerInner}>
+    <header className={styles.header}>
+      <Container className={styles.headerInner}>
         <Link to="/" className={styles.logo}>
           <span>EC</span>
           English Central
@@ -143,8 +125,7 @@ export function PublicHeader() {
             </Link>
           </div>
         )}
-        </Container>
-      </header>
-    </>
+      </Container>
+    </header>
   );
 }

@@ -1,7 +1,7 @@
-import { useState } from "react";
 import type { FormEvent } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Button, Container, Input } from "@/components/ui";
+import { Button, Container, ErrorMessage, Input, toastDanger } from "@/components/ui";
 import {
   authApi,
   getAuthErrorMessage,
@@ -10,28 +10,57 @@ import {
 
 import styles from "./LoginPage.module.scss";
 
+type LoginErrors = {
+  email?: string;
+  password?: string;
+};
+
+const getFormValue = (formData: FormData, name: string) =>
+  String(formData.get(name) ?? "").trim();
+
+const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value);
+
 export function LoginPage() {
   const navigate = useNavigate();
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errors, setErrors] = useState<LoginErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setErrorMessage("");
-    setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
+    const email = getFormValue(formData, "email");
+    const password = getFormValue(formData, "password");
+    const nextErrors: LoginErrors = {};
+
+    if (!email) {
+      nextErrors.email = "Vui lòng nhập email.";
+    } else if (!isValidEmail(email)) {
+      nextErrors.email = "Email không đúng định dạng.";
+    }
+
+    if (!password) {
+      nextErrors.password = "Vui lòng nhập mật khẩu.";
+    }
+
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       const session = await authApi.login({
-        email: String(formData.get("email") ?? ""),
-        password: String(formData.get("password") ?? ""),
+        email,
+        password,
       });
 
       saveAuthSession(session, formData.get("rememberLogin") === "on");
       navigate("/practice");
     } catch (error) {
-      setErrorMessage(getAuthErrorMessage(error));
+      toastDanger(getAuthErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -60,15 +89,30 @@ export function LoginPage() {
         <div className={styles.formCard}>
           <h2>Đăng nhập</h2>
 
-          <form className={styles.form} onSubmit={handleLogin}>
-            <Input name="email" placeholder="Email" required type="email" />
+          <form className={styles.form} onSubmit={handleLogin} noValidate>
             <Input
+              aria-describedby={errors.email ? "login-email-error" : undefined}
+              aria-invalid={Boolean(errors.email)}
+              name="email"
+              onChange={() =>
+                setErrors((current) => ({ ...current, email: undefined }))
+              }
+              placeholder="Email"
+              type="email"
+            />
+            <ErrorMessage id="login-email-error" message={errors.email} />
+            <Input
+              aria-describedby={errors.password ? "login-password-error" : undefined}
+              aria-invalid={Boolean(errors.password)}
               name="password"
+              onChange={() =>
+                setErrors((current) => ({ ...current, password: undefined }))
+              }
               placeholder="Mật khẩu"
-              required
               showPasswordToggle
               type="password"
             />
+            <ErrorMessage id="login-password-error" message={errors.password} />
 
             <div className={styles.options}>
               <label>
@@ -78,8 +122,6 @@ export function LoginPage() {
 
               <Link to="/forgot-password">Quên mật khẩu?</Link>
             </div>
-
-            {errorMessage && <p className={styles.errorText}>{errorMessage}</p>}
 
             <Button disabled={isSubmitting} fullWidth size="lg" type="submit">
               {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}

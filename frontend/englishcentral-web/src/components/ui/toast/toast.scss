@@ -1,0 +1,38 @@
+.ant-message-notice.ec-toast-danger {
+  padding-right: 8px;
+  text-align: right;
+  transform: translateY(28px);
+}
+
+.ant-message-notice.ec-toast-danger .ant-message-notice-content {
+  min-width: min(380px, calc(100vw - 24px));
+  max-width: min(440px, calc(100vw - 24px));
+  padding: 13px 18px;
+  border: 1px solid #f7b7b7;
+  border-radius: 8px;
+  background: #fff5f5;
+  color: #b42318;
+  box-shadow: 0 14px 34px rgba(127, 29, 29, 0.12);
+  text-align: left;
+}
+
+.ant-message-notice.ec-toast-danger .ant-message-custom-content {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+.ant-message-notice.ec-toast-danger .ant-message-custom-content svg {
+  flex: 0 0 auto;
+  color: #ef4444;
+}
+
+@media (max-width: 640px) {
+  .ant-message-notice.ec-toast-danger {
+    padding-inline: 12px;
+  }
+}
