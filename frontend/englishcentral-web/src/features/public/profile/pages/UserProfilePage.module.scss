@@ -61,6 +61,16 @@
   }
 }
 
+.statusCard {
+  padding: 28px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 800;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.08);
+}
+
 .infoList {
   display: grid;
   gap: 14px;

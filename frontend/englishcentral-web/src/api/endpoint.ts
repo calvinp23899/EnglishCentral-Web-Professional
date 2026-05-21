@@ -1,7 +1,10 @@
 export const ENDPOINTS = {
   AUTH: {
-    LOGIN: "/auth/login",
-    REFRESH: "/auth/refresh",
+    REGISTER: "/Auth/register",
+    LOGIN: "/Auth/login",
+    LOGOUT: "/Auth/logout",
+    REFRESH: "/Auth/refresh",
+    ME: "/Auth/me",
   },
 
   STUDENTS: {

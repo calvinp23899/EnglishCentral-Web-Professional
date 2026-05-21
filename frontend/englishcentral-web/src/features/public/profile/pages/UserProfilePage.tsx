@@ -1,6 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { CheckCircle2, Pencil, X } from "lucide-react";
 import { Container } from "@/components/ui";
+import {
+  authApi,
+  getStoredUser,
+  saveAuthSession,
+  type AuthUser,
+} from "@/features/public/auth/api/auth-api";
 import styles from "./UserProfilePage.module.scss";
 
 const latestSkillResults = [
@@ -25,16 +33,76 @@ const getEncouragement = (band: number) => {
   return "Có tiến bộ rõ rệt rồi, tiếp tục giữ nhịp và luyện kỹ phần còn yếu nhé.";
 };
 
+const getInitial = (name: string) => name.trim().charAt(0).toUpperCase() || "E";
+
+const formatValue = (value?: string) => value || "Chưa cập nhật";
+
 export function UserProfilePage() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
+  const [isLoading, setIsLoading] = useState(!getStoredUser());
   const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-  const handlePasswordSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    let isMounted = true;
+
+    const syncProfile = async () => {
+      try {
+        const profile = await authApi.getProfile();
+        saveAuthSession({ user: profile });
+
+        if (isMounted) {
+          setUser(profile);
+        }
+      } catch {
+        try {
+          const session = await authApi.refresh();
+          saveAuthSession(session);
+
+          const profile = await authApi.getProfile();
+          saveAuthSession({ user: profile });
+
+          if (isMounted) {
+            setUser(profile);
+          }
+        } catch {
+          navigate("/login");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void syncProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
+
+  const handlePasswordSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPasswordModalOpen(false);
     setShowSuccessMessage(true);
     window.setTimeout(() => setShowSuccessMessage(false), 2600);
   };
+
+  if (isLoading) {
+    return (
+      <section className={styles.page}>
+        <Container>
+          <div className={styles.statusCard}>Đang tải hồ sơ...</div>
+        </Container>
+      </section>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <section className={styles.page}>
@@ -47,11 +115,11 @@ export function UserProfilePage() {
         )}
 
         <div className={styles.profileHero}>
-          <div className={styles.avatar}>A</div>
+          <div className={styles.avatar}>{getInitial(user.name)}</div>
           <div>
             <span>Hồ sơ học viên</span>
-            <h1>Nguyễn Minh Anh</h1>
-            <p>minhanh@englishcentral.vn</p>
+            <h1>{user.name}</h1>
+            <p>{user.email}</p>
           </div>
         </div>
 
@@ -59,13 +127,28 @@ export function UserProfilePage() {
           <section className={styles.card}>
             <h2>Thông tin cá nhân</h2>
             <div className={styles.infoList}>
-              <p><strong>Họ tên</strong><span>Nguyễn Minh Anh</span></p>
-              <p><strong>Email</strong><span>minhanh@englishcentral.vn</span></p>
-              <p><strong>SDT</strong><span>0912 345 678</span></p>
-              <p><strong>Giới Tính</strong><span>Nữ</span></p>
-              <p><strong>Ngày Sinh</strong><span>**/**/****</span></p>
               <p>
-                <strong>Mật Khẩu</strong>
+                <strong>Họ tên</strong>
+                <span>{formatValue(user.name)}</span>
+              </p>
+              <p>
+                <strong>Email</strong>
+                <span>{formatValue(user.email)}</span>
+              </p>
+              <p>
+                <strong>SĐT</strong>
+                <span>{formatValue(user.phoneNumber)}</span>
+              </p>
+              <p>
+                <strong>Giới tính</strong>
+                <span>{formatValue(user.gender)}</span>
+              </p>
+              <p>
+                <strong>Ngày sinh</strong>
+                <span>{formatValue(user.dateOfBirth)}</span>
+              </p>
+              <p>
+                <strong>Mật khẩu</strong>
                 <span className={styles.passwordValue}>
                   ********
                   <button
@@ -131,11 +214,11 @@ export function UserProfilePage() {
               <input type="password" required minLength={6} />
             </label>
             <label>
-              <span>Repeat mật khẩu mới</span>
+              <span>Nhập lại mật khẩu mới</span>
               <input type="password" required minLength={6} />
             </label>
 
-            <button type="submit">Đổi Mật Khẩu</button>
+            <button type="submit">Đổi mật khẩu</button>
           </form>
         </div>
       )}

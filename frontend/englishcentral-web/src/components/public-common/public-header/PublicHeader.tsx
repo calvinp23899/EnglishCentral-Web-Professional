@@ -1,54 +1,64 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button, Container } from "@/components/ui";
+import {
+  AUTH_CHANGE_EVENT,
+  authApi,
+  clearAuthSession,
+  getAuthErrorMessage,
+  getStoredUser,
+  type AuthUser,
+} from "@/features/public/auth/api/auth-api";
 
 import styles from "./PublicHeader.module.scss";
 
-type HeaderUser = {
-  name: string;
-  email: string;
-  level: string;
-};
-
-const getStoredUser = (): HeaderUser | null => {
-  const rawUser = window.localStorage.getItem("englishcentral-user");
-
-  if (!rawUser) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(rawUser) as HeaderUser;
-  } catch {
-    return null;
-  }
-};
-
 export function PublicHeader() {
-  const [user, setUser] = useState<HeaderUser | null>(() => getStoredUser());
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
+  const [dangerToastMessage, setDangerToastMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     const syncUser = () => setUser(getStoredUser());
 
     window.addEventListener("storage", syncUser);
-    window.addEventListener("englishcentral-auth-change", syncUser);
+    window.addEventListener(AUTH_CHANGE_EVENT, syncUser);
 
     return () => {
       window.removeEventListener("storage", syncUser);
-      window.removeEventListener("englishcentral-auth-change", syncUser);
+      window.removeEventListener(AUTH_CHANGE_EVENT, syncUser);
     };
   }, []);
 
-  const handleLogout = () => {
-    window.localStorage.removeItem("englishcentral-user");
-    window.dispatchEvent(new Event("englishcentral-auth-change"));
-    navigate("/");
+  useEffect(() => {
+    if (!dangerToastMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setDangerToastMessage(""), 3600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [dangerToastMessage]);
+
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+      clearAuthSession();
+      navigate("/");
+    } catch (error) {
+      setDangerToastMessage(getAuthErrorMessage(error));
+    }
   };
 
   return (
-    <header className={styles.header}>
-      <Container className={styles.headerInner}>
+    <>
+      {dangerToastMessage && (
+        <div className={styles.dangerToast} role="alert">
+          {dangerToastMessage}
+        </div>
+      )}
+
+      <header className={styles.header}>
+        <Container className={styles.headerInner}>
         <Link to="/" className={styles.logo}>
           <span>EC</span>
           English Central
@@ -133,7 +143,8 @@ export function PublicHeader() {
             </Link>
           </div>
         )}
-      </Container>
-    </header>
+        </Container>
+      </header>
+    </>
   );
 }

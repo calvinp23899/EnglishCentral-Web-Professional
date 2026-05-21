@@ -2,6 +2,6 @@
 {
     public record RefreshTokenRequest(
         string UserPublicId,
-        string RefreshToken
+        string? RefreshToken
     );
 }

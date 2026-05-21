@@ -1,4 +1,4 @@
-﻿using EnglishCentral.Contracts.Responses.Identity;
+using EnglishCentral.Application.Features.Identity.DTOs;
 using EnglishCentral.Shared.Results;
 using MediatR;
 
@@ -9,5 +9,5 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
         string Email,
         string Password,
         string? PhoneNumber
-    ) : IRequest<Result<AuthResponse>>;
+    ) : IRequest<Result<AuthTokenResult>>;
 }

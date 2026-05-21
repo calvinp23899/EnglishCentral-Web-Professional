@@ -1,22 +1,40 @@
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Container, Input } from "@/components/ui";
+import {
+  authApi,
+  getAuthErrorMessage,
+  saveAuthSession,
+} from "@/features/public/auth/api/auth-api";
 
 import styles from "./LoginPage.module.scss";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    window.localStorage.setItem(
-      "englishcentral-user",
-      JSON.stringify({
-        name: "Nguyễn Minh Anh",
-        email: "minhanh@englishcentral.vn",
-        level: "IELTS 6.5",
-      })
-    );
-    window.dispatchEvent(new Event("englishcentral-auth-change"));
-    navigate("/practice");
+    setErrorMessage("");
+    setIsSubmitting(true);
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const session = await authApi.login({
+        email: String(formData.get("email") ?? ""),
+        password: String(formData.get("password") ?? ""),
+      });
+
+      saveAuthSession(session);
+      navigate("/practice");
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -43,8 +61,14 @@ export function LoginPage() {
           <h2>Đăng nhập</h2>
 
           <form className={styles.form} onSubmit={handleLogin}>
-            <Input placeholder="Email" type="email" />
-            <Input placeholder="Mật khẩu" type="password" />
+            <Input name="email" placeholder="Email" required type="email" />
+            <Input
+              name="password"
+              placeholder="Mật khẩu"
+              required
+              showPasswordToggle
+              type="password"
+            />
 
             <div className={styles.options}>
               <label>
@@ -55,8 +79,10 @@ export function LoginPage() {
               <Link to="/forgot-password">Quên mật khẩu?</Link>
             </div>
 
-            <Button fullWidth size="lg" type="submit">
-              Đăng nhập
+            {errorMessage && <p className={styles.errorText}>{errorMessage}</p>}
+
+            <Button disabled={isSubmitting} fullWidth size="lg" type="submit">
+              {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
           </form>
           <button type="button" className={styles.googleButton}>

@@ -1,4 +1,4 @@
-﻿using EnglishCentral.Application.Interfaces.Identity;
+using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Domain.Entities.Authentication;
 using EnglishCentral.Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +24,12 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Identity
         {
             return await _dbContenxt.Users
                 .AnyAsync(u => u.Email == email && !u.IsDeleted, ct);
+        }
+
+        public async Task<User?> GetByPublicIdAsync(Guid publicId, CancellationToken ct = default)
+        {
+            return await _dbContenxt.Users
+                .FirstOrDefaultAsync(u => u.PublicId == publicId && !u.IsDeleted, ct);
         }
 
         public async Task<User?> GetByIdWithRolesAsync(long id, CancellationToken ct = default)
