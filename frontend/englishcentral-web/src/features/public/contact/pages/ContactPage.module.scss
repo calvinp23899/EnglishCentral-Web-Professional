@@ -64,13 +64,36 @@
 
 .infoCard {
   display: grid;
-  gap: 18px;
+  gap: 0;
 
-  div {
+  .infoItem {
     display: grid;
-    gap: 6px;
-    padding-bottom: 16px;
+    grid-template-columns: 44px 1fr;
+    gap: 16px;
+    align-items: center;
+    padding: 18px 0;
     border-bottom: 1px solid #e5e7eb;
+
+    &:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+  }
+
+  .infoIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: grid;
+    place-items: center;
+  }
+
+  .infoText {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
   }
 
   strong {

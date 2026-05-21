@@ -1,6 +1,30 @@
+import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { Button, Container, Input } from "@/components/ui";
 
 import styles from "./ContactPage.module.scss";
+
+const contactItems = [
+  {
+    icon: Phone,
+    label: "Hotline",
+    value: "0909 123 456",
+  },
+  {
+    icon: Mail,
+    label: "Email",
+    value: "support@englishcentral.vn",
+  },
+  {
+    icon: MapPin,
+    label: "Địa chỉ",
+    value: "123 Nguyễn Văn Cừ, Quận 5, TP.HCM",
+  },
+  {
+    icon: Clock,
+    label: "Giờ làm việc",
+    value: "08:00 - 21:00 (Thứ 2 - Chủ nhật)",
+  },
+];
 
 export function ContactPage() {
   return (
@@ -22,25 +46,21 @@ export function ContactPage() {
             <div className={styles.infoCard}>
               <h3>Thông tin liên hệ</h3>
 
-              <div>
-                <strong>Hotline</strong>
-                <span>0909 123 456</span>
-              </div>
+              {contactItems.map((item) => {
+                const Icon = item.icon;
 
-              <div>
-                <strong>Email</strong>
-                <span>support@englishcentral.vn</span>
-              </div>
-
-              <div>
-                <strong>Địa chỉ</strong>
-                <span>123 Nguyễn Văn Cừ, Quận 5, TP.HCM</span>
-              </div>
-
-              <div>
-                <strong>Giờ làm việc</strong>
-                <span>08:00 - 21:00 (Thứ 2 - Chủ nhật)</span>
-              </div>
+                return (
+                  <div className={styles.infoItem} key={item.label}>
+                    <span className={styles.infoIcon}>
+                      <Icon size={22} strokeWidth={2.2} />
+                    </span>
+                    <span className={styles.infoText}>
+                      <strong>{item.label}</strong>
+                      <span>{item.value}</span>
+                    </span>
+                  </div>
+                );
+              })}
             </div>
 
             <div className={styles.mapPlaceholder}>
