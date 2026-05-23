@@ -10,7 +10,6 @@ namespace EnglishCentral.Application.Features.Identity.Commands.RefreshToken
     {
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly IJwtService _jwtService;
-        private readonly IUnitOfWork _unitOfWork;
 
         public RefreshTokenCommandHandler(
             IRefreshTokenRepository refreshTokenRepository,
@@ -19,7 +18,6 @@ namespace EnglishCentral.Application.Features.Identity.Commands.RefreshToken
         {
             _refreshTokenRepository = refreshTokenRepository;
             _jwtService = jwtService;
-            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result<AuthTokenResult>> Handle(RefreshTokenCommand request, CancellationToken ct)
@@ -50,8 +48,6 @@ namespace EnglishCentral.Application.Features.Identity.Commands.RefreshToken
 
             var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(user);
             var newRefreshToken = await _jwtService.GenerateRefreshTokenAsync(user, ct);
-
-            await _unitOfWork.SaveChangesAsync(ct);
 
             return Result<AuthTokenResult>.Success(
                 new AuthTokenResult(

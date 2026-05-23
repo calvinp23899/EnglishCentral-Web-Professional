@@ -27,7 +27,7 @@ namespace EnglishCentral.Application.Features.Identity.Queries.GetMe
                 return Result<AccountMeResponse>.Failure("Account not found.", 404);
             }
 
-            var student = await _studentRepository.GetByUserPublicIdAsync(request.UserPublicId, ct);
+            var student = await _studentRepository.GetMeProfileByUserPublicIdAsync(request.UserPublicId, ct);
             var studentProfile = student is null
                 ? null
                 : new StudentProfileResponse(
