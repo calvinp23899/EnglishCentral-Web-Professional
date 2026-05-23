@@ -1,12 +1,19 @@
 import { AdminLayout } from "@/app/layouts/admin-layout/AdminLayout";
 import { AdminLoginPage } from "@/features/admin/auth/pages/AdminLoginPage/AdminLoginPage";
+import { ClassFormPage } from "@/features/admin/classes/pages/ClassFormPage";
+import { ClassListPage } from "@/features/admin/classes/pages/ClassListPage";
+import { CourseFormPage } from "@/features/admin/courses/pages/CourseFormPage";
+import { CourseListPage } from "@/features/admin/courses/pages/CourseListPage";
 import { AdminDashboardPage } from "@/features/admin/dashboard/pages/AdminDashboardPage";
 import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePage";
+import { AdminSchedulePage } from "@/features/admin/schedule/pages/AdminSchedulePage";
 import { AdminSettingsPage } from "@/features/admin/settings/pages/AdminSettingsPage";
 import { AdminPlaceholderPage } from "@/features/admin/shared/pages/AdminPlaceholderPage";
 import { StudentCreatePage } from "@/features/admin/students/pages/StudentCreatePage";
 import { StudentEditPage } from "@/features/admin/students/pages/StudentEditPage";
 import { StudentListPage } from "@/features/admin/students/pages/StudentListPage";
+import { TeacherFormPage } from "@/features/admin/teachers/pages/TeacherFormPage";
+import { TeacherListPage } from "@/features/admin/teachers/pages/TeacherListPage";
 
 const adminModuleRoutes = [
   {
@@ -79,7 +86,65 @@ export const adminRoutes = [
         path: "students/:studentId/edit",
         element: <StudentEditPage />,
       },
-      ...adminModuleRoutes.filter((route) => route.path !== "students").map((route) => ({
+      {
+        path: "schedule",
+        element: <AdminSchedulePage />,
+      },
+      {
+        path: "practice-bank/ielts",
+        element: (
+          <AdminPlaceholderPage
+            title="IELTS Practice Bank"
+            description="Quản lý ngân hàng bài tập IELTS theo kỹ năng, bộ đề, câu hỏi và đáp án."
+          />
+        ),
+      },
+      {
+        path: "practice-bank/toeic",
+        element: (
+          <AdminPlaceholderPage
+            title="TOEIC Practice Bank"
+            description="Quản lý ngân hàng bài tập TOEIC theo part, bộ đề, câu hỏi và đáp án."
+          />
+        ),
+      },
+      {
+        path: "courses",
+        element: <CourseListPage />,
+      },
+      {
+        path: "courses/create",
+        element: <CourseFormPage mode="create" />,
+      },
+      {
+        path: "courses/:recordId/edit",
+        element: <CourseFormPage mode="edit" />,
+      },
+      {
+        path: "classes",
+        element: <ClassListPage />,
+      },
+      {
+        path: "classes/create",
+        element: <ClassFormPage mode="create" />,
+      },
+      {
+        path: "classes/:recordId/edit",
+        element: <ClassFormPage mode="edit" />,
+      },
+      {
+        path: "teachers",
+        element: <TeacherListPage />,
+      },
+      {
+        path: "teachers/create",
+        element: <TeacherFormPage mode="create" />,
+      },
+      {
+        path: "teachers/:recordId/edit",
+        element: <TeacherFormPage mode="edit" />,
+      },
+      ...adminModuleRoutes.filter((route) => !["students", "courses", "classes", "teachers"].includes(route.path)).map((route) => ({
         path: route.path,
         element: (
           <AdminPlaceholderPage

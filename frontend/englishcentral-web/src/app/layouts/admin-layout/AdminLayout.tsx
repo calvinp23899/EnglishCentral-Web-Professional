@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   Bell,
   BookOpen,
   CalendarDays,
+  CalendarRange,
   ChevronDown,
   GraduationCap,
   LayoutDashboard,
@@ -20,13 +22,32 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 
 import styles from "./AdminLayout.module.scss";
 
-const navigationItems = [
+type NavigationItem = {
+  children?: Array<{
+    label: string;
+    path: string;
+  }>;
+  icon: LucideIcon;
+  label: string;
+  path: string;
+};
+
+const navigationItems: NavigationItem[] = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
   { label: "Học viên", path: "/admin/students", icon: UsersRound },
+  { label: "Lịch", path: "/admin/schedule", icon: CalendarRange },
   { label: "Khóa học", path: "/admin/courses", icon: LibraryBig },
   { label: "Lớp học", path: "/admin/classes", icon: CalendarDays },
   { label: "Giáo viên", path: "/admin/teachers", icon: GraduationCap },
-  { label: "Ngân hàng bài tập", path: "/admin/practice-bank", icon: BookOpen },
+  {
+    label: "Ngân hàng bài tập",
+    path: "/admin/practice-bank",
+    icon: BookOpen,
+    children: [
+      { label: "IELTS", path: "/admin/practice-bank/ielts" },
+      { label: "TOEIC", path: "/admin/practice-bank/toeic" },
+    ],
+  },
   { label: "Báo cáo", path: "/admin/reports", icon: BarChart3 },
   { label: "Tin nhắn", path: "/admin/messages", icon: MessageSquareText },
 ];
@@ -36,12 +57,15 @@ const breadcrumbLabels: Record<string, string> = {
   classes: "Lớp học",
   courses: "Khóa học",
   messages: "Tin nhắn",
+  ielts: "IELTS",
   "practice-bank": "Ngân hàng bài tập",
   profile: "Hồ sơ",
   reports: "Báo cáo",
+  schedule: "Lịch",
   settings: "Cài đặt",
   students: "Học viên",
   teachers: "Giáo viên",
+  toeic: "TOEIC",
 };
 
 const getBreadcrumbItems = (pathname: string) => {
@@ -114,17 +138,34 @@ export function AdminLayout() {
             const Icon = item.icon;
 
             return (
-              <NavLink
-                className={({ isActive }) =>
-                  `${styles.navItem} ${isActive ? styles.active : ""}`.trim()
-                }
-                end={item.path === "/admin"}
-                key={item.path}
-                to={item.path}
-              >
-                <Icon aria-hidden="true" size={18} />
-                <span>{item.label}</span>
-              </NavLink>
+              <div className={styles.navGroup} key={item.path}>
+                <NavLink
+                  className={({ isActive }) =>
+                    `${styles.navItem} ${isActive ? styles.active : ""}`.trim()
+                  }
+                  end={item.path === "/admin"}
+                  to={item.path}
+                >
+                  <Icon aria-hidden="true" size={18} />
+                  <span>{item.label}</span>
+                </NavLink>
+
+                {item.children && (
+                  <div className={styles.subNav}>
+                    {item.children.map((child) => (
+                      <NavLink
+                        className={({ isActive }) =>
+                          `${styles.subNavItem} ${isActive ? styles.subActive : ""}`.trim()
+                        }
+                        key={child.path}
+                        to={child.path}
+                      >
+                        {child.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

@@ -75,6 +75,11 @@
   gap: 6px;
 }
 
+.navGroup {
+  display: grid;
+  gap: 4px;
+}
+
 .navItem {
   min-height: 42px;
   padding: 0 12px;
@@ -94,6 +99,39 @@
     background: #eff6ff;
     color: #1d4ed8;
   }
+}
+
+.subNav {
+  margin-left: 21px;
+  padding-left: 14px;
+  border-left: 1px solid #e5edf6;
+  display: grid;
+  gap: 4px;
+}
+
+.subNavItem {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+
+  &:hover {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+}
+
+.subActive {
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .active {
