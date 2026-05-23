@@ -1,0 +1,116 @@
+.pagination {
+  min-height: 64px;
+  padding: 14px 18px;
+  border-top: 1px solid #e5edf6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.summary {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+
+  strong {
+    color: #0f172a;
+    font-weight: 700;
+  }
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pageSize,
+.pageNumber {
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  span {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  select,
+  input {
+    min-width: 58px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #0f172a;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  input {
+    width: 46px;
+  }
+
+  em {
+    color: #94a3b8;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 700;
+  }
+}
+
+.controls button {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease;
+
+  &:hover:not(:disabled) {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  &:disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+}
+
+@media (max-width: 900px) {
+  .pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .controls {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 576px) {
+  .controls button {
+    flex: 1 1 120px;
+    justify-content: center;
+  }
+}

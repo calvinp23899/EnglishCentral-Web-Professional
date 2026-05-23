@@ -1,0 +1,251 @@
+@use "/src/styles/abstracts/breakpoints" as *;
+
+.page {
+  font-family:
+    Inter,
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  font-synthesis-weight: none;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+  display: grid;
+  gap: 18px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+
+  h1 {
+    margin: 8px 0 8px;
+    color: #0f172a;
+    font-size: clamp(26px, 3vw, 38px);
+    line-height: 1.12;
+  }
+}
+
+.backLink {
+  width: fit-content;
+  margin-bottom: 18px;
+  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+
+  &:hover {
+    color: #1d4ed8;
+  }
+}
+
+.studentBadge {
+  min-width: 220px;
+  padding: 14px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.04);
+
+  svg {
+    color: #2563eb;
+  }
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 13px;
+  }
+
+  span {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+.formPanel {
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+}
+
+.formHeader {
+  min-height: 70px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e5edf6;
+  display: flex;
+  align-items: center;
+
+  h2 {
+    margin: 0 0 5px;
+    color: #0f172a;
+    font-size: 18px;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+.formGrid {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.field {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+
+  span {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #dbe5f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #0f172a;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    outline: 0;
+    transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      box-shadow 0.18s ease;
+
+    &:focus {
+      border-color: #93c5fd;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+  }
+
+  input,
+  select {
+    height: 44px;
+    padding: 0 12px;
+  }
+
+  textarea {
+    padding: 12px;
+    resize: vertical;
+  }
+}
+
+.notesField {
+  grid-column: 1 / -1;
+}
+
+.formActions {
+  padding: 16px 20px;
+  border-top: 1px solid #e5edf6;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  a,
+  button {
+    height: 40px;
+    padding: 0 15px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  a {
+    border: 1px solid #dbe5f0;
+    background: #ffffff;
+    color: #334155;
+
+    &:hover {
+      border-color: #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+  }
+
+  button {
+    border: 0;
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+
+    &:hover {
+      background: #1d4ed8;
+    }
+  }
+}
+
+.formActions .cancelButton {
+  border: 1px solid #dbe5f0;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: none;
+
+  &:hover {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+}
+
+@media (max-width: $tablet) {
+  .header {
+    flex-direction: column;
+  }
+
+  .studentBadge {
+    width: 100%;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formActions {
+    flex-direction: column-reverse;
+
+    a,
+    button {
+      width: 100%;
+    }
+  }
+}

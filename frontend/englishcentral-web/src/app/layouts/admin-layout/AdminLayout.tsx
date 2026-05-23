@@ -46,9 +46,18 @@ const breadcrumbLabels: Record<string, string> = {
 
 const getBreadcrumbItems = (pathname: string) => {
   const segments = pathname.split("/").filter(Boolean);
+  const visibleSegments = segments
+    .map((segment, index) => ({ originalIndex: index, segment }))
+    .filter((item) => {
+      const { originalIndex } = item;
+      const previousSegment = segments[originalIndex - 1];
+      const nextSegment = segments[originalIndex + 1];
 
-  return segments.map((segment, index) => {
-    const href = `/${segments.slice(0, index + 1).join("/")}`;
+      return !(previousSegment === "students" && nextSegment === "edit");
+    });
+
+  return visibleSegments.map(({ originalIndex, segment }) => {
+    const href = `/${segments.slice(0, originalIndex + 1).join("/")}`;
 
     return {
       href,

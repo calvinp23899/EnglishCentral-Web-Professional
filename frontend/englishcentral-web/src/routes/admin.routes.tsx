@@ -4,6 +4,9 @@ import { AdminDashboardPage } from "@/features/admin/dashboard/pages/AdminDashbo
 import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePage";
 import { AdminSettingsPage } from "@/features/admin/settings/pages/AdminSettingsPage";
 import { AdminPlaceholderPage } from "@/features/admin/shared/pages/AdminPlaceholderPage";
+import { StudentCreatePage } from "@/features/admin/students/pages/StudentCreatePage";
+import { StudentEditPage } from "@/features/admin/students/pages/StudentEditPage";
+import { StudentListPage } from "@/features/admin/students/pages/StudentListPage";
 
 const adminModuleRoutes = [
   {
@@ -64,7 +67,19 @@ export const adminRoutes = [
         index: true,
         element: <AdminDashboardPage />,
       },
-      ...adminModuleRoutes.map((route) => ({
+      {
+        path: "students",
+        element: <StudentListPage />,
+      },
+      {
+        path: "students/create",
+        element: <StudentCreatePage />,
+      },
+      {
+        path: "students/:studentId/edit",
+        element: <StudentEditPage />,
+      },
+      ...adminModuleRoutes.filter((route) => route.path !== "students").map((route) => ({
         path: route.path,
         element: (
           <AdminPlaceholderPage
