@@ -18,11 +18,13 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
         public CreateStudentCommandHandler(
                 IStudentRepository studentRepository,
                 IUserRepository userRepository,
-                IRoleRepository roleRepository)
+                IRoleRepository roleRepository,
+                IPasswordService passwordService)
         {
             _studentRepository = studentRepository;
             _userRepository = userRepository;
             _roleRepository = roleRepository;
+            _passwordService = passwordService;
         }
 
         public async Task<Result<StudentResponse>> Handle(CreateStudentCommand request, CancellationToken ct)

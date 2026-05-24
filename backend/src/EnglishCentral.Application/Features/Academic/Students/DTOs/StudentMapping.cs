@@ -24,7 +24,7 @@ namespace EnglishCentral.Application.Features.Academic.Students.DTOs
                 new StudentAccount
                 (
                     student.Id,
-                    student.Email,
+                    student.User?.Email,
                     student.IsDeleted
                 )
             );

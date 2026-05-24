@@ -29,14 +29,6 @@ export function PublicLayout() {
   );
 
   useEffect(() => {
-    const isRealExamRoute =
-      isPracticeDetailRoute &&
-      new URLSearchParams(location.search).get("mode") === "real";
-
-    setPublicChromeVisible(!isRealExamRoute);
-  }, [isPracticeDetailRoute, location.search]);
-
-  useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 420);
 
     handleScroll();
@@ -46,6 +38,8 @@ export function PublicLayout() {
   }, []);
 
   const shouldShowPublicFooter =
+    isPublicChromeVisible && !isPracticeDetailRoute;
+  const shouldShowFloatingContact =
     isPublicChromeVisible && !isPracticeDetailRoute;
   const scrollToTop = () => {
     const startY = window.scrollY;
@@ -84,7 +78,7 @@ export function PublicLayout() {
 
       {shouldShowPublicFooter && <PublicFooter />}
 
-      {isPublicChromeVisible && (
+      {shouldShowFloatingContact && (
         <div className={styles.floatingContact} aria-label="Kênh liên hệ nhanh">
           <a
             className={styles.zaloButton}

@@ -1,0 +1,135 @@
+.field {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+
+  > span {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+  }
+}
+
+.editor {
+  border-radius: 8px;
+  background: #ffffff;
+
+  :global(.ql-toolbar.ql-snow) {
+    min-height: 42px;
+    padding: 6px 8px;
+    border-color: #dbe5f0;
+    border-radius: 8px 8px 0 0;
+    background: #ffffff;
+    font-family: inherit;
+  }
+
+  :global(.ql-container.ql-snow) {
+    min-height: inherit;
+    border-color: #dbe5f0;
+    border-radius: 0 0 8px 8px;
+    background: #f8fafc;
+    font-family: inherit;
+    font-size: 14px;
+  }
+
+  :global(.ql-editor) {
+    min-height: inherit;
+    padding: 12px;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+
+  :global(.ql-font-arial) {
+    font-family: Arial, sans-serif;
+  }
+
+  :global(.ql-font-times-new-roman) {
+    font-family: "Times New Roman", Times, serif;
+  }
+
+  :global(.ql-font-inter) {
+    font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  }
+
+  :global(.ql-font-georgia) {
+    font-family: Georgia, serif;
+  }
+
+  :global(.ql-font-courier-new) {
+    font-family: "Courier New", monospace;
+  }
+
+  :global(.ql-picker.ql-font .ql-picker-label[data-value="arial"]::before),
+  :global(.ql-picker.ql-font .ql-picker-item[data-value="arial"]::before) {
+    content: "Arial";
+    font-family: Arial, sans-serif;
+  }
+
+  :global(.ql-picker.ql-font .ql-picker-label[data-value="times-new-roman"]::before),
+  :global(.ql-picker.ql-font .ql-picker-item[data-value="times-new-roman"]::before) {
+    content: "Times New Roman";
+    font-family: "Times New Roman", Times, serif;
+  }
+
+  :global(.ql-picker.ql-font .ql-picker-label[data-value="inter"]::before),
+  :global(.ql-picker.ql-font .ql-picker-item[data-value="inter"]::before) {
+    content: "Inter";
+    font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  }
+
+  :global(.ql-picker.ql-font .ql-picker-label[data-value="georgia"]::before),
+  :global(.ql-picker.ql-font .ql-picker-item[data-value="georgia"]::before) {
+    content: "Georgia";
+    font-family: Georgia, serif;
+  }
+
+  :global(.ql-picker.ql-font .ql-picker-label[data-value="courier-new"]::before),
+  :global(.ql-picker.ql-font .ql-picker-item[data-value="courier-new"]::before) {
+    content: "Courier New";
+    font-family: "Courier New", monospace;
+  }
+
+  :global(.ql-editor.ql-blank::before) {
+    color: #94a3b8;
+    font-style: normal;
+  }
+
+  :global(.ql-picker),
+  :global(.ql-stroke) {
+    color: #475569;
+    stroke: #475569;
+  }
+
+  :global(.ql-toolbar .ql-picker.ql-font) {
+    width: 152px;
+  }
+
+  :global(.ql-picker.ql-font .ql-picker-label),
+  :global(.ql-picker.ql-font .ql-picker-item) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :global(.ql-picker.ql-font .ql-picker-options) {
+    min-width: 178px;
+  }
+
+  :global(.ql-fill) {
+    fill: #475569;
+  }
+
+  &:focus-within {
+    :global(.ql-toolbar.ql-snow),
+    :global(.ql-container.ql-snow) {
+      border-color: #93c5fd;
+    }
+
+    :global(.ql-container.ql-snow) {
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+  }
+}

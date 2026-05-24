@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EnglishCentral.API.Controllers.Admin
 {
-    [Route("api/[controller]")]
+    [Route("api/admin/academic/students")]
     [ApiController]
     public class StudentsController : AdminBaseController
     {

@@ -6,6 +6,10 @@ import { CourseFormPage } from "@/features/admin/courses/pages/CourseFormPage";
 import { CourseListPage } from "@/features/admin/courses/pages/CourseListPage";
 import { AdminDashboardPage } from "@/features/admin/dashboard/pages/AdminDashboardPage";
 import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePage";
+import { IeltsHubPage } from "@/features/admin/practice-bank/ielts/pages/IeltsHubPage";
+import { IeltsReadingCreatePage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingCreatePage";
+import { IeltsReadingListPage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingListPage";
+import { IeltsReadingViewPage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingViewPage";
 import { AdminSchedulePage } from "@/features/admin/schedule/pages/AdminSchedulePage";
 import { AdminSettingsPage } from "@/features/admin/settings/pages/AdminSettingsPage";
 import { AdminPlaceholderPage } from "@/features/admin/shared/pages/AdminPlaceholderPage";
@@ -92,10 +96,39 @@ export const adminRoutes = [
       },
       {
         path: "practice-bank/ielts",
+        element: <IeltsHubPage />,
+      },
+      {
+        path: "practice-bank/ielts/reading",
+        element: <IeltsReadingListPage />,
+      },
+      {
+        path: "practice-bank/ielts/reading/create",
+        element: <IeltsReadingCreatePage />,
+      },
+      {
+        path: "practice-bank/ielts/reading/:recordId/view",
+        element: <IeltsReadingViewPage />,
+      },
+      {
+        path: "practice-bank/ielts/reading/:recordId/edit",
+        element: <IeltsReadingCreatePage />,
+      },
+      {
+        path: "practice-bank/ielts/writing",
         element: (
           <AdminPlaceholderPage
-            title="IELTS Practice Bank"
-            description="Quản lý ngân hàng bài tập IELTS theo kỹ năng, bộ đề, câu hỏi và đáp án."
+            title="IELTS Writing"
+            description="Quản lý đề IELTS Writing theo Task 1, Task 2, rubric và sample answers."
+          />
+        ),
+      },
+      {
+        path: "practice-bank/ielts/listening",
+        element: (
+          <AdminPlaceholderPage
+            title="IELTS Listening"
+            description="Quản lý đề IELTS Listening theo audio sections, transcript, questions và đáp án."
           />
         ),
       },

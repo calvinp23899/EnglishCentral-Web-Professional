@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Edit3, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Edit3, Eye, Plus, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { ConfirmModal, Pagination } from "@/components/ui";
@@ -30,6 +30,7 @@ type Props = {
   searchKeys: string[];
   statusOptions: StatusOption[];
   title: string;
+  viewPath?: (record: CrudRecord) => string;
 };
 
 type SortDirection = "asc" | "desc";
@@ -51,6 +52,7 @@ export function AdminCrudListPage({
   searchKeys,
   statusOptions,
   title,
+  viewPath,
 }: Props) {
   const firstSortableColumn = columns.find((column) => column.sortable);
   const [records, setRecords] = useState(initialRecords);
@@ -241,6 +243,11 @@ export function AdminCrudListPage({
                     ))}
                     <td>
                       <div className={styles.actions}>
+                        {viewPath && (
+                          <Link to={viewPath(record)} aria-label="Xem">
+                            <Eye aria-hidden="true" size={16} />
+                          </Link>
+                        )}
                         <Link to={editPath(record)} aria-label="Sửa">
                           <Edit3 aria-hidden="true" size={16} />
                         </Link>

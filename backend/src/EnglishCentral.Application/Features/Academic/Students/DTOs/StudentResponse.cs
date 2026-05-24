@@ -23,6 +23,6 @@ namespace EnglishCentral.Application.Features.Academic.Students.DTOs
     public record StudentAccount(
         long? AccountId,
         string? AccountEmail,
-        bool? IsActive
+        bool? IsDelete
     );
 }
