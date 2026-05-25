@@ -31,6 +31,7 @@ type TestSetup = {
   durationMinutes: number;
   level: string;
   note: string;
+  numberPassages: number;
   sourceLabel: string;
   status: "draft" | "published";
   subDescriptions: string[];
@@ -45,12 +46,20 @@ type PassageParagraph = {
   label: string;
 };
 
+type QuestionOption = {
+  explanation: string;
+  id: string;
+  isCorrectAnswer: boolean;
+  option: string;
+};
+
 type QuestionItem = {
   correctAnswer: string;
   explanation: string;
   id: string;
   number: number;
   passageRef: string;
+  questionOptions: QuestionOption[];
   text: string;
   wordLimit?: number;
 };
@@ -92,19 +101,22 @@ const questionTypeOptions: Array<{ label: string; value: IELTSReadingQuestionTyp
 ];
 
 const maxReadingQuestions = 40;
+const passageCountOptions = [1, 2, 3];
+const questionTypesWithOptions: IELTSReadingQuestionType[] = [
+  "multiple-choice",
+  "true-false-not-given",
+  "yes-no-not-given",
+];
 
 const defaultSetup: TestSetup = {
   description: "A full IELTS Reading mock test with 3 passages and 40 questions.",
   durationMinutes: 60,
   level: "Academic",
   note: "Original mock dataset for UI development.",
+  numberPassages: 3,
   sourceLabel: "IELTS Academic Reading - Original Mock Test",
   status: "draft",
-  subDescriptions: [
-    "3 reading passages with academic-style topics.",
-    "40 questions across common IELTS Reading question types.",
-    "Designed for timed practice and real exam simulation.",
-  ],
+  subDescriptions: ["3 reading passages with academic-style topics."],
   testCode: "IELTS-RD-001",
   title: "IELTS Reading Full Mock Test",
 };
@@ -116,12 +128,48 @@ const createParagraph = (index: number): PassageParagraph => ({
   label: String.fromCharCode(65 + index),
 });
 
-const createQuestion = (number: number): QuestionItem => ({
+const createQuestionOption = (option: string): QuestionOption => ({
+  explanation: "",
+  id: crypto.randomUUID(),
+  isCorrectAnswer: false,
+  option,
+});
+
+const createQuestionOptions = (type: IELTSReadingQuestionType): QuestionOption[] => {
+  if (type === "true-false-not-given") {
+    return ["True", "False", "Not Given"].map(createQuestionOption);
+  }
+
+  if (type === "yes-no-not-given") {
+    return ["Yes", "No", "Not Given"].map(createQuestionOption);
+  }
+
+  if (type === "multiple-choice") {
+    return ["A", "B", "C", "D"].map(createQuestionOption);
+  }
+
+  return [];
+};
+
+const shouldUseQuestionOptions = (type: IELTSReadingQuestionType) =>
+  questionTypesWithOptions.includes(type);
+
+const getCorrectAnswerFromOptions = (questionOptions: QuestionOption[]) =>
+  questionOptions
+    .filter((option) => option.isCorrectAnswer)
+    .map((option) => option.option)
+    .join(", ");
+
+const createQuestion = (
+  number: number,
+  type: IELTSReadingQuestionType = "multiple-choice",
+): QuestionItem => ({
   correctAnswer: "",
   explanation: "",
   id: crypto.randomUUID(),
   number,
   passageRef: "",
+  questionOptions: createQuestionOptions(type),
   text: `Question ${number}`,
 });
 
@@ -131,7 +179,7 @@ const createQuestionGroup = (order: number, questionNumber: number): QuestionGro
     groupLabel: `Group ${order}`,
     instruction: "",
     options: [],
-    questions: [createQuestion(questionNumber)],
+    questions: [createQuestion(questionNumber, "multiple-choice")],
     title: `Questions ${questionNumber}-${questionNumber}`,
     type: "multiple-choice",
   };
@@ -215,6 +263,28 @@ export function IeltsReadingCreatePage() {
         descriptionIndex === index ? value : description,
       ),
     }));
+  };
+
+  const updateNumberPassages = (value: number) => {
+    const nextNumberPassages = Math.min(3, Math.max(1, value));
+    const nextPassages = [...passages];
+
+    while (nextPassages.length < nextNumberPassages) {
+      nextPassages.push(createPassage(nextPassages.length + 1));
+    }
+
+    const visiblePassages = nextPassages.slice(0, nextNumberPassages);
+    const nextActivePassage =
+      visiblePassages.find((passage) => passage.id === activePassageId) ?? visiblePassages[0];
+
+    setSetup((currentSetup) => ({
+      ...currentSetup,
+      numberPassages: nextNumberPassages,
+    }));
+    setPassages(visiblePassages);
+    setActivePassageId(nextActivePassage.id);
+    setActiveGroupId(nextActivePassage.questionGroups[0]?.id ?? "");
+    setGroupEditorOpen(true);
   };
 
   const updatePassage = <Key extends keyof ReadingPassage>(
@@ -379,6 +449,38 @@ export function IeltsReadingCreatePage() {
     );
   };
 
+  const updateQuestionGroupType = (
+    groupId: string,
+    type: IELTSReadingQuestionType,
+  ) => {
+    setPassages((currentPassages) =>
+      currentPassages.map((passage) => ({
+        ...passage,
+        questionGroups: passage.questionGroups.map((group) => {
+          if (group.id !== groupId) {
+            return group;
+          }
+
+          return {
+            ...group,
+            type,
+            questions: group.questions.map((question) => {
+              const questionOptions = shouldUseQuestionOptions(type)
+                ? createQuestionOptions(type)
+                : [];
+
+              return {
+                ...question,
+                correctAnswer: "",
+                questionOptions,
+              };
+            }),
+          };
+        }),
+      })),
+    );
+  };
+
   const removeQuestionGroup = (groupId: string) => {
     if (!activePassage) {
       return;
@@ -425,7 +527,7 @@ export function IeltsReadingCreatePage() {
             questions: [
               ...group.questions,
               {
-                ...createQuestion(nextQuestionNumber),
+                ...createQuestion(nextQuestionNumber, group.type),
                 id: nextQuestionId,
               },
             ],
@@ -486,6 +588,109 @@ export function IeltsReadingCreatePage() {
     );
   };
 
+  const addQuestionOption = (groupId: string, questionId: string) => {
+    setPassages((currentPassages) =>
+      currentPassages.map((passage) => ({
+        ...passage,
+        questionGroups: passage.questionGroups.map((group) =>
+          group.id === groupId
+            ? {
+                ...group,
+                questions: group.questions.map((question) =>
+                  question.id === questionId
+                    ? {
+                        ...question,
+                        questionOptions: [
+                          ...question.questionOptions,
+                          createQuestionOption(
+                            String.fromCharCode(65 + question.questionOptions.length),
+                          ),
+                        ],
+                      }
+                    : question,
+                ),
+              }
+            : group,
+        ),
+      })),
+    );
+  };
+
+  const updateQuestionOption = (
+    groupId: string,
+    questionId: string,
+    optionId: string,
+    key: keyof QuestionOption,
+    value: string | boolean,
+  ) => {
+    setPassages((currentPassages) =>
+      currentPassages.map((passage) => ({
+        ...passage,
+        questionGroups: passage.questionGroups.map((group) =>
+          group.id === groupId
+            ? {
+                ...group,
+                questions: group.questions.map((question) => {
+                  if (question.id !== questionId) {
+                    return question;
+                  }
+
+                  const questionOptions = question.questionOptions.map((option) =>
+                    option.id === optionId
+                      ? {
+                          ...option,
+                          [key]: value,
+                        }
+                      : option,
+                  );
+
+                  return {
+                    ...question,
+                    correctAnswer: getCorrectAnswerFromOptions(questionOptions),
+                    questionOptions,
+                  };
+                }),
+              }
+            : group,
+        ),
+      })),
+    );
+  };
+
+  const removeQuestionOption = (
+    groupId: string,
+    questionId: string,
+    optionId: string,
+  ) => {
+    setPassages((currentPassages) =>
+      currentPassages.map((passage) => ({
+        ...passage,
+        questionGroups: passage.questionGroups.map((group) =>
+          group.id === groupId
+            ? {
+                ...group,
+                questions: group.questions.map((question) => {
+                  if (question.id !== questionId) {
+                    return question;
+                  }
+
+                  const questionOptions = question.questionOptions.filter(
+                    (option) => option.id !== optionId,
+                  );
+
+                  return {
+                    ...question,
+                    correctAnswer: getCorrectAnswerFromOptions(questionOptions),
+                    questionOptions,
+                  };
+                }),
+              }
+            : group,
+        ),
+      })),
+    );
+  };
+
   const goToStep = (step: number) => {
     if (step === 3) {
       const firstPassage = passages[0];
@@ -520,7 +725,15 @@ export function IeltsReadingCreatePage() {
                   <span>Test setup</span>
                   <h2>Thông tin đề</h2>
                 </div>
-                <strong>{setup.status === "published" ? "Published" : "Draft"}</strong>
+                <strong
+                  className={
+                    setup.status === "published"
+                      ? styles.publishedStatus
+                      : styles.draftStatus
+                  }
+                >
+                  {setup.status === "published" ? "Published" : "Draft"}
+                </strong>
               </div>
 
               <div className={styles.formGrid}>
@@ -581,6 +794,19 @@ export function IeltsReadingCreatePage() {
                     <option value="published">Published</option>
                   </select>
                 </label>
+                <label>
+                  <span>NumberPassage</span>
+                  <select
+                    value={setup.numberPassages}
+                    onChange={(event) => updateNumberPassages(Number(event.target.value))}
+                  >
+                    {passageCountOptions.map((passageCount) => (
+                      <option key={passageCount} value={passageCount}>
+                        {passageCount}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <label className={styles.fullField}>
                   <span>Description</span>
                   <textarea
@@ -589,22 +815,14 @@ export function IeltsReadingCreatePage() {
                     onChange={(event) => updateSetup("description", event.target.value)}
                   />
                 </label>
-                <div className={styles.fullField}>
-                  <div className={styles.subDescriptionGrid}>
-                    {setup.subDescriptions.map((subDescription, index) => (
-                      <label key={`sub-description-${index + 1}`}>
-                        <span>{`Sub description ${index + 1}`}</span>
-                        <textarea
-                          rows={3}
-                          value={subDescription}
-                          onChange={(event) =>
-                            updateSubDescription(index, event.target.value)
-                          }
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                <label className={styles.fullField}>
+                  <span>Sub description</span>
+                  <textarea
+                    rows={3}
+                    value={setup.subDescriptions[0] ?? ""}
+                    onChange={(event) => updateSubDescription(0, event.target.value)}
+                  />
+                </label>
                 <label className={styles.fullField}>
                   <span>Note</span>
                   <textarea
@@ -859,13 +1077,12 @@ export function IeltsReadingCreatePage() {
                             />
                           </label>
                           <label>
-                            <span>Question type</span>
+                            <span>Group Question Type</span>
                             <select
                               value={activeGroup.type}
                               onChange={(event) =>
-                                updateQuestionGroup(
+                                updateQuestionGroupType(
                                   activeGroup.id,
-                                  "type",
                                   event.target.value as IELTSReadingQuestionType,
                                 )
                               }
@@ -877,20 +1094,16 @@ export function IeltsReadingCreatePage() {
                               ))}
                             </select>
                           </label>
-                          <label className={styles.fullField}>
-                            <span>Instruction</span>
-                            <textarea
-                              rows={4}
+                          <div className={styles.fullField}>
+                            <RichTextEditor
+                              label="Instruction"
+                              minHeight={140}
                               value={activeGroup.instruction}
-                              onChange={(event) =>
-                                updateQuestionGroup(
-                                  activeGroup.id,
-                                  "instruction",
-                                  event.target.value,
-                                )
+                              onChange={(value) =>
+                                updateQuestionGroup(activeGroup.id, "instruction", value)
                               }
                             />
-                          </label>
+                          </div>
                         </div>
                       )}
 
@@ -909,6 +1122,7 @@ export function IeltsReadingCreatePage() {
                       <div className={styles.questionList}>
                         {activeGroup.questions.map((question) => {
                           const isQuestionOpen = Boolean(openQuestionIds[question.id]);
+                          const questionHasOptions = shouldUseQuestionOptions(activeGroup.type);
 
                           return (
                             <article className={styles.questionCard} key={question.id}>
@@ -960,21 +1174,6 @@ export function IeltsReadingCreatePage() {
                                         }
                                       />
                                     </label>
-                                    <label>
-                                      <span>Passage ref</span>
-                                      <input
-                                        placeholder="Paragraph A"
-                                        value={question.passageRef}
-                                        onChange={(event) =>
-                                          updateQuestionItem(
-                                            activeGroup.id,
-                                            question.id,
-                                            "passageRef",
-                                            event.target.value,
-                                          )
-                                        }
-                                      />
-                                    </label>
                                   </div>
                                   <label>
                                     <span>Question text</span>
@@ -991,35 +1190,128 @@ export function IeltsReadingCreatePage() {
                                       }
                                     />
                                   </label>
-                                  <label>
-                                    <span>Correct answer</span>
-                                    <input
-                                      value={question.correctAnswer}
-                                      onChange={(event) =>
-                                        updateQuestionItem(
-                                          activeGroup.id,
-                                          question.id,
-                                          "correctAnswer",
-                                          event.target.value,
-                                        )
-                                      }
-                                    />
-                                  </label>
-                                  <label>
-                                    <span>Explanation</span>
-                                    <textarea
-                                      rows={2}
-                                      value={question.explanation}
-                                      onChange={(event) =>
-                                        updateQuestionItem(
-                                          activeGroup.id,
-                                          question.id,
-                                          "explanation",
-                                          event.target.value,
-                                        )
-                                      }
-                                    />
-                                  </label>
+                                  {questionHasOptions ? (
+                                    <div className={styles.questionOptions}>
+                                      <div className={styles.questionOptionsHeader}>
+                                        <strong>QuestionOptions</strong>
+                                        {activeGroup.type === "multiple-choice" && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              addQuestionOption(activeGroup.id, question.id)
+                                            }
+                                          >
+                                            <Plus aria-hidden="true" size={15} />
+                                            Add option
+                                          </button>
+                                        )}
+                                      </div>
+
+                                      {question.questionOptions.map((questionOption) => (
+                                        <div
+                                          className={styles.questionOptionCard}
+                                          key={questionOption.id}
+                                        >
+                                          <label>
+                                            <span>Option</span>
+                                            <input
+                                              value={questionOption.option}
+                                              onChange={(event) =>
+                                                updateQuestionOption(
+                                                  activeGroup.id,
+                                                  question.id,
+                                                  questionOption.id,
+                                                  "option",
+                                                  event.target.value,
+                                                )
+                                              }
+                                            />
+                                          </label>
+                                          <label className={styles.checkboxField}>
+                                            <input
+                                              checked={questionOption.isCorrectAnswer}
+                                              type="checkbox"
+                                              onChange={(event) =>
+                                                updateQuestionOption(
+                                                  activeGroup.id,
+                                                  question.id,
+                                                  questionOption.id,
+                                                  "isCorrectAnswer",
+                                                  event.target.checked,
+                                                )
+                                              }
+                                            />
+                                            <span>IsCorrectAnswer</span>
+                                          </label>
+                                          <label>
+                                            <span>Explanation</span>
+                                            <textarea
+                                              rows={2}
+                                              value={questionOption.explanation}
+                                              onChange={(event) =>
+                                                updateQuestionOption(
+                                                  activeGroup.id,
+                                                  question.id,
+                                                  questionOption.id,
+                                                  "explanation",
+                                                  event.target.value,
+                                                )
+                                              }
+                                            />
+                                          </label>
+                                          {activeGroup.type === "multiple-choice" &&
+                                            question.questionOptions.length > 2 && (
+                                              <button
+                                                aria-label="Remove option"
+                                                className={styles.iconButton}
+                                                type="button"
+                                                onClick={() =>
+                                                  removeQuestionOption(
+                                                    activeGroup.id,
+                                                    question.id,
+                                                    questionOption.id,
+                                                  )
+                                                }
+                                              >
+                                                <Trash2 aria-hidden="true" size={16} />
+                                              </button>
+                                            )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <label>
+                                        <span>Correct answer</span>
+                                        <input
+                                          value={question.correctAnswer}
+                                          onChange={(event) =>
+                                            updateQuestionItem(
+                                              activeGroup.id,
+                                              question.id,
+                                              "correctAnswer",
+                                              event.target.value,
+                                            )
+                                          }
+                                        />
+                                      </label>
+                                      <label>
+                                        <span>Explanation</span>
+                                        <textarea
+                                          rows={2}
+                                          value={question.explanation}
+                                          onChange={(event) =>
+                                            updateQuestionItem(
+                                              activeGroup.id,
+                                              question.id,
+                                              "explanation",
+                                              event.target.value,
+                                            )
+                                          }
+                                        />
+                                      </label>
+                                    </>
+                                  )}
                                 </>
                               )}
                             </article>

@@ -14,7 +14,10 @@ import {
   LogOut,
   MessageSquareText,
   PanelLeft,
+  ScrollText,
   Settings,
+  ShieldCheck,
+  SlidersHorizontal,
   UserRound,
   UsersRound,
 } from "lucide-react";
@@ -55,9 +58,12 @@ const navigationItems: NavigationItem[] = [
 const breadcrumbLabels: Record<string, string> = {
   admin: "Dashboard",
   classes: "Lớp học",
+  config: "Cấu Hình",
   courses: "Khóa học",
+  logs: "Nhật Ký Hệ Thống",
   messages: "Tin nhắn",
   ielts: "IELTS",
+  permissions: "Phân Quyền",
   "practice-bank": "Ngân hàng bài tập",
   profile: "Hồ sơ",
   reports: "Báo cáo",
@@ -94,10 +100,14 @@ export function AdminLayout() {
   const location = useLocation();
   const breadcrumbItems = getBreadcrumbItems(location.pathname);
   const [isProfileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [openNavGroups, setOpenNavGroups] = useState<Record<string, boolean>>({});
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
+  const isSettingsActive = location.pathname.startsWith("/admin/settings");
+  const isSettingsOpen = openNavGroups["/admin/settings"] ?? isSettingsActive;
 
   useEffect(() => {
-    if (!isProfileMenuOpen) {
+    if (!isProfileMenuOpen && !isSettingsOpen) {
       return;
     }
 
@@ -105,11 +115,22 @@ export function AdminLayout() {
       if (!profileMenuRef.current?.contains(event.target as Node)) {
         setProfileMenuOpen(false);
       }
+
+      if (!settingsMenuRef.current?.contains(event.target as Node)) {
+        setOpenNavGroups((currentGroups) => ({
+          ...currentGroups,
+          "/admin/settings": false,
+        }));
+      }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setProfileMenuOpen(false);
+        setOpenNavGroups((currentGroups) => ({
+          ...currentGroups,
+          "/admin/settings": false,
+        }));
       }
     };
 
@@ -120,7 +141,7 @@ export function AdminLayout() {
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isProfileMenuOpen]);
+  }, [isProfileMenuOpen, isSettingsOpen]);
 
   return (
     <div className={styles.layout}>
@@ -136,21 +157,45 @@ export function AdminLayout() {
         <nav className={styles.nav} aria-label="Admin navigation">
           {navigationItems.map((item) => {
             const Icon = item.icon;
+            const isGroupActive = location.pathname.startsWith(item.path);
+            const isGroupOpen = openNavGroups[item.path] ?? isGroupActive;
 
             return (
               <div className={styles.navGroup} key={item.path}>
-                <NavLink
-                  className={({ isActive }) =>
-                    `${styles.navItem} ${isActive ? styles.active : ""}`.trim()
-                  }
-                  end={item.path === "/admin"}
-                  to={item.path}
-                >
-                  <Icon aria-hidden="true" size={18} />
-                  <span>{item.label}</span>
-                </NavLink>
+                {item.children ? (
+                  <button
+                    className={`${styles.navItem} ${isGroupActive ? styles.active : ""}`.trim()}
+                    type="button"
+                    aria-expanded={isGroupOpen}
+                    onClick={() =>
+                      setOpenNavGroups((currentGroups) => ({
+                        ...currentGroups,
+                        [item.path]: !isGroupOpen,
+                      }))
+                    }
+                  >
+                    <Icon aria-hidden="true" size={18} />
+                    <span>{item.label}</span>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className={styles.navToggleIcon}
+                      size={15}
+                    />
+                  </button>
+                ) : (
+                  <NavLink
+                    className={({ isActive }) =>
+                      `${styles.navItem} ${isActive ? styles.active : ""}`.trim()
+                    }
+                    end={item.path === "/admin"}
+                    to={item.path}
+                  >
+                    <Icon aria-hidden="true" size={18} />
+                    <span>{item.label}</span>
+                  </NavLink>
+                )}
 
-                {item.children && (
+                {item.children && isGroupOpen && (
                   <div className={styles.subNav}>
                     {item.children.map((child) => (
                       <NavLink
@@ -171,15 +216,80 @@ export function AdminLayout() {
         </nav>
 
         <nav className={styles.bottomNav} aria-label="Admin settings">
-          <NavLink
-            className={({ isActive }) =>
-              `${styles.navItem} ${isActive ? styles.active : ""}`.trim()
+          <div className={styles.settingsMenu} ref={settingsMenuRef}>
+          <button
+            className={`${styles.navItem} ${isSettingsActive ? styles.active : ""}`.trim()}
+            type="button"
+            aria-expanded={isSettingsOpen}
+            onClick={() =>
+              setOpenNavGroups((currentGroups) => ({
+                ...currentGroups,
+                "/admin/settings": !isSettingsOpen,
+              }))
             }
-            to="/admin/settings"
           >
             <Settings aria-hidden="true" size={18} />
             <span>Cài đặt</span>
-          </NavLink>
+            <ChevronDown
+              aria-hidden="true"
+              className={styles.navToggleIcon}
+              size={15}
+            />
+          </button>
+
+          {isSettingsOpen && (
+            <div className={styles.settingsDropdown} role="menu">
+              <NavLink
+                className={({ isActive }) =>
+                  `${isActive ? styles.dropdownActive : ""}`.trim()
+                }
+                role="menuitem"
+                to="/admin/settings/permissions"
+                onClick={() =>
+                  setOpenNavGroups((currentGroups) => ({
+                    ...currentGroups,
+                    "/admin/settings": false,
+                  }))
+                }
+              >
+                <ShieldCheck aria-hidden="true" size={16} />
+                Phân Quyền
+              </NavLink>
+              <NavLink
+                className={({ isActive }) =>
+                  `${isActive ? styles.dropdownActive : ""}`.trim()
+                }
+                role="menuitem"
+                to="/admin/settings/config"
+                onClick={() =>
+                  setOpenNavGroups((currentGroups) => ({
+                    ...currentGroups,
+                    "/admin/settings": false,
+                  }))
+                }
+              >
+                <SlidersHorizontal aria-hidden="true" size={16} />
+                Cấu Hình
+              </NavLink>
+              <NavLink
+                className={({ isActive }) =>
+                  `${isActive ? styles.dropdownActive : ""}`.trim()
+                }
+                role="menuitem"
+                to="/admin/settings/logs"
+                onClick={() =>
+                  setOpenNavGroups((currentGroups) => ({
+                    ...currentGroups,
+                    "/admin/settings": false,
+                  }))
+                }
+              >
+                <ScrollText aria-hidden="true" size={16} />
+                Nhật Ký Hệ Thống
+              </NavLink>
+            </div>
+          )}
+          </div>
         </nav>
       </aside>
 
@@ -231,7 +341,7 @@ export function AdminLayout() {
                     <UserRound aria-hidden="true" size={16} />
                     Hồ sơ
                   </Link>
-                  <Link role="menuitem" to="/admin/settings">
+                  <Link role="menuitem" to="/admin/profile/settings">
                     <Settings aria-hidden="true" size={16} />
                     Cài đặt
                   </Link>

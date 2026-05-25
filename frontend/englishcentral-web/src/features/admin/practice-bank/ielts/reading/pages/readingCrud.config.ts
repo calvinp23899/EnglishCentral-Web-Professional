@@ -4,7 +4,7 @@ export const readingRecords: CrudRecord[] = [
   { id: "1", code: "RD-001", title: "Urban Farming", level: "Band 5.5-6.0", passages: 3, questions: 40, createdAt: "2026-05-18", status: "draft" },
   { id: "2", code: "RD-002", title: "The History of Glass", level: "Band 6.0-6.5", passages: 3, questions: 40, createdAt: "2026-05-12", status: "published" },
   { id: "3", code: "RD-003", title: "Ocean Navigation", level: "Band 6.5-7.0", passages: 3, questions: 40, createdAt: "2026-04-28", status: "draft" },
-  { id: "4", code: "RD-004", title: "Artificial Intelligence", level: "Band 7.0+", passages: 3, questions: 40, createdAt: "2026-04-20", status: "archived" },
+  { id: "4", code: "RD-004", title: "Artificial Intelligence", level: "Band 7.0+", passages: 3, questions: 40, createdAt: "2026-04-20", status: "published" },
 ];
 
 export const readingColumns: CrudColumn[] = [
@@ -20,11 +20,9 @@ export const readingColumns: CrudColumn[] = [
 export const readingStatusOptions = [
   { label: "Draft", value: "draft" },
   { label: "Published", value: "published" },
-  { label: "Archived", value: "archived" },
 ];
 
 const statusLabel: Record<string, string> = {
-  archived: "Archived",
   draft: "Draft",
   published: "Published",
 };

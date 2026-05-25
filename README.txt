@@ -206,6 +206,10 @@ dotnet ef database update
 dotnet run
 ```
 
+```
+for migration set up infrastructure is default project
+Add-Migration <MigrationName> -Project EnglishCentral.Infrastructure -StartupProject EnglishCentral.API
+```
 ---
 
 ## Frontend

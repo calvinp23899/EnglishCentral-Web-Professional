@@ -1,3 +1,5 @@
+import { Navigate } from "react-router-dom";
+
 import { AdminLayout } from "@/app/layouts/admin-layout/AdminLayout";
 import { AdminLoginPage } from "@/features/admin/auth/pages/AdminLoginPage/AdminLoginPage";
 import { ClassFormPage } from "@/features/admin/classes/pages/ClassFormPage";
@@ -45,12 +47,6 @@ const adminModuleRoutes = [
       "Track teaching assignments, availability, class load, and coaching quality across programs.",
   },
   {
-    path: "practice-bank",
-    title: "Practice Bank",
-    description:
-      "Organize IELTS, TOEIC, listening, reading, writing, and speaking practice content in one library.",
-  },
-  {
     path: "reports",
     title: "Reports & Analytics",
     description:
@@ -93,6 +89,10 @@ export const adminRoutes = [
       {
         path: "schedule",
         element: <AdminSchedulePage />,
+      },
+      {
+        path: "practice-bank",
+        element: <Navigate to="/admin/practice-bank/ielts" replace />,
       },
       {
         path: "practice-bank/ielts",
@@ -188,11 +188,42 @@ export const adminRoutes = [
       })),
       {
         path: "settings",
-        element: <AdminSettingsPage />,
+        element: <Navigate to="/admin/settings/config" replace />,
+      },
+      {
+        path: "settings/config",
+        element: (
+          <AdminPlaceholderPage
+            title="Cấu Hình"
+            description="Thiết lập cấu hình hệ thống, quy tắc vận hành và các tham số dùng chung."
+          />
+        ),
+      },
+      {
+        path: "settings/permissions",
+        element: (
+          <AdminPlaceholderPage
+            title="Phân Quyền"
+            description="Quản lý vai trò, quyền truy cập và phạm vi thao tác trong hệ thống."
+          />
+        ),
+      },
+      {
+        path: "settings/logs",
+        element: (
+          <AdminPlaceholderPage
+            title="Nhật Ký Hệ Thống"
+            description="Theo dõi lịch sử đăng nhập, thao tác quản trị và các thay đổi dữ liệu quan trọng."
+          />
+        ),
       },
       {
         path: "profile",
         element: <AdminProfilePage />,
+      },
+      {
+        path: "profile/settings",
+        element: <AdminSettingsPage />,
       },
     ],
   },

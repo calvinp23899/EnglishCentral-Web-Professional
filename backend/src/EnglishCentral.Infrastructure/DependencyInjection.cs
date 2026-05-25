@@ -1,10 +1,12 @@
 using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Academic;
+using EnglishCentral.Application.Interfaces.Academic.ITeacher;
 using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Infrastructure.Persistence;
 using EnglishCentral.Infrastructure.Persistence.Context;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Academic;
+using EnglishCentral.Infrastructure.Persistence.Repositories.Academic.TeacherRepo;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Identity;
 using EnglishCentral.Infrastructure.Services.Identity;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
@@ -55,6 +57,7 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IStudentRepository, StudentRepository>();
+            services.AddScoped<ITeacherRepository, TeacherRepository>();
             #endregion
 
             #region JWT Setting

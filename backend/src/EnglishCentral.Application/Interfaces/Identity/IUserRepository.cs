@@ -8,6 +8,5 @@ namespace EnglishCentral.Application.Interfaces.Identity
         Task<bool> IsEmailExistsAsync(string email, CancellationToken ct = default);
         Task<User?> GetByPublicIdAsync(Guid publicId, CancellationToken ct = default);
         Task<User?> GetByIdWithRolesAsync(long id, CancellationToken ct = default);
-        Task<User?> GetByIdAsync(long id, CancellationToken ct = default);
     }
 }

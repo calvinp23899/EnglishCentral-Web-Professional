@@ -42,6 +42,17 @@ const formatDate = (value: string | number) =>
     year: "numeric",
   }).format(new Date(String(value)));
 
+const getStatusBadgeClassName = (status: string | number) => {
+  const statusClassName =
+    status === "published"
+      ? styles.statusBadgePublished
+      : status === "draft"
+        ? styles.statusBadgeDraft
+        : "";
+
+  return `${styles.statusBadge} ${statusClassName}`.trim();
+};
+
 export function AdminCrudListPage({
   columns,
   createPath,
@@ -229,7 +240,7 @@ export function AdminCrudListPage({
                     {columns.map((column) => (
                       <td key={column.key}>
                         {column.key === "status" ? (
-                          <span className={styles.statusBadge}>
+                          <span className={getStatusBadgeClassName(record[column.key])}>
                             {column.render?.(record) ?? record[column.key]}
                           </span>
                         ) : column.key === dateKey ? (

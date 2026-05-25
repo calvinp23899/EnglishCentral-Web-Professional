@@ -199,14 +199,22 @@
   min-height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.statusBadgeDraft {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.statusBadgePublished {
+  background: #ccfbf1;
+  color: #0f766e;
 }
 
 .actions {
