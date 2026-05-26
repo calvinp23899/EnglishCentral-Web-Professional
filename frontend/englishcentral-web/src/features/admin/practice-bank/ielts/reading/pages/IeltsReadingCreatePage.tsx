@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { RichTextEditor } from "@/components/ui";
+import { RichTextEditor, toastDanger, toastInfo, toastSuccess, toastWarning } from "@/components/ui";
 import type {
   IELTSReadingOption,
   IELTSReadingQuestionType,
@@ -341,8 +341,9 @@ export function IeltsReadingCreatePage() {
               ],
             }
           : passage,
-      ),
+        ),
     );
+    toastInfo("Đã thêm paragraph.");
   };
 
   const removeParagraph = (passageId: string, paragraphId: string) => {
@@ -354,8 +355,9 @@ export function IeltsReadingCreatePage() {
               paragraphs: passage.paragraphs.filter((paragraph) => paragraph.id !== paragraphId),
             }
           : passage,
-      ),
+        ),
     );
+    toastDanger("Đã xóa paragraph.");
   };
 
   const updatePassageContent = (passageId: string, value: string) => {
@@ -426,7 +428,11 @@ export function IeltsReadingCreatePage() {
     if (nextGroupId) {
       setActiveGroupId(nextGroupId);
       setGroupEditorOpen(true);
+      toastInfo("Đã thêm question group.");
+      return;
     }
+
+    toastWarning("Đã đạt giới hạn số câu hỏi.");
   };
 
   const updateQuestionGroup = <Key extends keyof QuestionGroup>(
@@ -501,6 +507,7 @@ export function IeltsReadingCreatePage() {
         };
       }),
     );
+    toastDanger("Đã xóa question group.");
   };
 
   const addQuestion = (groupId: string) => {
@@ -541,7 +548,11 @@ export function IeltsReadingCreatePage() {
         ...currentOpenIds,
         [nextQuestionId]: true,
       }));
+      toastInfo("Đã thêm question.");
+      return;
     }
+
+    toastWarning("Đã đạt giới hạn 40 câu hỏi.");
   };
 
   const updateQuestionItem = (
@@ -586,6 +597,7 @@ export function IeltsReadingCreatePage() {
         ),
       })),
     );
+    toastDanger("Đã xóa question.");
   };
 
   const addQuestionOption = (groupId: string, questionId: string) => {
@@ -614,6 +626,7 @@ export function IeltsReadingCreatePage() {
         ),
       })),
     );
+    toastInfo("Đã thêm option.");
   };
 
   const updateQuestionOption = (
@@ -689,6 +702,7 @@ export function IeltsReadingCreatePage() {
         ),
       })),
     );
+    toastDanger("Đã xóa option.");
   };
 
   const goToStep = (step: number) => {
@@ -701,6 +715,15 @@ export function IeltsReadingCreatePage() {
     }
 
     setCurrentStep(step);
+  };
+
+  const handlePrimaryAction = () => {
+    if (currentStep === 3) {
+      toastSuccess("Lưu bản nháp IELTS Reading thành công.");
+      return;
+    }
+
+    goToStep(currentStep + 1);
   };
 
   return (
@@ -1335,7 +1358,7 @@ export function IeltsReadingCreatePage() {
             </button>
             <button
               type="button"
-              onClick={() => goToStep(Math.min(3, currentStep + 1))}
+              onClick={handlePrimaryAction}
             >
               {currentStep === 3 ? "Lưu bản nháp" : "Tiếp tục"}
               <ChevronRight aria-hidden="true" size={16} />

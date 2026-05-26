@@ -14,6 +14,7 @@ export function TeacherListPage() {
       searchKeys={["code", "fullName", "email", "phone", "specialty"]}
       statusOptions={teacherStatusOptions}
       title="Danh sách giáo viên"
+      viewPath={(record) => `/admin/teachers/${record.id}/view`}
     />
   );
 }

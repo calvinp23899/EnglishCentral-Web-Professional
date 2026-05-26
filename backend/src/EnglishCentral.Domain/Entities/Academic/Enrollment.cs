@@ -9,7 +9,13 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public long ClassId { get; set; }
 
+        public string EnrollmentCode { get; set; } = default!;
+
         public DateTimeOffset EnrolledAt { get; set; } = DateTimeOffset.UtcNow;
+
+        public DateOnly? StartDate { get; set; }
+
+        public DateOnly? EndDate { get; set; }
 
         public EnrollmentStatus Status { get; set; } = EnrollmentStatus.Active;
 
@@ -18,6 +24,16 @@ namespace EnglishCentral.Domain.Entities.Academic
         public decimal DiscountAmount { get; set; }
 
         public decimal FinalAmount { get; set; }
+
+        public decimal PaidAmount { get; set; }
+
+        public decimal OutstandingAmount { get; set; }
+
+        public string? CancellationReason { get; set; }
+
+        public DateTimeOffset? CancelledAt { get; set; }
+
+        public long? CancelledBy { get; set; }
 
         public string? Notes { get; set; }
 

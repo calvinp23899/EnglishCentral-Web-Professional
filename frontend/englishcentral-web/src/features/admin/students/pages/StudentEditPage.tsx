@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, Save, UserRoundPen } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
+import { toastSuccess } from "@/components/ui";
 import {
   genderLabels,
   statusLabels,
@@ -64,6 +65,7 @@ export function StudentEditPage() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    toastSuccess("Lưu thay đổi học viên thành công.");
     navigate("/admin/students");
   };
 

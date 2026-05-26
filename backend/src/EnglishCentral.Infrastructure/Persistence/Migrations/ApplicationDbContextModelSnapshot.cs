@@ -106,6 +106,10 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.Property<long?>("DeletedBy")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("AbsenceReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -115,6 +119,12 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("PublicId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("RecordedBy")
+                        .HasColumnType("bigint");
 
                     b.Property<long>("SessionId")
                         .HasColumnType("bigint");
@@ -165,6 +175,12 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CompletedSessions")
+                        .HasColumnType("integer");
+
                     b.Property<long>("CourseId")
                         .HasColumnType("bigint");
 
@@ -195,8 +211,14 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<DateTimeOffset?>("OpenedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("PublicId")
                         .HasColumnType("uuid");
+
+                    b.Property<long?>("RoomId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
@@ -206,6 +228,13 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
 
                     b.Property<long>("TeacherId")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("TotalSessions")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TuitionFeeSnapshot")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -225,6 +254,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.HasIndex("PublicId")
                         .IsUnique();
 
+                    b.HasIndex("RoomId");
+
                     b.HasIndex("Status");
 
                     b.HasIndex("TeacherId");
@@ -242,6 +273,10 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
 
                     b.Property<long>("ClassId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -266,6 +301,12 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
 
                     b.Property<TimeOnly>("EndTime")
                         .HasColumnType("time without time zone");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsPayrollLocked")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -345,6 +386,12 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("SubstituteTeacherId")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("TeacherId")
                         .HasColumnType("bigint");
 
@@ -364,6 +411,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.HasIndex("RoomId");
 
                     b.HasIndex("SessionDate");
+
+                    b.HasIndex("SubstituteTeacherId");
 
                     b.HasIndex("TeacherId");
 
@@ -401,6 +450,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.Property<long?>("DeletedBy")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
@@ -432,6 +484,12 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("PublicId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("SessionDurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalSessions")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("TuitionFee")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -448,6 +506,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("CourseCategoryId");
+
+                    b.HasIndex("DisplayOrder");
 
                     b.HasIndex("Level");
 
@@ -530,6 +590,16 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.Property<long>("ClassId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CancelledBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -546,6 +616,14 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("EnrollmentCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<DateTimeOffset>("EnrolledAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -560,8 +638,19 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<decimal>("OutstandingAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<Guid>("PublicId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -582,6 +671,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClassId");
+
+                    b.HasIndex("EnrollmentCode")
+                        .IsUnique();
 
                     b.HasIndex("PublicId")
                         .IsUnique();
@@ -1216,9 +1308,14 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("AcademicTerm");
+                    b.HasOne("EnglishCentral.Domain.Entities.Academic.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Course");
+
+                    b.Navigation("Room");
 
                     b.Navigation("Teacher");
                 });
@@ -1248,6 +1345,11 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("EnglishCentral.Domain.Entities.Academic.Teacher", "SubstituteTeacher")
+                        .WithMany()
+                        .HasForeignKey("SubstituteTeacherId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("EnglishCentral.Domain.Entities.Academic.Teacher", "Teacher")
                         .WithMany("Sessions")
                         .HasForeignKey("TeacherId")
@@ -1257,6 +1359,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Room");
+
+                    b.Navigation("SubstituteTeacher");
 
                     b.Navigation("Teacher");
                 });

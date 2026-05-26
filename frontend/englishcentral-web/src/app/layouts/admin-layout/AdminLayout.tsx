@@ -26,14 +26,22 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import styles from "./AdminLayout.module.scss";
 
 type NavigationItem = {
-  children?: Array<{
-    label: string;
-    path: string;
-  }>;
+  children?: NavigationChild[];
   icon: LucideIcon;
   label: string;
   path: string;
 };
+
+type NavigationChild =
+  | {
+      label: string;
+      path: string;
+      type?: "item";
+    }
+  | {
+      label: string;
+      type: "section";
+    };
 
 const navigationItems: NavigationItem[] = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
@@ -51,6 +59,18 @@ const navigationItems: NavigationItem[] = [
       { label: "TOEIC", path: "/admin/practice-bank/toeic" },
     ],
   },
+  {
+    label: "Nội Dung Quản Lý",
+    path: "/admin/content",
+    icon: ScrollText,
+    children: [
+      { label: "Components", type: "section" },
+      { label: "Footer", path: "/admin/content/components/footer" },
+      { label: "Slider", path: "/admin/content/components/slider" },
+      { label: "Navbar", path: "/admin/content/components/navbar" },
+      { label: "Dropdown", path: "/admin/content/components/dropdown" },
+    ],
+  },
   { label: "Báo cáo", path: "/admin/reports", icon: BarChart3 },
   { label: "Tin nhắn", path: "/admin/messages", icon: MessageSquareText },
 ];
@@ -58,10 +78,15 @@ const navigationItems: NavigationItem[] = [
 const breadcrumbLabels: Record<string, string> = {
   admin: "Dashboard",
   classes: "Lớp học",
+  components: "Components",
   config: "Cấu Hình",
+  content: "Nội Dung Quản Lý",
   courses: "Khóa học",
+  dropdown: "Dropdown",
+  footer: "Footer",
   logs: "Nhật Ký Hệ Thống",
   messages: "Tin nhắn",
+  navbar: "Navbar",
   ielts: "IELTS",
   permissions: "Phân Quyền",
   "practice-bank": "Ngân hàng bài tập",
@@ -69,6 +94,7 @@ const breadcrumbLabels: Record<string, string> = {
   reports: "Báo cáo",
   schedule: "Lịch",
   settings: "Cài đặt",
+  slider: "Slider",
   students: "Học viên",
   teachers: "Giáo viên",
   toeic: "TOEIC",
@@ -197,17 +223,23 @@ export function AdminLayout() {
 
                 {item.children && isGroupOpen && (
                   <div className={styles.subNav}>
-                    {item.children.map((child) => (
-                      <NavLink
-                        className={({ isActive }) =>
-                          `${styles.subNavItem} ${isActive ? styles.subActive : ""}`.trim()
-                        }
-                        key={child.path}
-                        to={child.path}
-                      >
-                        {child.label}
-                      </NavLink>
-                    ))}
+                    {item.children.map((child) =>
+                      child.type === "section" ? (
+                        <span className={styles.subNavSection} key={child.label}>
+                          {child.label}
+                        </span>
+                      ) : (
+                        <NavLink
+                          className={({ isActive }) =>
+                            `${styles.subNavItem} ${isActive ? styles.subActive : ""}`.trim()
+                          }
+                          key={child.path}
+                          to={child.path}
+                        >
+                          {child.label}
+                        </NavLink>
+                      ),
+                    )}
                   </div>
                 )}
               </div>

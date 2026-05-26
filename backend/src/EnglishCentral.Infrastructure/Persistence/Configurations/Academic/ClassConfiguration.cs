@@ -23,7 +23,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
 
             builder.HasIndex(x => x.TeacherId);
 
-            builder.HasIndex(x => x.AcademicTermId);
+            builder.HasIndex(x => x.RoomId);
 
             builder.HasIndex(x => x.Status);
 
@@ -38,6 +38,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
             builder.Property(x => x.Status)
                 .HasConversion<int>();
 
+            builder.Property(x => x.TuitionFeeSnapshot)
+                .HasPrecision(18, 2);
+
             builder.Property(x => x.Notes)
                 .HasMaxLength(2000);
 
@@ -51,9 +54,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
                 .HasForeignKey(x => x.TeacherId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasOne(x => x.AcademicTerm)
-                .WithMany(x => x.Classes)
-                .HasForeignKey(x => x.AcademicTermId)
+            builder.HasOne(x => x.Room)
+                .WithMany()
+                .HasForeignKey(x => x.RoomId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

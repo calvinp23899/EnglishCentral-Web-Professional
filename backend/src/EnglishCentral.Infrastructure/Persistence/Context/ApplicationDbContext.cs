@@ -37,8 +37,6 @@ namespace EnglishCentral.Infrastructure.Persistence.Context
 
         public DbSet<Course> Courses => Set<Course>();
 
-        public DbSet<AcademicTerm> AcademicTerms => Set<AcademicTerm>();
-
         public DbSet<Room> Rooms => Set<Room>();
 
         public DbSet<Class> Classes => Set<Class>();

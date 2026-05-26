@@ -3,15 +3,19 @@ import {
   ArrowLeft,
   Check,
   ChevronRight,
+  Eye,
+  EyeOff,
   LockKeyhole,
   Mail,
   Phone,
   Search,
+  WandSparkles,
   UserPlus,
   UserRoundCheck,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { toastSuccess } from "@/components/ui";
 import {
   genderLabels,
   statusLabels,
@@ -19,6 +23,7 @@ import {
   type StudentGender,
   type StudentStatus,
 } from "@/features/admin/students/data/mockStudents";
+import { generatePassword } from "@/features/admin/shared/utils/password";
 
 import styles from "./StudentCreatePage.module.scss";
 
@@ -83,6 +88,7 @@ export function StudentCreatePage() {
   const [accountSearch, setAccountSearch] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [accountForm, setAccountForm] = useState<AccountForm>(initialAccountForm);
+  const [showAccountPassword, setShowAccountPassword] = useState(false);
 
   const matchedAccounts = useMemo(() => {
     const searchTerm = accountSearch.trim().toLowerCase();
@@ -116,6 +122,11 @@ export function StudentCreatePage() {
     }));
   };
 
+  const handleGeneratePassword = () => {
+    updateAccountForm("password", generatePassword());
+    setShowAccountPassword(true);
+  };
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -124,6 +135,7 @@ export function StudentCreatePage() {
       return;
     }
 
+    toastSuccess("Tạo học viên thành công.");
     navigate("/admin/students");
   };
 
@@ -393,14 +405,36 @@ export function StudentCreatePage() {
                   <label className={styles.field}>
                     <span>Password</span>
                     <span className={styles.passwordInput}>
-                      <LockKeyhole aria-hidden="true" size={16} />
+                      <LockKeyhole aria-hidden="true" className={styles.passwordIcon} size={16} />
                       <input
-                        type="password"
+                        type={showAccountPassword ? "text" : "password"}
                         value={accountForm.password}
                         onChange={(event) =>
                           updateAccountForm("password", event.target.value)
                         }
                       />
+                      <span className={styles.passwordActions}>
+                        <button
+                          type="button"
+                          aria-label={showAccountPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                          title={showAccountPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                          onClick={() => setShowAccountPassword((currentValue) => !currentValue)}
+                        >
+                          {showAccountPassword ? (
+                            <EyeOff aria-hidden="true" size={17} />
+                          ) : (
+                            <Eye aria-hidden="true" size={17} />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Tự sinh mật khẩu"
+                          title="Tự sinh mật khẩu"
+                          onClick={handleGeneratePassword}
+                        >
+                          <WandSparkles aria-hidden="true" size={17} />
+                        </button>
+                      </span>
                     </span>
                   </label>
                 </div>

@@ -7,7 +7,7 @@ import {
   Plus,
 } from "lucide-react";
 
-import { SidePanel } from "@/components/ui";
+import { SidePanel, toastSuccess, toastWarning } from "@/components/ui";
 
 import styles from "./AdminSchedulePage.module.scss";
 
@@ -241,6 +241,7 @@ export function AdminSchedulePage() {
   const handleCreateLesson = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isDateKey(lessonForm.date)) {
+      toastWarning("Ngày tạo lịch chưa hợp lệ.");
       return;
     }
 
@@ -249,6 +250,7 @@ export function AdminSchedulePage() {
       : [lessonForm];
 
     setLessonRecords((currentLessons) => [...currentLessons, ...lessonsToCreate]);
+    toastSuccess(`Đã tạo ${lessonsToCreate.length} lịch.`);
     setCreatePanelOpen(false);
   };
 

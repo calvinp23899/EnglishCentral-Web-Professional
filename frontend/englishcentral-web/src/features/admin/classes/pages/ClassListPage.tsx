@@ -14,6 +14,7 @@ export function ClassListPage() {
       searchKeys={["code", "name", "course", "teacher"]}
       statusOptions={classStatusOptions}
       title="Danh sách lớp học"
+      viewPath={(record) => `/admin/classes/${record.id}/view`}
     />
   );
 }

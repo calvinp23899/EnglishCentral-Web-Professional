@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Edit3, Eye, Plus, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { ConfirmModal, Pagination } from "@/components/ui";
+import { ConfirmModal, Pagination, toastDanger } from "@/components/ui";
 
 import styles from "./AdminCrudPage.module.scss";
 
@@ -141,6 +141,7 @@ export function AdminCrudListPage({
     setRecords((currentRecords) =>
       currentRecords.filter((record) => record.id !== deletingRecord.id),
     );
+    toastDanger("Đã xóa record.");
     setDeletingRecord(null);
   };
 

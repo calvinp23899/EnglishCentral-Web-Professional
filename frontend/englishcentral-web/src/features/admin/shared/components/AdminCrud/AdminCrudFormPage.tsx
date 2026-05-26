@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
+import { toastSuccess } from "@/components/ui";
+
 import type { CrudRecord } from "./AdminCrudListPage";
 import styles from "./AdminCrudPage.module.scss";
 
@@ -49,6 +51,7 @@ export function AdminCrudFormPage({
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    toastSuccess(mode === "create" ? "Tạo mới thành công." : "Lưu thay đổi thành công.");
     navigate(listPath);
   };
 

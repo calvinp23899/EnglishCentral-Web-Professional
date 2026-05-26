@@ -19,5 +19,47 @@
         public const string CourseCreate = "course.create";
         public const string CourseUpdate = "course.update";
         public const string CourseDelete = "course.delete";
+
+        // Course Categories
+        public const string CourseCategoryRead = "course_category.read";
+        public const string CourseCategoryCreate = "course_category.create";
+        public const string CourseCategoryUpdate = "course_category.update";
+        public const string CourseCategoryDelete = "course_category.delete";
+
+        // Rooms
+        public const string RoomRead = "room.read";
+        public const string RoomCreate = "room.create";
+        public const string RoomUpdate = "room.update";
+        public const string RoomDelete = "room.delete";
+
+        // Classes
+        public const string ClassRead = "class.read";
+        public const string ClassCreate = "class.create";
+        public const string ClassUpdate = "class.update";
+        public const string ClassDelete = "class.delete";
+
+        // Class Schedules
+        public const string ClassScheduleRead = "class_schedule.read";
+        public const string ClassScheduleCreate = "class_schedule.create";
+        public const string ClassScheduleUpdate = "class_schedule.update";
+        public const string ClassScheduleDelete = "class_schedule.delete";
+
+        // Class Sessions
+        public const string ClassSessionRead = "class_session.read";
+        public const string ClassSessionCreate = "class_session.create";
+        public const string ClassSessionUpdate = "class_session.update";
+        public const string ClassSessionDelete = "class_session.delete";
+
+        // Enrollments
+        public const string EnrollmentRead = "enrollment.read";
+        public const string EnrollmentCreate = "enrollment.create";
+        public const string EnrollmentUpdate = "enrollment.update";
+        public const string EnrollmentDelete = "enrollment.delete";
+
+        // Attendances
+        public const string AttendanceRead = "attendance.read";
+        public const string AttendanceCreate = "attendance.create";
+        public const string AttendanceUpdate = "attendance.update";
+        public const string AttendanceDelete = "attendance.delete";
     }
 }

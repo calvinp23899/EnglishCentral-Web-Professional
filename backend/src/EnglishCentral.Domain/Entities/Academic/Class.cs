@@ -9,7 +9,7 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public long TeacherId { get; set; }
 
-        public long AcademicTermId { get; set; }
+        public long? RoomId { get; set; }
 
         public string Code { get; set; } = default!;
 
@@ -21,7 +21,17 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public int Capacity { get; set; }
 
+        public decimal TuitionFeeSnapshot { get; set; }
+
+        public int TotalSessions { get; set; }
+
+        public int CompletedSessions { get; set; }
+
         public ClassStatus Status { get; set; } = ClassStatus.Draft;
+
+        public DateTimeOffset? OpenedAt { get; set; }
+
+        public DateTimeOffset? ClosedAt { get; set; }
 
         public string? Notes { get; set; }
 
@@ -31,7 +41,7 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public Teacher Teacher { get; set; } = default!;
 
-        public AcademicTerm AcademicTerm { get; set; } = default!;
+        public Room? Room { get; set; }
 
         public ICollection<Enrollment> Enrollments { get; set; } = [];
 

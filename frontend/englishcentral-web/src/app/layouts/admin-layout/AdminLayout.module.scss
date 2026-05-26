@@ -29,6 +29,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow: hidden;
 }
 
 .brand {
@@ -71,8 +72,15 @@
 }
 
 .nav {
+  min-height: 0;
   display: grid;
   gap: 6px;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .navGroup {
@@ -143,6 +151,18 @@
     background: #eff6ff;
     color: #1d4ed8;
   }
+}
+
+.subNavSection {
+  min-height: 24px;
+  padding: 10px 10px 2px;
+  color: #334155;
+  display: flex;
+  align-items: flex-end;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .subActive {

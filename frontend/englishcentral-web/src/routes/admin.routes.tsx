@@ -4,6 +4,7 @@ import { AdminLayout } from "@/app/layouts/admin-layout/AdminLayout";
 import { AdminLoginPage } from "@/features/admin/auth/pages/AdminLoginPage/AdminLoginPage";
 import { ClassFormPage } from "@/features/admin/classes/pages/ClassFormPage";
 import { ClassListPage } from "@/features/admin/classes/pages/ClassListPage";
+import { ClassViewPage } from "@/features/admin/classes/pages/ClassViewPage";
 import { CourseFormPage } from "@/features/admin/courses/pages/CourseFormPage";
 import { CourseListPage } from "@/features/admin/courses/pages/CourseListPage";
 import { AdminDashboardPage } from "@/features/admin/dashboard/pages/AdminDashboardPage";
@@ -20,6 +21,7 @@ import { StudentEditPage } from "@/features/admin/students/pages/StudentEditPage
 import { StudentListPage } from "@/features/admin/students/pages/StudentListPage";
 import { TeacherFormPage } from "@/features/admin/teachers/pages/TeacherFormPage";
 import { TeacherListPage } from "@/features/admin/teachers/pages/TeacherListPage";
+import { TeacherViewPage } from "@/features/admin/teachers/pages/TeacherViewPage";
 
 const adminModuleRoutes = [
   {
@@ -142,6 +144,46 @@ export const adminRoutes = [
         ),
       },
       {
+        path: "content",
+        element: <Navigate to="/admin/content/components/footer" replace />,
+      },
+      {
+        path: "content/components/footer",
+        element: (
+          <AdminPlaceholderPage
+            title="Footer"
+            description="Quản lý nội dung footer, liên kết nhanh, thông tin liên hệ và các khối hiển thị cuối trang."
+          />
+        ),
+      },
+      {
+        path: "content/components/slider",
+        element: (
+          <AdminPlaceholderPage
+            title="Slider"
+            description="Quản lý slider, banner, hình ảnh, CTA và thứ tự hiển thị trên các trang public."
+          />
+        ),
+      },
+      {
+        path: "content/components/navbar",
+        element: (
+          <AdminPlaceholderPage
+            title="Navbar"
+            description="Quản lý navbar, menu điều hướng, liên kết chính và trạng thái hiển thị."
+          />
+        ),
+      },
+      {
+        path: "content/components/dropdown",
+        element: (
+          <AdminPlaceholderPage
+            title="Dropdown"
+            description="Quản lý dropdown, nhóm liên kết con và nội dung menu mở rộng trên website."
+          />
+        ),
+      },
+      {
         path: "courses",
         element: <CourseListPage />,
       },
@@ -162,6 +204,10 @@ export const adminRoutes = [
         element: <ClassFormPage mode="create" />,
       },
       {
+        path: "classes/:recordId/view",
+        element: <ClassViewPage />,
+      },
+      {
         path: "classes/:recordId/edit",
         element: <ClassFormPage mode="edit" />,
       },
@@ -172,6 +218,10 @@ export const adminRoutes = [
       {
         path: "teachers/create",
         element: <TeacherFormPage mode="create" />,
+      },
+      {
+        path: "teachers/:recordId/view",
+        element: <TeacherViewPage />,
       },
       {
         path: "teachers/:recordId/edit",

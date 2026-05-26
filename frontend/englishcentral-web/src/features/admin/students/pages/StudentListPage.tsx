@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { ConfirmModal, Pagination } from "@/components/ui";
+import { ConfirmModal, Pagination, toastDanger } from "@/components/ui";
 import {
   statusLabels,
   statusToneByValue,
@@ -133,6 +133,7 @@ export function StudentListPage() {
     setStudentRecords((currentRecords) =>
       currentRecords.filter((student) => student.id !== deletingStudent.id),
     );
+    toastDanger(`Đã xóa học viên ${deletingStudent.fullName}.`);
     setDeletingStudent(null);
   };
 

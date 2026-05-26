@@ -15,6 +15,12 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public long? CheckedBy { get; set; }
 
+        public long? RecordedBy { get; set; }
+
+        public DateTimeOffset? RecordedAt { get; set; }
+
+        public string? AbsenceReason { get; set; }
+
         public string? Notes { get; set; }
 
         // Navigation

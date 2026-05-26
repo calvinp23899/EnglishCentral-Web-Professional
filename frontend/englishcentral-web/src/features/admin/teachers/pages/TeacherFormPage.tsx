@@ -1,20 +1,27 @@
 import { useMemo, useState } from "react";
 import {
   ArrowLeft,
+  BarChart3,
   Check,
   ChevronRight,
+  Clock,
+  Eye,
+  EyeOff,
   LockKeyhole,
   Mail,
   Phone,
   Search,
+  WandSparkles,
+  Save,
   UserPlus,
   UserRoundCheck,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { AdminCrudFormPage } from "@/features/admin/shared/components/AdminCrud/AdminCrudFormPage";
+import { toastSuccess } from "@/components/ui";
+import { generatePassword } from "@/features/admin/shared/utils/password";
 
-import { teacherDefaultValue, teacherFields, teacherRecords } from "./teacherCrud.config";
+import { teacherRecords } from "./teacherCrud.config";
 import styles from "@/features/admin/students/pages/StudentCreatePage.module.scss";
 
 type Props = {
@@ -56,6 +63,65 @@ type AccountForm = {
 };
 
 type AccountMode = "existing" | "new";
+type EditTabKey = "info" | "performance";
+type PerformanceForm = {
+  averageRating: number;
+  completionRate: number;
+  completedClasses: number;
+  feedbackScore: number;
+  monthlyRevenue: number;
+  note: string;
+  teachingHours: number;
+  totalClasses: number;
+};
+
+const editTabs: Array<{ key: EditTabKey; label: string }> = [
+  { key: "info", label: "Thông tin" },
+  { key: "performance", label: "Hiệu Suất" },
+];
+
+const performanceByTeacherId: Record<string, PerformanceForm> = {
+  "1": {
+    averageRating: 4.9,
+    completionRate: 97,
+    completedClasses: 30,
+    feedbackScore: 96,
+    monthlyRevenue: 68000000,
+    note: "Giữ chất lượng phản hồi writing ổn định, ưu tiên thêm lớp Speaking Clinic.",
+    teachingHours: 64,
+    totalClasses: 32,
+  },
+  "2": {
+    averageRating: 4.7,
+    completionRate: 94,
+    completedClasses: 24,
+    feedbackScore: 92,
+    monthlyRevenue: 52000000,
+    note: "Tăng bài luyện listening theo format mới.",
+    teachingHours: 52,
+    totalClasses: 26,
+  },
+  "3": {
+    averageRating: 4.6,
+    completionRate: 90,
+    completedClasses: 14,
+    feedbackScore: 89,
+    monthlyRevenue: 30000000,
+    note: "Cần theo dõi thêm sau giai đoạn onboarding.",
+    teachingHours: 28,
+    totalClasses: 16,
+  },
+  "4": {
+    averageRating: 4.8,
+    completionRate: 96,
+    completedClasses: 18,
+    feedbackScore: 95,
+    monthlyRevenue: 41000000,
+    note: "Writing reviewer ổn định, có thể phân thêm lớp band cao.",
+    teachingHours: 40,
+    totalClasses: 19,
+  },
+};
 
 const initialTeacherInfo: TeacherInfoForm = {
   address: "",
@@ -99,6 +165,30 @@ const accountRecords = teacherRecords.map((teacher) => ({
   status: String(teacher.status),
 }));
 
+const statusValueByTeacherStatus: Record<string, number> = {
+  active: 1,
+  inactive: 2,
+  pending: 0,
+};
+
+const toTeacherInfoForm = (recordId?: string): TeacherInfoForm => {
+  const teacher = teacherRecords.find((record) => String(record.id) === recordId) ?? teacherRecords[0];
+
+  return {
+    ...initialTeacherInfo,
+    bio: String(teacher.bio ?? ""),
+    dateOfBirth: "1990-01-01",
+    degree: "Bachelor",
+    email: String(teacher.email),
+    fullName: String(teacher.fullName),
+    hireDate: String(teacher.joinedAt),
+    phoneNumber: String(teacher.phone),
+    specialization: String(teacher.specialty),
+    status: statusValueByTeacherStatus[String(teacher.status)] ?? 1,
+    yearsOfExperience: 4,
+  };
+};
+
 const splitCertifications = (value: string) =>
   value
     .split(",")
@@ -107,12 +197,21 @@ const splitCertifications = (value: string) =>
 
 export function TeacherFormPage({ mode }: Props) {
   const navigate = useNavigate();
+  const { recordId } = useParams();
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [teacherInfo, setTeacherInfo] = useState<TeacherInfoForm>(initialTeacherInfo);
+  const [editTeacherInfo, setEditTeacherInfo] = useState<TeacherInfoForm>(() =>
+    toTeacherInfoForm(recordId),
+  );
+  const [performanceForm, setPerformanceForm] = useState<PerformanceForm>(
+    () => performanceByTeacherId[String(recordId ?? teacherRecords[0].id)] ?? performanceByTeacherId["1"],
+  );
+  const [editActiveTab, setEditActiveTab] = useState<EditTabKey>("info");
   const [accountMode, setAccountMode] = useState<AccountMode>("existing");
   const [accountSearch, setAccountSearch] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [accountForm, setAccountForm] = useState<AccountForm>(initialAccountForm);
+  const [showAccountPassword, setShowAccountPassword] = useState(false);
 
   const matchedAccounts = useMemo(() => {
     const searchTerm = accountSearch.trim().toLowerCase();
@@ -126,24 +225,31 @@ export function TeacherFormPage({ mode }: Props) {
     );
   }, [accountSearch]);
 
-  if (mode === "edit") {
-    return (
-      <AdminCrudFormPage
-        defaultValue={teacherDefaultValue}
-        fields={teacherFields}
-        listPath="/admin/teachers"
-        mode={mode}
-        records={teacherRecords}
-        title="Chỉnh sửa giáo viên"
-      />
-    );
-  }
-
   const updateTeacherInfo = <Key extends keyof TeacherInfoForm>(
     field: Key,
     value: TeacherInfoForm[Key],
   ) => {
     setTeacherInfo((currentValue) => ({
+      ...currentValue,
+      [field]: value,
+    }));
+  };
+
+  const updateEditTeacherInfo = <Key extends keyof TeacherInfoForm>(
+    field: Key,
+    value: TeacherInfoForm[Key],
+  ) => {
+    setEditTeacherInfo((currentValue) => ({
+      ...currentValue,
+      [field]: value,
+    }));
+  };
+
+  const updatePerformanceForm = <Key extends keyof PerformanceForm>(
+    field: Key,
+    value: PerformanceForm[Key],
+  ) => {
+    setPerformanceForm((currentValue) => ({
       ...currentValue,
       [field]: value,
     }));
@@ -158,6 +264,438 @@ export function TeacherFormPage({ mode }: Props) {
       [field]: value,
     }));
   };
+
+  const handleGeneratePassword = () => {
+    updateAccountForm("password", generatePassword());
+    setShowAccountPassword(true);
+  };
+
+  const handleEditSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    toastSuccess("Lưu thay đổi giáo viên thành công.");
+    navigate("/admin/teachers");
+  };
+
+  const handlePerformanceSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    toastSuccess("Lưu hiệu suất giáo viên thành công.");
+  };
+
+  if (mode === "edit") {
+    return (
+      <div className={styles.page}>
+        <section className={styles.header}>
+          <div>
+            <Link className={styles.backLink} to="/admin/teachers">
+              <ArrowLeft aria-hidden="true" size={16} />
+              Quay lại danh sách
+            </Link>
+            <h1>Chỉnh sửa giáo viên</h1>
+          </div>
+        </section>
+
+        <section className={styles.panel}>
+          <div className={styles.editTabs} role="tablist" aria-label="Teacher edit tabs">
+            {editTabs.map((tab) => (
+              <button
+                className={editActiveTab === tab.key ? styles.activeEditTab : ""}
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={editActiveTab === tab.key}
+                onClick={() => setEditActiveTab(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {editActiveTab === "info" && (
+            <form onSubmit={handleEditSubmit}>
+              <div className={styles.panelHeader}>
+                <div>
+                  <h2>Thông tin giáo viên</h2>
+                  <p>Cập nhật theo cấu trúc thông tin ở flow tạo giáo viên.</p>
+                </div>
+              </div>
+
+              <div className={styles.formGrid}>
+                <label className={styles.field}>
+                  <span>Họ Tên</span>
+                  <input
+                    value={editTeacherInfo.fullName}
+                    onChange={(event) => updateEditTeacherInfo("fullName", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Email</span>
+                  <input
+                    type="email"
+                    value={editTeacherInfo.email}
+                    onChange={(event) => updateEditTeacherInfo("email", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Số Điện Thoại</span>
+                  <input
+                    value={editTeacherInfo.phoneNumber}
+                    onChange={(event) => updateEditTeacherInfo("phoneNumber", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Ngày Sinh</span>
+                  <input
+                    type="date"
+                    value={editTeacherInfo.dateOfBirth}
+                    onChange={(event) => updateEditTeacherInfo("dateOfBirth", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Giới Tính</span>
+                  <select
+                    value={editTeacherInfo.gender}
+                    onChange={(event) => updateEditTeacherInfo("gender", Number(event.target.value))}
+                  >
+                    <option value={0}>Nữ</option>
+                    <option value={1}>Nam</option>
+                    <option value={2}>Khác</option>
+                  </select>
+                </label>
+                <label className={styles.field}>
+                  <span>Địa Chỉ</span>
+                  <input
+                    value={editTeacherInfo.address}
+                    onChange={(event) => updateEditTeacherInfo("address", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>CMND/CCCD</span>
+                  <input
+                    value={editTeacherInfo.nationalId}
+                    onChange={(event) => updateEditTeacherInfo("nationalId", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Ngày cấp CMND/CCCD</span>
+                  <input
+                    type="date"
+                    value={editTeacherInfo.nationalIdIssuedDate}
+                    onChange={(event) =>
+                      updateEditTeacherInfo("nationalIdIssuedDate", event.target.value)
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Địa điểm cấp CMND/CCCD</span>
+                  <input
+                    value={editTeacherInfo.nationalIdIssuedPlace}
+                    onChange={(event) =>
+                      updateEditTeacherInfo("nationalIdIssuedPlace", event.target.value)
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Chuyên môn</span>
+                  <input
+                    value={editTeacherInfo.specialization}
+                    onChange={(event) => updateEditTeacherInfo("specialization", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Bằng cấp</span>
+                  <input
+                    value={editTeacherInfo.degree}
+                    onChange={(event) => updateEditTeacherInfo("degree", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Số Năm Kinh Nghiệm</span>
+                  <input
+                    min={0}
+                    type="number"
+                    value={editTeacherInfo.yearsOfExperience}
+                    onChange={(event) =>
+                      updateEditTeacherInfo("yearsOfExperience", Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label className={`${styles.field} ${styles.notesField}`}>
+                  <span>Chứng Chỉ</span>
+                  <input
+                    placeholder="IELTS 8.0, CELTA, TESOL"
+                    value={editTeacherInfo.certifications}
+                    onChange={(event) => updateEditTeacherInfo("certifications", event.target.value)}
+                  />
+                </label>
+                <label className={`${styles.field} ${styles.notesField}`}>
+                  <span>Mô Tả Bản Thân</span>
+                  <textarea
+                    rows={4}
+                    value={editTeacherInfo.bio}
+                    onChange={(event) => updateEditTeacherInfo("bio", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Ngày Tuyển Dụng</span>
+                  <input
+                    type="date"
+                    value={editTeacherInfo.hireDate}
+                    onChange={(event) => updateEditTeacherInfo("hireDate", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Loại Hợp Đồng</span>
+                  <select
+                    value={editTeacherInfo.contractType}
+                    onChange={(event) =>
+                      updateEditTeacherInfo("contractType", Number(event.target.value))
+                    }
+                  >
+                    <option value={0}>Full-time</option>
+                    <option value={1}>Part-time</option>
+                    <option value={2}>Contract</option>
+                  </select>
+                </label>
+                <label className={styles.field}>
+                  <span>Ngày Kết Thúc Hợp Đồng</span>
+                  <input
+                    type="date"
+                    value={editTeacherInfo.contractEndDate}
+                    onChange={(event) => updateEditTeacherInfo("contractEndDate", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Trạng Thái</span>
+                  <select
+                    value={editTeacherInfo.status}
+                    onChange={(event) => updateEditTeacherInfo("status", Number(event.target.value))}
+                  >
+                    <option value={0}>Đang chờ</option>
+                    <option value={1}>Hoạt động</option>
+                    <option value={2}>Không hoạt động</option>
+                  </select>
+                </label>
+                <label className={styles.field}>
+                  <span>Loại Lương</span>
+                  <select
+                    value={editTeacherInfo.salaryType}
+                    onChange={(event) =>
+                      updateEditTeacherInfo("salaryType", Number(event.target.value))
+                    }
+                  >
+                    <option value={0}>Lương cơ bản</option>
+                    <option value={1}>Theo giờ</option>
+                  </select>
+                </label>
+                <label className={styles.field}>
+                  <span>Lương cơ bản</span>
+                  <input
+                    min={0}
+                    type="number"
+                    value={editTeacherInfo.baseSalary}
+                    onChange={(event) =>
+                      updateEditTeacherInfo("baseSalary", Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Rate theo giờ</span>
+                  <input
+                    min={0}
+                    type="number"
+                    value={editTeacherInfo.hourlyRate ?? ""}
+                    onChange={(event) =>
+                      updateEditTeacherInfo(
+                        "hourlyRate",
+                        event.target.value ? Number(event.target.value) : null,
+                      )
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Số tài khoản ngân hàng</span>
+                  <input
+                    value={editTeacherInfo.bankAccountNumber}
+                    onChange={(event) =>
+                      updateEditTeacherInfo("bankAccountNumber", event.target.value)
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Tên ngân hàng</span>
+                  <input
+                    value={editTeacherInfo.bankName}
+                    onChange={(event) => updateEditTeacherInfo("bankName", event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Mã số thuế</span>
+                  <input
+                    value={editTeacherInfo.taxCode}
+                    onChange={(event) => updateEditTeacherInfo("taxCode", event.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className={styles.formActions}>
+                <button
+                  className={styles.secondaryButton}
+                  type="button"
+                  onClick={() => setEditTeacherInfo(toTeacherInfoForm(recordId))}
+                >
+                  Hủy
+                </button>
+                <button type="submit">
+                  <Save aria-hidden="true" size={17} />
+                  Lưu thay đổi
+                </button>
+              </div>
+            </form>
+          )}
+
+          {editActiveTab === "performance" && (
+            <form onSubmit={handlePerformanceSubmit}>
+              <div className={styles.panelHeader}>
+                <div>
+                  <h2>Hiệu Suất</h2>
+                  <p>Mock các chỉ số hiệu suất, có thể cập nhật trực tiếp.</p>
+                </div>
+              </div>
+
+              <div className={styles.performanceFormGrid}>
+                <label className={styles.field}>
+                  <span>Tổng lớp phụ trách</span>
+                  <input
+                    min={0}
+                    type="number"
+                    value={performanceForm.totalClasses}
+                    onChange={(event) =>
+                      updatePerformanceForm("totalClasses", Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Lớp đã hoàn thành</span>
+                  <input
+                    min={0}
+                    type="number"
+                    value={performanceForm.completedClasses}
+                    onChange={(event) =>
+                      updatePerformanceForm("completedClasses", Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Tổng giờ dạy</span>
+                  <input
+                    min={0}
+                    type="number"
+                    value={performanceForm.teachingHours}
+                    onChange={(event) =>
+                      updatePerformanceForm("teachingHours", Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Tỷ lệ hoàn thành (%)</span>
+                  <input
+                    max={100}
+                    min={0}
+                    type="number"
+                    value={performanceForm.completionRate}
+                    onChange={(event) =>
+                      updatePerformanceForm("completionRate", Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Đánh giá trung bình</span>
+                  <input
+                    max={5}
+                    min={0}
+                    step="0.1"
+                    type="number"
+                    value={performanceForm.averageRating}
+                    onChange={(event) =>
+                      updatePerformanceForm("averageRating", Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Điểm phản hồi (%)</span>
+                  <input
+                    max={100}
+                    min={0}
+                    type="number"
+                    value={performanceForm.feedbackScore}
+                    onChange={(event) =>
+                      updatePerformanceForm("feedbackScore", Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Doanh thu tháng</span>
+                  <input
+                    min={0}
+                    type="number"
+                    value={performanceForm.monthlyRevenue}
+                    onChange={(event) =>
+                      updatePerformanceForm("monthlyRevenue", Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label className={`${styles.field} ${styles.notesField}`}>
+                  <span>Ghi chú hiệu suất</span>
+                  <textarea
+                    rows={4}
+                    value={performanceForm.note}
+                    onChange={(event) => updatePerformanceForm("note", event.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className={styles.performanceSummary}>
+                <article>
+                  <BarChart3 aria-hidden="true" size={20} />
+                  <span>Tỷ lệ hoàn thành</span>
+                  <strong>{performanceForm.completionRate}%</strong>
+                </article>
+                <article>
+                  <Clock aria-hidden="true" size={20} />
+                  <span>Tổng giờ dạy</span>
+                  <strong>{performanceForm.teachingHours}h</strong>
+                </article>
+                <article>
+                  <UserRoundCheck aria-hidden="true" size={20} />
+                  <span>Đánh giá</span>
+                  <strong>{performanceForm.averageRating}/5</strong>
+                </article>
+              </div>
+
+              <div className={styles.formActions}>
+                <button
+                  className={styles.secondaryButton}
+                  type="button"
+                  onClick={() =>
+                    setPerformanceForm(
+                      performanceByTeacherId[String(recordId ?? teacherRecords[0].id)] ??
+                        performanceByTeacherId["1"],
+                    )
+                  }
+                >
+                  Hủy
+                </button>
+                <button type="submit">
+                  <Save aria-hidden="true" size={17} />
+                  Lưu hiệu suất
+                </button>
+              </div>
+            </form>
+          )}
+        </section>
+      </div>
+    );
+  }
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -190,6 +728,7 @@ export function TeacherFormPage({ mode }: Props) {
     };
 
     console.info("Mock create teacher payload", payload);
+    toastSuccess("Tạo giáo viên thành công.");
     navigate("/admin/teachers");
   };
 
@@ -229,7 +768,7 @@ export function TeacherFormPage({ mode }: Props) {
 
             <div className={styles.formGrid}>
               <label className={styles.field}>
-                <span>Full name</span>
+                <span>Họ Tên</span>
                 <input
                   value={teacherInfo.fullName}
                   onChange={(event) => updateTeacherInfo("fullName", event.target.value)}
@@ -243,14 +782,14 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>Phone number</span>
+                <span>Số Điện Thoại</span>
                 <input
                   value={teacherInfo.phoneNumber}
                   onChange={(event) => updateTeacherInfo("phoneNumber", event.target.value)}
                 />
               </label>
               <label className={styles.field}>
-                <span>Date of birth</span>
+                <span>Ngày Sinh</span>
                 <input
                   type="date"
                   value={teacherInfo.dateOfBirth}
@@ -258,7 +797,7 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>Gender</span>
+                <span>Giới Tính</span>
                 <select
                   value={teacherInfo.gender}
                   onChange={(event) => updateTeacherInfo("gender", Number(event.target.value))}
@@ -269,21 +808,21 @@ export function TeacherFormPage({ mode }: Props) {
                 </select>
               </label>
               <label className={styles.field}>
-                <span>Address</span>
+                <span>Địa Chỉ</span>
                 <input
                   value={teacherInfo.address}
                   onChange={(event) => updateTeacherInfo("address", event.target.value)}
                 />
               </label>
               <label className={styles.field}>
-                <span>National ID</span>
+                <span>CMND/CCCD</span>
                 <input
                   value={teacherInfo.nationalId}
                   onChange={(event) => updateTeacherInfo("nationalId", event.target.value)}
                 />
               </label>
               <label className={styles.field}>
-                <span>National ID issued date</span>
+                <span>Ngày cấp CMND/CCCD</span>
                 <input
                   type="date"
                   value={teacherInfo.nationalIdIssuedDate}
@@ -293,7 +832,7 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>National ID issued place</span>
+                <span>Địa điểm cấp CMND/CCCD</span>
                 <input
                   value={teacherInfo.nationalIdIssuedPlace}
                   onChange={(event) =>
@@ -302,7 +841,7 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>Specialization</span>
+                <span>Chuyên môn</span>
                 <input
                   value={teacherInfo.specialization}
                   onChange={(event) =>
@@ -311,14 +850,14 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>Degree</span>
+                <span>Bằng cấp</span>
                 <input
                   value={teacherInfo.degree}
                   onChange={(event) => updateTeacherInfo("degree", event.target.value)}
                 />
               </label>
               <label className={styles.field}>
-                <span>Years of experience</span>
+                <span>Số Năm Kinh Nghiệm</span>
                 <input
                   min={0}
                   type="number"
@@ -329,7 +868,7 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={`${styles.field} ${styles.notesField}`}>
-                <span>Certifications</span>
+                <span>Chứng Chỉ</span>
                 <input
                   placeholder="IELTS 8.0, CELTA, TESOL"
                   value={teacherInfo.certifications}
@@ -337,7 +876,7 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={`${styles.field} ${styles.notesField}`}>
-                <span>Bio</span>
+                <span>Mô Tả Bản Thân</span>
                 <textarea
                   rows={4}
                   value={teacherInfo.bio}
@@ -345,7 +884,7 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>Hire date</span>
+                <span>Ngày Tuyển Dụng</span>
                 <input
                   type="date"
                   value={teacherInfo.hireDate}
@@ -353,7 +892,7 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>Contract type</span>
+                <span>Loại Hợp Đồng</span>
                 <select
                   value={teacherInfo.contractType}
                   onChange={(event) =>
@@ -366,7 +905,7 @@ export function TeacherFormPage({ mode }: Props) {
                 </select>
               </label>
               <label className={styles.field}>
-                <span>Contract end date</span>
+                <span>Ngày Kết Thúc Hợp Đồng</span>
                 <input
                   type="date"
                   value={teacherInfo.contractEndDate}
@@ -376,30 +915,30 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>Status</span>
+                <span>Trạng Thái</span>
                 <select
                   value={teacherInfo.status}
                   onChange={(event) => updateTeacherInfo("status", Number(event.target.value))}
                 >
-                  <option value={0}>Pending</option>
-                  <option value={1}>Active</option>
-                  <option value={2}>Inactive</option>
+                  <option value={0}>Đang chờ</option>
+                  <option value={1}>Hoạt động</option>
+                  <option value={2}>Không hoạt động</option>
                 </select>
               </label>
               <label className={styles.field}>
-                <span>Salary type</span>
+                <span>Loại Lương</span>
                 <select
                   value={teacherInfo.salaryType}
                   onChange={(event) =>
                     updateTeacherInfo("salaryType", Number(event.target.value))
                   }
                 >
-                  <option value={0}>Base salary</option>
-                  <option value={1}>Hourly</option>
+                  <option value={0}>Lương cơ bản</option>
+                  <option value={1}>Theo giờ</option>
                 </select>
               </label>
               <label className={styles.field}>
-                <span>Base salary</span>
+                <span>Lương cơ bản</span>
                 <input
                   min={0}
                   type="number"
@@ -410,7 +949,7 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>Hourly rate</span>
+                <span>Rate theo giờ</span>
                 <input
                   min={0}
                   type="number"
@@ -424,7 +963,7 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>Bank account number</span>
+                <span>Số tài khoản ngân hàng</span>
                 <input
                   value={teacherInfo.bankAccountNumber}
                   onChange={(event) =>
@@ -433,14 +972,14 @@ export function TeacherFormPage({ mode }: Props) {
                 />
               </label>
               <label className={styles.field}>
-                <span>Bank name</span>
+                <span>Tên ngân hàng</span>
                 <input
                   value={teacherInfo.bankName}
                   onChange={(event) => updateTeacherInfo("bankName", event.target.value)}
                 />
               </label>
               <label className={styles.field}>
-                <span>Tax code</span>
+                <span>Mã số thuế</span>
                 <input
                   value={teacherInfo.taxCode}
                   onChange={(event) => updateTeacherInfo("taxCode", event.target.value)}
@@ -545,14 +1084,36 @@ export function TeacherFormPage({ mode }: Props) {
                   <label className={styles.field}>
                     <span>Password</span>
                     <span className={styles.passwordInput}>
-                      <LockKeyhole aria-hidden="true" size={16} />
+                      <LockKeyhole aria-hidden="true" className={styles.passwordIcon} size={16} />
                       <input
-                        type="password"
+                        type={showAccountPassword ? "text" : "password"}
                         value={accountForm.password}
                         onChange={(event) =>
                           updateAccountForm("password", event.target.value)
                         }
                       />
+                      <span className={styles.passwordActions}>
+                        <button
+                          type="button"
+                          aria-label={showAccountPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                          title={showAccountPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                          onClick={() => setShowAccountPassword((currentValue) => !currentValue)}
+                        >
+                          {showAccountPassword ? (
+                            <EyeOff aria-hidden="true" size={17} />
+                          ) : (
+                            <Eye aria-hidden="true" size={17} />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Tự sinh mật khẩu"
+                          title="Tự sinh mật khẩu"
+                          onClick={handleGeneratePassword}
+                        >
+                          <WandSparkles aria-hidden="true" size={17} />
+                        </button>
+                      </span>
                     </span>
                   </label>
                 </div>

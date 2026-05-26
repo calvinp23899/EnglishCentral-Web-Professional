@@ -58,6 +58,7 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IStudentRepository, StudentRepository>();
             services.AddScoped<ITeacherRepository, TeacherRepository>();
+            services.AddScoped(typeof(IAcademicRepository<>), typeof(AcademicRepository<>));
             #endregion
 
             #region JWT Setting
@@ -85,6 +86,41 @@ namespace EnglishCentral.Infrastructure
                 SystemPermissions.CourseDelete,
                 SystemPermissions.CourseRead,
                 SystemPermissions.CourseUpdate,
+
+                SystemPermissions.CourseCategoryRead,
+                SystemPermissions.CourseCategoryCreate,
+                SystemPermissions.CourseCategoryUpdate,
+                SystemPermissions.CourseCategoryDelete,
+
+                SystemPermissions.RoomRead,
+                SystemPermissions.RoomCreate,
+                SystemPermissions.RoomUpdate,
+                SystemPermissions.RoomDelete,
+
+                SystemPermissions.ClassRead,
+                SystemPermissions.ClassCreate,
+                SystemPermissions.ClassUpdate,
+                SystemPermissions.ClassDelete,
+
+                SystemPermissions.ClassScheduleRead,
+                SystemPermissions.ClassScheduleCreate,
+                SystemPermissions.ClassScheduleUpdate,
+                SystemPermissions.ClassScheduleDelete,
+
+                SystemPermissions.ClassSessionRead,
+                SystemPermissions.ClassSessionCreate,
+                SystemPermissions.ClassSessionUpdate,
+                SystemPermissions.ClassSessionDelete,
+
+                SystemPermissions.EnrollmentRead,
+                SystemPermissions.EnrollmentCreate,
+                SystemPermissions.EnrollmentUpdate,
+                SystemPermissions.EnrollmentDelete,
+
+                SystemPermissions.AttendanceRead,
+                SystemPermissions.AttendanceCreate,
+                SystemPermissions.AttendanceUpdate,
+                SystemPermissions.AttendanceDelete,
             ];
         }
     }
