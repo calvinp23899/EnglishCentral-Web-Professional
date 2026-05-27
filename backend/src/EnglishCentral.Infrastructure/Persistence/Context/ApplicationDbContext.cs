@@ -1,6 +1,7 @@
-﻿using EnglishCentral.Domain.Common;
+using EnglishCentral.Domain.Common;
 using EnglishCentral.Domain.Entities.Academic;
 using EnglishCentral.Domain.Entities.Authentication;
+using EnglishCentral.Domain.Entities.Finance;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -51,6 +52,40 @@ namespace EnglishCentral.Infrastructure.Persistence.Context
 
         #endregion
 
+        #region ---- Finance Module ----
+
+        public DbSet<BillingPolicy> BillingPolicies => Set<BillingPolicy>();
+
+        public DbSet<EnrollmentPaymentPlan> EnrollmentPaymentPlans => Set<EnrollmentPaymentPlan>();
+
+        public DbSet<EnrollmentPaymentPlanItem> EnrollmentPaymentPlanItems => Set<EnrollmentPaymentPlanItem>();
+
+        public DbSet<Invoice> Invoices => Set<Invoice>();
+
+        public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
+
+        public DbSet<Payment> Payments => Set<Payment>();
+
+        public DbSet<PaymentAllocation> PaymentAllocations => Set<PaymentAllocation>();
+
+        public DbSet<Receipt> Receipts => Set<Receipt>();
+
+        public DbSet<Discount> Discounts => Set<Discount>();
+
+        public DbSet<EnrollmentDiscount> EnrollmentDiscounts => Set<EnrollmentDiscount>();
+
+        public DbSet<InvoiceDiscount> InvoiceDiscounts => Set<InvoiceDiscount>();
+
+        public DbSet<Refund> Refunds => Set<Refund>();
+
+        public DbSet<CreditNote> CreditNotes => Set<CreditNote>();
+
+        public DbSet<CreditNoteApplication> CreditNoteApplications => Set<CreditNoteApplication>();
+
+        public DbSet<BillingLedgerEntry> BillingLedgerEntries => Set<BillingLedgerEntry>();
+
+        #endregion
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(
@@ -61,14 +96,6 @@ namespace EnglishCentral.Infrastructure.Persistence.Context
             base.OnModelCreating(modelBuilder);
         }
 
-        /// <summary>
-        /// Automatically applies global soft delete query filters
-        /// to all entities inheriting from BaseEntity.
-        ///
-        /// This ensures that records marked as deleted
-        /// (IsDeleted = true) are excluded from all queries by default.
-        /// If not use, using IgnoreQueryFilters in query context
-        /// </summary>
         private static void ConfigureSoftDeleteFilter(ModelBuilder modelBuilder)
         {
             var entityTypes = modelBuilder.Model
@@ -83,21 +110,11 @@ namespace EnglishCentral.Infrastructure.Persistence.Context
             }
         }
 
-        /// <summary>
-        /// Generates a lambda expression used for the global
-        /// soft delete query filter.
-        ///
-        /// Equivalent to:
-        /// entity => entity.IsDeleted == false
-        /// </summary>
         private static LambdaExpression GenerateIsDeletedRestriction(Type type)
         {
             var parameter = Expression.Parameter(type, "entity");
-
             var property = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
-
             var condition = Expression.Equal(property, Expression.Constant(false));
-
             return Expression.Lambda(condition, parameter);
         }
     }

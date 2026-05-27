@@ -1,5 +1,6 @@
-﻿using EnglishCentral.Domain.Common;
+using EnglishCentral.Domain.Common;
 using EnglishCentral.Domain.Entities.Authentication;
+using EnglishCentral.Domain.Entities.Finance;
 using EnglishCentral.Domain.Enums.Academic;
 
 namespace EnglishCentral.Domain.Entities.Academic
@@ -39,5 +40,7 @@ namespace EnglishCentral.Domain.Entities.Academic
         public ICollection<Enrollment> Enrollments { get; set; } = [];
 
         public ICollection<Attendance> Attendances { get; set; } = [];
+
+        public ICollection<Payment> Payments { get; set; } = [];
     }
 }

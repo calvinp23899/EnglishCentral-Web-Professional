@@ -21,6 +21,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
 
             builder.HasIndex(x => x.CourseCategoryId);
 
+            builder.HasIndex(x => x.DefaultBillingPolicyId);
+
             builder.HasIndex(x => x.Level);
 
             builder.HasIndex(x => x.DisplayOrder);
@@ -45,6 +47,11 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
             builder.HasOne(x => x.CourseCategory)
                 .WithMany(x => x.Courses)
                 .HasForeignKey(x => x.CourseCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(x => x.DefaultBillingPolicy)
+                .WithMany(x => x.Courses)
+                .HasForeignKey(x => x.DefaultBillingPolicyId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

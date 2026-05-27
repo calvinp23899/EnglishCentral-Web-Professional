@@ -25,6 +25,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
 
             builder.HasIndex(x => x.RoomId);
 
+            builder.HasIndex(x => x.BillingPolicyId);
+
             builder.HasIndex(x => x.Status);
 
             builder.Property(x => x.Code)
@@ -57,6 +59,11 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
             builder.HasOne(x => x.Room)
                 .WithMany()
                 .HasForeignKey(x => x.RoomId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(x => x.BillingPolicy)
+                .WithMany(x => x.Classes)
+                .HasForeignKey(x => x.BillingPolicyId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

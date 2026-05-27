@@ -23,63 +23,6 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("EnglishCentral.Domain.Entities.Academic.AcademicTerm", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long?>("CreatedBy")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long?>("DeletedBy")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateOnly>("EndDate")
-                        .HasColumnType("date");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<Guid>("PublicId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long?>("UpdatedBy")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.HasIndex("PublicId")
-                        .IsUnique();
-
-                    b.ToTable("academic_terms", "academic");
-                });
-
             modelBuilder.Entity("EnglishCentral.Domain.Entities.Academic.Attendance", b =>
                 {
                     b.Property<long>("Id")
@@ -164,9 +107,6 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<long>("AcademicTermId")
-                        .HasColumnType("bigint");
-
                     b.Property<int>("Capacity")
                         .HasColumnType("integer");
 
@@ -243,8 +183,6 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AcademicTermId");
 
                     b.HasIndex("Code")
                         .IsUnique();
@@ -1290,12 +1228,6 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("EnglishCentral.Domain.Entities.Academic.Class", b =>
                 {
-                    b.HasOne("EnglishCentral.Domain.Entities.Academic.AcademicTerm", "AcademicTerm")
-                        .WithMany("Classes")
-                        .HasForeignKey("AcademicTermId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("EnglishCentral.Domain.Entities.Academic.Course", "Course")
                         .WithMany("Classes")
                         .HasForeignKey("CourseId")
@@ -1463,11 +1395,6 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EnglishCentral.Domain.Entities.Academic.AcademicTerm", b =>
-                {
-                    b.Navigation("Classes");
                 });
 
             modelBuilder.Entity("EnglishCentral.Domain.Entities.Academic.Class", b =>
