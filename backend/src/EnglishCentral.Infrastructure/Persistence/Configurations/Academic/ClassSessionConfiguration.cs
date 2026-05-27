@@ -20,6 +20,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
 
             builder.HasIndex(x => x.TeacherId);
 
+            builder.HasIndex(x => x.SubstituteTeacherId);
+
             builder.HasIndex(x => x.RoomId);
 
             builder.HasIndex(x => x.SessionDate);
@@ -36,6 +38,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
             builder.Property(x => x.Notes)
                 .HasMaxLength(2000);
 
+            builder.Property(x => x.CancellationReason)
+                .HasMaxLength(1000);
+
             builder.HasOne(x => x.Class)
                 .WithMany(x => x.Sessions)
                 .HasForeignKey(x => x.ClassId)
@@ -44,6 +49,11 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
             builder.HasOne(x => x.Teacher)
                 .WithMany(x => x.Sessions)
                 .HasForeignKey(x => x.TeacherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(x => x.SubstituteTeacher)
+                .WithMany()
+                .HasForeignKey(x => x.SubstituteTeacherId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Room)

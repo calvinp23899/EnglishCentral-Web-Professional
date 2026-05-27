@@ -16,6 +16,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
             builder.HasIndex(x => x.PublicId)
                 .IsUnique();
 
+            builder.HasIndex(x => x.EnrollmentCode)
+                .IsUnique();
+
             builder.HasIndex(x => new
             {
                 x.StudentId,
@@ -27,6 +30,10 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
             builder.Property(x => x.Status)
                 .HasConversion<int>();
 
+            builder.Property(x => x.EnrollmentCode)
+                .HasMaxLength(50)
+                .IsRequired();
+
             builder.Property(x => x.TuitionFee)
                 .HasPrecision(18, 2);
 
@@ -35,6 +42,15 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
 
             builder.Property(x => x.FinalAmount)
                 .HasPrecision(18, 2);
+
+            builder.Property(x => x.PaidAmount)
+                .HasPrecision(18, 2);
+
+            builder.Property(x => x.OutstandingAmount)
+                .HasPrecision(18, 2);
+
+            builder.Property(x => x.CancellationReason)
+                .HasMaxLength(1000);
 
             builder.Property(x => x.Notes)
                 .HasMaxLength(2000);

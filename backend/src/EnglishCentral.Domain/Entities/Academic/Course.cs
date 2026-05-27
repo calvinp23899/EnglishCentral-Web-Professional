@@ -16,9 +16,15 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public int DurationWeeks { get; set; }
 
+        public int TotalSessions { get; set; }
+
+        public int SessionDurationMinutes { get; set; }
+
         public decimal TuitionFee { get; set; }
 
         public int MaxStudents { get; set; }
+
+        public int DisplayOrder { get; set; }
 
         public bool IsPublished { get; set; }
 

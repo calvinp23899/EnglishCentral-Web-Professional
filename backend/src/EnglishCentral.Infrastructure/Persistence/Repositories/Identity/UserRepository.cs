@@ -20,7 +20,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Identity
         }
 
 
-        public async Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default)
+        public async Task<bool> IsEmailExistsAsync(string email, CancellationToken ct = default)
         {
             return await _dbContenxt.Users
                 .AnyAsync(u => u.Email == email && !u.IsDeleted, ct);

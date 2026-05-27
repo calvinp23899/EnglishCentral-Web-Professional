@@ -27,6 +27,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
             builder.Property(x => x.Status)
                 .HasConversion<int>();
 
+            builder.Property(x => x.AbsenceReason)
+                .HasMaxLength(1000);
+
             builder.Property(x => x.Notes)
                 .HasMaxLength(1000);
 

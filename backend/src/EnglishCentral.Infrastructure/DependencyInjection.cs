@@ -1,10 +1,12 @@
 using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Academic;
+using EnglishCentral.Application.Interfaces.Academic.ITeacher;
 using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Infrastructure.Persistence;
 using EnglishCentral.Infrastructure.Persistence.Context;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Academic;
+using EnglishCentral.Infrastructure.Persistence.Repositories.Academic.TeacherRepo;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Identity;
 using EnglishCentral.Infrastructure.Services.Identity;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
@@ -55,6 +57,8 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IStudentRepository, StudentRepository>();
+            services.AddScoped<ITeacherRepository, TeacherRepository>();
+            services.AddScoped(typeof(IAcademicRepository<>), typeof(AcademicRepository<>));
             #endregion
 
             #region JWT Setting
@@ -82,6 +86,41 @@ namespace EnglishCentral.Infrastructure
                 SystemPermissions.CourseDelete,
                 SystemPermissions.CourseRead,
                 SystemPermissions.CourseUpdate,
+
+                SystemPermissions.CourseCategoryRead,
+                SystemPermissions.CourseCategoryCreate,
+                SystemPermissions.CourseCategoryUpdate,
+                SystemPermissions.CourseCategoryDelete,
+
+                SystemPermissions.RoomRead,
+                SystemPermissions.RoomCreate,
+                SystemPermissions.RoomUpdate,
+                SystemPermissions.RoomDelete,
+
+                SystemPermissions.ClassRead,
+                SystemPermissions.ClassCreate,
+                SystemPermissions.ClassUpdate,
+                SystemPermissions.ClassDelete,
+
+                SystemPermissions.ClassScheduleRead,
+                SystemPermissions.ClassScheduleCreate,
+                SystemPermissions.ClassScheduleUpdate,
+                SystemPermissions.ClassScheduleDelete,
+
+                SystemPermissions.ClassSessionRead,
+                SystemPermissions.ClassSessionCreate,
+                SystemPermissions.ClassSessionUpdate,
+                SystemPermissions.ClassSessionDelete,
+
+                SystemPermissions.EnrollmentRead,
+                SystemPermissions.EnrollmentCreate,
+                SystemPermissions.EnrollmentUpdate,
+                SystemPermissions.EnrollmentDelete,
+
+                SystemPermissions.AttendanceRead,
+                SystemPermissions.AttendanceCreate,
+                SystemPermissions.AttendanceUpdate,
+                SystemPermissions.AttendanceDelete,
             ];
         }
     }

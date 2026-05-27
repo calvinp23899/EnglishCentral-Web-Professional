@@ -15,7 +15,6 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
         private readonly IRoleRepository _roleRepository;
         private readonly IPasswordService _passwordService;
         private readonly IJwtService _jwtService;
-        private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<RegisterCommandHandler> _logger;
 
         public RegisterCommandHandler(
@@ -30,7 +29,6 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
             _roleRepository = roleRepository;
             _passwordService = passwordService;
             _jwtService = jwtService;
-            _unitOfWork = unitOfWork;
             _logger = logger;
 
         }
@@ -38,7 +36,7 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
         public async Task<Result<AuthTokenResult>> Handle(RegisterCommand request, CancellationToken ct)
         {
             _logger.LogInformation($"-----Starting running {typeof(RegisterCommandHandler)} -----");
-            var exists = await _userRepository.ExistsByEmailAsync(request.Email, ct);
+            var exists = await _userRepository.IsEmailExistsAsync(request.Email, ct);
             if (exists)
             {
                 _logger.LogWarning("Register failed because email already exists {0}", request.Email);
@@ -75,8 +73,6 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
             var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(user);
             var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user, ct);
             _logger.LogInformation("Generating token successfuly accessToken - {0}", string.Empty);
-
-            await _unitOfWork.SaveChangesAsync(ct);
             _logger.LogInformation($"-----Ending running {typeof(RegisterCommandHandler)} ------");
             return Result<AuthTokenResult>.Success(new AuthTokenResult(
                 user.PublicId,

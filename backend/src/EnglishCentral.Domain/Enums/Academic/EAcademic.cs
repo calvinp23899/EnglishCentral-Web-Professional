@@ -72,4 +72,17 @@
         TOEIC650 = 12,
         TOEIC850 = 13
     }
+
+    public enum ContractType
+    {
+        FullTime,
+        PartTime,
+        Freelance
+    }
+    public enum SalaryType
+    {
+        Fixed,
+        Hourly,
+        PerSession
+    }
 }

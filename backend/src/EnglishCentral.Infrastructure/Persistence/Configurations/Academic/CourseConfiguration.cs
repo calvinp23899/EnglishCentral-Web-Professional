@@ -23,6 +23,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Academic
 
             builder.HasIndex(x => x.Level);
 
+            builder.HasIndex(x => x.DisplayOrder);
+
             builder.Property(x => x.Code)
                 .HasMaxLength(50)
                 .IsRequired();

@@ -5,16 +5,22 @@ namespace EnglishCentral.Infrastructure.Persistence
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly ApplicationDbContext _db;
+        private readonly ApplicationDbContext _dbContext;
 
-        public UnitOfWork(ApplicationDbContext db)
+        public UnitOfWork(ApplicationDbContext dbContext)
         {
-            _db = db;
+            _dbContext = dbContext;
         }
 
-        public async Task<int> SaveChangesAsync(CancellationToken ct = default)
+        public async Task<IAppTransaction> BeginTransactionAsync(CancellationToken ct = default)
         {
-            return await _db.SaveChangesAsync(ct);
+            var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
+            return new AppTransaction(transaction);
+        }
+
+        public Task<int> SaveChangesAsync(CancellationToken ct = default)
+        {
+            return _dbContext.SaveChangesAsync(ct);
         }
     }
 }

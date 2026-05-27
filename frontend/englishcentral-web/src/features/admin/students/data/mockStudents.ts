@@ -1,0 +1,220 @@
+export type StudentStatus = 1 | 2 | 3;
+
+export type StudentGender = 1 | 2 | 3;
+
+export type Student = {
+  id: string;
+  studentCode: string;
+  fullName: string;
+  dateOfBirth: string;
+  gender: StudentGender;
+  email: string;
+  phoneNumber: string;
+  address: string;
+  parentName: string;
+  parentPhoneNumber: string;
+  status: StudentStatus;
+  notes: string;
+  registeredAt: string;
+};
+
+export const genderLabels: Record<StudentGender, string> = {
+  1: "Nam",
+  2: "Nữ",
+  3: "Khác",
+};
+
+export const statusLabels: Record<StudentStatus, string> = {
+  1: "Đang học",
+  2: "Chờ tư vấn",
+  3: "Tạm dừng",
+};
+
+export const statusToneByValue: Record<StudentStatus, "active" | "pending" | "inactive"> = {
+  1: "active",
+  2: "pending",
+  3: "inactive",
+};
+
+export const students: Student[] = [
+  {
+    id: "1",
+    studentCode: "STU-24001",
+    fullName: "Nguyễn Minh Anh",
+    dateOfBirth: "2001-02-14",
+    gender: 2,
+    email: "minhanh@student.ec.vn",
+    phoneNumber: "0901234567",
+    address: "Ho Chi Minh",
+    parentName: "Nguyễn Văn Hùng",
+    parentPhoneNumber: "0909999001",
+    registeredAt: "2026-05-18",
+    status: 1,
+    notes: "IELTS Foundation",
+  },
+  {
+    id: "2",
+    studentCode: "STU-24002",
+    fullName: "Nguyen Van B",
+    dateOfBirth: "2000-01-01",
+    gender: 2,
+    email: "student002@gmail.com",
+    phoneNumber: "0901234567",
+    address: "Da Nang",
+    parentName: "AAAAAAAAAAAAVan B",
+    parentPhoneNumber: "0909999999",
+    registeredAt: "2026-05-16",
+    status: 1,
+    notes: "second student",
+  },
+  {
+    id: "3",
+    studentCode: "STU-24003",
+    fullName: "Lê Phương Thảo",
+    dateOfBirth: "2002-08-21",
+    gender: 2,
+    email: "phuongthao@student.ec.vn",
+    phoneNumber: "0988112233",
+    address: "Ha Noi",
+    parentName: "Lê Minh Quân",
+    parentPhoneNumber: "0909999003",
+    registeredAt: "2026-05-12",
+    status: 1,
+    notes: "Needs speaking follow-up",
+  },
+  {
+    id: "4",
+    studentCode: "STU-24004",
+    fullName: "Phạm Gia Huy",
+    dateOfBirth: "1999-11-05",
+    gender: 1,
+    email: "giahuy@student.ec.vn",
+    phoneNumber: "0934556778",
+    address: "Can Tho",
+    parentName: "Phạm Thanh Bình",
+    parentPhoneNumber: "0909999004",
+    registeredAt: "2026-05-10",
+    status: 3,
+    notes: "Paused for schedule conflict",
+  },
+  {
+    id: "5",
+    studentCode: "STU-24005",
+    fullName: "Võ Khánh Linh",
+    dateOfBirth: "2003-04-19",
+    gender: 2,
+    email: "khanhlinh@student.ec.vn",
+    phoneNumber: "0977345221",
+    address: "Da Nang",
+    parentName: "Võ Hữu Tín",
+    parentPhoneNumber: "0909999005",
+    registeredAt: "2026-05-08",
+    status: 1,
+    notes: "High attendance",
+  },
+  {
+    id: "6",
+    studentCode: "STU-24006",
+    fullName: "Đặng Quốc Bảo",
+    dateOfBirth: "2000-09-30",
+    gender: 1,
+    email: "quocbao@student.ec.vn",
+    phoneNumber: "0966781245",
+    address: "Hai Phong",
+    parentName: "Đặng Quốc Tuấn",
+    parentPhoneNumber: "0909999006",
+    registeredAt: "2026-05-05",
+    status: 2,
+    notes: "Waiting for placement test",
+  },
+  {
+    id: "7",
+    studentCode: "STU-24007",
+    fullName: "Bùi Thanh Mai",
+    dateOfBirth: "2001-12-12",
+    gender: 2,
+    email: "thanhmai@student.ec.vn",
+    phoneNumber: "0922908104",
+    address: "Hue",
+    parentName: "Bùi Văn Long",
+    parentPhoneNumber: "0909999007",
+    registeredAt: "2026-04-29",
+    status: 1,
+    notes: "Prefers evening class",
+  },
+  {
+    id: "8",
+    studentCode: "STU-24008",
+    fullName: "Đỗ Nhật Minh",
+    dateOfBirth: "2002-06-03",
+    gender: 1,
+    email: "nhatminh@student.ec.vn",
+    phoneNumber: "0945334920",
+    address: "Ho Chi Minh",
+    parentName: "Đỗ Nhật Nam",
+    parentPhoneNumber: "0909999008",
+    registeredAt: "2026-04-25",
+    status: 3,
+    notes: "Follow up next term",
+  },
+  {
+    id: "9",
+    studentCode: "STU-24009",
+    fullName: "Hoàng Mai Chi",
+    dateOfBirth: "2004-03-17",
+    gender: 2,
+    email: "maichi@student.ec.vn",
+    phoneNumber: "0909601842",
+    address: "Ha Noi",
+    parentName: "Hoàng Quốc Cường",
+    parentPhoneNumber: "0909999009",
+    registeredAt: "2026-04-21",
+    status: 1,
+    notes: "Strong reading skill",
+  },
+  {
+    id: "10",
+    studentCode: "STU-24010",
+    fullName: "Ngô Đức Anh",
+    dateOfBirth: "2000-07-27",
+    gender: 1,
+    email: "ducanh@student.ec.vn",
+    phoneNumber: "0918777318",
+    address: "Nha Trang",
+    parentName: "Ngô Đức Hòa",
+    parentPhoneNumber: "0909999010",
+    registeredAt: "2026-04-18",
+    status: 2,
+    notes: "Needs advisor confirmation",
+  },
+  {
+    id: "11",
+    studentCode: "STU-24011",
+    fullName: "Tạ Bảo Ngọc",
+    dateOfBirth: "2001-10-09",
+    gender: 2,
+    email: "baongoc@student.ec.vn",
+    phoneNumber: "0981654200",
+    address: "Da Lat",
+    parentName: "Tạ Minh Sơn",
+    parentPhoneNumber: "0909999011",
+    registeredAt: "2026-04-12",
+    status: 1,
+    notes: "Target IELTS 7.0",
+  },
+  {
+    id: "12",
+    studentCode: "STU-24012",
+    fullName: "Phan Quốc Việt",
+    dateOfBirth: "1998-05-22",
+    gender: 1,
+    email: "quocviet@student.ec.vn",
+    phoneNumber: "0938410733",
+    address: "Binh Duong",
+    parentName: "Phan Quốc Thắng",
+    parentPhoneNumber: "0909999012",
+    registeredAt: "2026-04-06",
+    status: 3,
+    notes: "Archived account",
+  },
+];

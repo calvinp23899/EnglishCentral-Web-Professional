@@ -9,6 +9,8 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public long TeacherId { get; set; }
 
+        public long? SubstituteTeacherId { get; set; }
+
         public long RoomId { get; set; }
 
         public int SessionNumber { get; set; }
@@ -19,7 +21,15 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public TimeOnly EndTime { get; set; }
 
+        public DateTimeOffset? StartedAt { get; set; }
+
+        public DateTimeOffset? EndedAt { get; set; }
+
         public SessionStatus Status { get; set; } = SessionStatus.Scheduled;
+
+        public string? CancellationReason { get; set; }
+
+        public bool IsPayrollLocked { get; set; }
 
         public string? Notes { get; set; }
 
@@ -28,6 +38,8 @@ namespace EnglishCentral.Domain.Entities.Academic
         public Class Class { get; set; } = default!;
 
         public Teacher Teacher { get; set; } = default!;
+
+        public Teacher? SubstituteTeacher { get; set; }
 
         public Room Room { get; set; } = default!;
 

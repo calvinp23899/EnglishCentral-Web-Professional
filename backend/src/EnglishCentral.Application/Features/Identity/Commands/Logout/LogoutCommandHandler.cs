@@ -7,7 +7,6 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Logout
 {
     public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result<bool>>
     {
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
 
         public LogoutCommandHandler(
@@ -15,7 +14,6 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Logout
             IUnitOfWork unitOfWork)
         {
             _refreshTokenRepository = refreshTokenRepository;
-            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result<bool>> Handle(LogoutCommand request, CancellationToken ct)
@@ -37,9 +35,6 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Logout
                     400);
             }
             token.RevokedAt = DateTimeOffset.UtcNow;
-
-            await _unitOfWork.SaveChangesAsync(ct);
-
             return Result<bool>.Success(true);
         }
     }

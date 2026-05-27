@@ -14,31 +14,71 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Identity
             var permissions = new List<Permission>
             {
                 // Students
-                new() { Name = "student.read", Description = "View students" , CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "student.create", Description = "Create students", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "student.update", Description = "Update students", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "student.delete", Description = "Delete students", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.StudentRead, Description = "View students" , CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.StudentCreate, Description = "Create students", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.StudentUpdate, Description = "Update students", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.StudentDelete, Description = "Delete students", CreatedBy = SystemDefault.DefaultSystemNumber },
 
                 // Teachers
-                new() { Name = "teacher.read", Description = "View teachers", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "teacher.create", Description = "Create teachers", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "teacher.update", Description = "Update teachers", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "teacher.delete", Description = "Delete teachers", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.TeacherRead, Description = "View teachers", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.TeacherCreate, Description = "Create teachers", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.TeacherUpdate, Description = "Update teachers", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.TeacherDelete, Description = "Delete teachers", CreatedBy = SystemDefault.DefaultSystemNumber },
 
                 // Courses
-                new() { Name = "course.read", Description = "View courses", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "course.create", Description = "Create courses", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "course.update", Description = "Update courses", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "course.delete", Description = "Delete courses", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.CourseRead, Description = "View courses", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.CourseCreate, Description = "Create courses", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.CourseUpdate, Description = "Update courses", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.CourseDelete, Description = "Delete courses", CreatedBy = SystemDefault.DefaultSystemNumber },
 
-                // Classes
-                new() { Name = "class.read", Description = "View classes", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "class.create", Description = "Create classes", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "class.update", Description = "Update classes", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = "class.delete", Description = "Delete classes", CreatedBy = SystemDefault.DefaultSystemNumber }
+                new() { Name = SystemPermissions.CourseCategoryRead, Description = "View course categories", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.CourseCategoryCreate, Description = "Create course categories", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.CourseCategoryUpdate, Description = "Update course categories", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.CourseCategoryDelete, Description = "Delete course categories", CreatedBy = SystemDefault.DefaultSystemNumber },
+
+                new() { Name = SystemPermissions.RoomRead, Description = "View rooms", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.RoomCreate, Description = "Create rooms", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.RoomUpdate, Description = "Update rooms", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.RoomDelete, Description = "Delete rooms", CreatedBy = SystemDefault.DefaultSystemNumber },
+
+                new() { Name = SystemPermissions.ClassRead, Description = "View classes", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ClassCreate, Description = "Create classes", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ClassUpdate, Description = "Update classes", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ClassDelete, Description = "Delete classes", CreatedBy = SystemDefault.DefaultSystemNumber },
+
+                new() { Name = SystemPermissions.ClassScheduleRead, Description = "View class schedules", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ClassScheduleCreate, Description = "Create class schedules", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ClassScheduleUpdate, Description = "Update class schedules", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ClassScheduleDelete, Description = "Delete class schedules", CreatedBy = SystemDefault.DefaultSystemNumber },
+
+                new() { Name = SystemPermissions.ClassSessionRead, Description = "View class sessions", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ClassSessionCreate, Description = "Create class sessions", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ClassSessionUpdate, Description = "Update class sessions", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ClassSessionDelete, Description = "Delete class sessions", CreatedBy = SystemDefault.DefaultSystemNumber },
+
+                new() { Name = SystemPermissions.EnrollmentRead, Description = "View enrollments", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.EnrollmentCreate, Description = "Create enrollments", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.EnrollmentUpdate, Description = "Update enrollments", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.EnrollmentDelete, Description = "Delete enrollments", CreatedBy = SystemDefault.DefaultSystemNumber },
+
+                new() { Name = SystemPermissions.AttendanceRead, Description = "View attendances", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.AttendanceCreate, Description = "Create attendances", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.AttendanceUpdate, Description = "Update attendances", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.AttendanceDelete, Description = "Delete attendances", CreatedBy = SystemDefault.DefaultSystemNumber }
             };
 
-            await context.Permissions.AddRangeAsync(permissions);
+            var existingPermissionNames = await context.Permissions
+                .Select(x => x.Name)
+                .ToListAsync();
+
+            var missingPermissions = permissions
+                .Where(x => !existingPermissionNames.Contains(x.Name))
+                .ToList();
+
+            if (missingPermissions.Count == 0)
+                return;
+
+            await context.Permissions.AddRangeAsync(missingPermissions);
             await context.SaveChangesAsync();
         }
     }
