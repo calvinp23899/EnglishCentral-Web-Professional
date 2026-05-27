@@ -70,6 +70,20 @@ namespace EnglishCentral.Infrastructure.Persistence.Context
 
         public DbSet<Receipt> Receipts => Set<Receipt>();
 
+        public DbSet<Discount> Discounts => Set<Discount>();
+
+        public DbSet<EnrollmentDiscount> EnrollmentDiscounts => Set<EnrollmentDiscount>();
+
+        public DbSet<InvoiceDiscount> InvoiceDiscounts => Set<InvoiceDiscount>();
+
+        public DbSet<Refund> Refunds => Set<Refund>();
+
+        public DbSet<CreditNote> CreditNotes => Set<CreditNote>();
+
+        public DbSet<CreditNoteApplication> CreditNoteApplications => Set<CreditNoteApplication>();
+
+        public DbSet<BillingLedgerEntry> BillingLedgerEntries => Set<BillingLedgerEntry>();
+
         #endregion
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

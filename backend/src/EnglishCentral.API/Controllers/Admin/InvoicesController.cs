@@ -1,3 +1,4 @@
+using EnglishCentral.Application.Features.Finance.Invoices.Commands.CancelInvoice;
 using EnglishCentral.Application.Features.Finance.Invoices.Queries.GetInvoiceById;
 using EnglishCentral.Application.Features.Finance.Invoices.Queries.GetInvoices;
 using EnglishCentral.Infrastructure.Authorization;
@@ -16,7 +17,7 @@ namespace EnglishCentral.API.Controllers.Admin
         public InvoicesController(IMediator mediator) => _mediator = mediator;
 
         [HttpGet("get-list")]
-        [HasPermission(SystemPermissions.EnrollmentRead)]
+        [HasPermission(SystemPermissions.BillingRead)]
         public async Task<IActionResult> GetList([FromQuery] GetInvoicesQuery query, CancellationToken ct)
         {
             var result = await _mediator.Send(query, ct);
@@ -24,10 +25,18 @@ namespace EnglishCentral.API.Controllers.Admin
         }
 
         [HttpGet("{id:long}/get-by-id")]
-        [HasPermission(SystemPermissions.EnrollmentRead)]
+        [HasPermission(SystemPermissions.BillingRead)]
         public async Task<IActionResult> GetById(long id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetInvoiceByIdQuery(id), ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPost("{id:long}/cancel")]
+        [HasPermission(SystemPermissions.BillingUpdate)]
+        public async Task<IActionResult> Cancel(long id, CancelInvoiceCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command with { Id = id }, ct);
             return StatusCode(result.StatusCode, result);
         }
     }

@@ -1,5 +1,5 @@
 using EnglishCentral.Application.Features.Finance.Invoices.DTOs;
-using EnglishCentral.Application.Interfaces.Academic;
+using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Domain.Entities.Finance;
 using EnglishCentral.Shared.Common.PaginationHelpers;
 using EnglishCentral.Shared.Results;
@@ -9,12 +9,12 @@ namespace EnglishCentral.Application.Features.Finance.Invoices.Queries.GetInvoic
 {
     public class GetInvoicesQueryHandler : IRequestHandler<GetInvoicesQuery, Result<PagedResult<InvoiceResponse>>>
     {
-        private readonly IAcademicRepository<Invoice> _repository;
-        private readonly IAcademicRepository<InvoiceLine> _invoiceLineRepository;
+        private readonly IFinanceRepository<Invoice> _repository;
+        private readonly IFinanceRepository<InvoiceLine> _invoiceLineRepository;
 
         public GetInvoicesQueryHandler(
-            IAcademicRepository<Invoice> repository,
-            IAcademicRepository<InvoiceLine> invoiceLineRepository)
+            IFinanceRepository<Invoice> repository,
+            IFinanceRepository<InvoiceLine> invoiceLineRepository)
         {
             _repository = repository;
             _invoiceLineRepository = invoiceLineRepository;

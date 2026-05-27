@@ -1,13 +1,18 @@
 using EnglishCentral.API.Middlewares;
 using EnglishCentral.Application;
 using EnglishCentral.Infrastructure;
+using EnglishCentral.Infrastructure.BackgroundJobs;
+using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Infrastructure.Extensions;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
+using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace EnglishCentral.API
 {
@@ -37,7 +42,12 @@ namespace EnglishCentral.API
             // Add services to the container.
             var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(
+                        new JsonStringEnumConverter(allowIntegerValues: false));
+                });
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("Frontend", policy =>
@@ -117,6 +127,16 @@ namespace EnglishCentral.API
 
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                Authorization =
+                [
+                    new HangfireDashboardAuthorizationFilter(
+                        app.Services.GetRequiredService<IDataProtectionProvider>())
+                ]
+            });
+
+            HangfireJobScheduler.ScheduleRecurringJobs();
 
             app.MapControllers();
 

@@ -9,8 +9,6 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Identity
     {
         public static async Task SeedAsync(ApplicationDbContext context)
         {
-            if (await context.RolePermissions.AnyAsync())
-                return;
             var adminRole = await context.Roles
                 .FirstAsync(x => x.Name == SystemRoles.Admin);
 

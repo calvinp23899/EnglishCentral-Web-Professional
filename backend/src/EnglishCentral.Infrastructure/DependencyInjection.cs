@@ -1,16 +1,20 @@
 using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Academic;
 using EnglishCentral.Application.Interfaces.Academic.ITeacher;
+using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Infrastructure.Persistence;
 using EnglishCentral.Infrastructure.Persistence.Context;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Academic;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Academic.TeacherRepo;
+using EnglishCentral.Infrastructure.Persistence.Repositories.Finance;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Identity;
 using EnglishCentral.Infrastructure.Services.Identity;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
 using EnglishCentral.Shared.Constants;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +29,17 @@ namespace EnglishCentral.Infrastructure
             #region Database Connection
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            #endregion
+
+            #region Hangfire
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
+
+            services.AddHangfireServer();
             #endregion
 
             #region Authorization
@@ -59,6 +74,7 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped<IStudentRepository, StudentRepository>();
             services.AddScoped<ITeacherRepository, TeacherRepository>();
             services.AddScoped(typeof(IAcademicRepository<>), typeof(AcademicRepository<>));
+            services.AddScoped(typeof(IFinanceRepository<>), typeof(FinanceRepository<>));
             #endregion
 
             #region JWT Setting
@@ -121,6 +137,12 @@ namespace EnglishCentral.Infrastructure
                 SystemPermissions.AttendanceCreate,
                 SystemPermissions.AttendanceUpdate,
                 SystemPermissions.AttendanceDelete,
+
+                SystemPermissions.BillingRead,
+                SystemPermissions.BillingCreate,
+                SystemPermissions.BillingUpdate,
+                SystemPermissions.BillingDelete,
+                SystemPermissions.BillingPaymentCreate,
             ];
         }
     }

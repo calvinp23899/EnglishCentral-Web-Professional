@@ -135,7 +135,8 @@
         MaterialFee = 2,
         ExamFee = 3,
         RegistrationFee = 4,
-        Adjustment = 5
+        Adjustment = 5,
+        Discount = 6
     }
 
     public enum PaymentMethod
@@ -153,5 +154,48 @@
         Failed = 3,
         Cancelled = 4,
         Refunded = 5
+    }
+
+    public enum DiscountType
+    {
+        FixedAmount = 1,
+        Percentage = 2
+    }
+
+    public enum RefundStatus
+    {
+        Pending = 1,
+        Completed = 2,
+        Cancelled = 3
+    }
+
+    public enum RefundMethod
+    {
+        Cash = 1,
+        BankTransfer = 2,
+        Card = 3,
+        EWallet = 4
+    }
+
+    public enum CreditNoteStatus
+    {
+        Open = 1,
+        PartiallyApplied = 2,
+        Applied = 3,
+        Cancelled = 4
+    }
+
+    public enum BillingLedgerEntryType
+    {
+        InvoiceIssued = 1,
+        PaymentReceived = 2,
+        PaymentAllocated = 3,
+        InvoicePaid = 4,
+        PaymentCancelled = 5,
+        RefundIssued = 6,
+        CreditNoteIssued = 7,
+        CreditNoteApplied = 8,
+        InvoiceCancelled = 9,
+        DiscountApplied = 10
     }
 }

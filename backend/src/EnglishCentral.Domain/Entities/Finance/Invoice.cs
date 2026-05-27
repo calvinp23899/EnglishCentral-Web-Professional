@@ -38,6 +38,8 @@ namespace EnglishCentral.Domain.Entities.Finance
 
         public ICollection<InvoiceLine> Lines { get; set; } = [];
 
+        public ICollection<InvoiceDiscount> Discounts { get; set; } = [];
+
         public ICollection<PaymentAllocation> PaymentAllocations { get; set; } = [];
     }
 }

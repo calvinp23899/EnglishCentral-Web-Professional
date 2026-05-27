@@ -30,6 +30,8 @@ namespace EnglishCentral.Domain.Entities.Finance
 
         public ICollection<PaymentAllocation> Allocations { get; set; } = [];
 
+        public ICollection<Refund> Refunds { get; set; } = [];
+
         public Receipt? Receipt { get; set; }
     }
 }

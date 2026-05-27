@@ -1,5 +1,5 @@
 using EnglishCentral.Application.Features.Finance.Invoices.DTOs;
-using EnglishCentral.Application.Interfaces.Academic;
+using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Domain.Entities.Finance;
 using EnglishCentral.Shared.Results;
 using MediatR;
@@ -8,12 +8,12 @@ namespace EnglishCentral.Application.Features.Finance.Invoices.Queries.GetInvoic
 {
     public class GetInvoiceByIdQueryHandler : IRequestHandler<GetInvoiceByIdQuery, Result<InvoiceResponse>>
     {
-        private readonly IAcademicRepository<Invoice> _repository;
-        private readonly IAcademicRepository<InvoiceLine> _invoiceLineRepository;
+        private readonly IFinanceRepository<Invoice> _repository;
+        private readonly IFinanceRepository<InvoiceLine> _invoiceLineRepository;
 
         public GetInvoiceByIdQueryHandler(
-            IAcademicRepository<Invoice> repository,
-            IAcademicRepository<InvoiceLine> invoiceLineRepository)
+            IFinanceRepository<Invoice> repository,
+            IFinanceRepository<InvoiceLine> invoiceLineRepository)
         {
             _repository = repository;
             _invoiceLineRepository = invoiceLineRepository;

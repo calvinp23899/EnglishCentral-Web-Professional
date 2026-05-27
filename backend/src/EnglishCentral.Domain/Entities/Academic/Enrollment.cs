@@ -47,5 +47,7 @@ namespace EnglishCentral.Domain.Entities.Academic
         public EnrollmentPaymentPlan? PaymentPlan { get; set; }
 
         public ICollection<Invoice> Invoices { get; set; } = [];
+
+        public ICollection<EnrollmentDiscount> Discounts { get; set; } = [];
     }
 }

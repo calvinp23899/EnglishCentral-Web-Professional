@@ -9,8 +9,6 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Identity
     {
         public static async Task SeedAsync(ApplicationDbContext context)
         {
-            if (await context.Permissions.AnyAsync())
-                return;
             var permissions = new List<Permission>
             {
                 // Students
@@ -64,7 +62,13 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Identity
                 new() { Name = SystemPermissions.AttendanceRead, Description = "View attendances", CreatedBy = SystemDefault.DefaultSystemNumber },
                 new() { Name = SystemPermissions.AttendanceCreate, Description = "Create attendances", CreatedBy = SystemDefault.DefaultSystemNumber },
                 new() { Name = SystemPermissions.AttendanceUpdate, Description = "Update attendances", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = SystemPermissions.AttendanceDelete, Description = "Delete attendances", CreatedBy = SystemDefault.DefaultSystemNumber }
+                new() { Name = SystemPermissions.AttendanceDelete, Description = "Delete attendances", CreatedBy = SystemDefault.DefaultSystemNumber },
+
+                new() { Name = SystemPermissions.BillingRead, Description = "View billing", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.BillingCreate, Description = "Create billing records", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.BillingUpdate, Description = "Update billing records", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.BillingDelete, Description = "Delete billing records", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.BillingPaymentCreate, Description = "Create billing payments", CreatedBy = SystemDefault.DefaultSystemNumber }
             };
 
             var existingPermissionNames = await context.Permissions

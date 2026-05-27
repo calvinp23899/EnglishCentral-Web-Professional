@@ -1,5 +1,6 @@
 using EnglishCentral.Application.Features.Finance.Payments.DTOs;
 using EnglishCentral.Application.Interfaces.Academic;
+using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Domain.Entities.Academic;
 using EnglishCentral.Domain.Entities.Finance;
 using EnglishCentral.Domain.Enums.Academic;
@@ -10,21 +11,30 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
 {
     public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand, Result<PaymentResponse>>
     {
-        private readonly IAcademicRepository<Payment> _paymentRepository;
+        private readonly IFinanceRepository<Payment> _paymentRepository;
         private readonly IAcademicRepository<Student> _studentRepository;
-        private readonly IAcademicRepository<Invoice> _invoiceRepository;
+        private readonly IFinanceRepository<Invoice> _invoiceRepository;
         private readonly IAcademicRepository<Enrollment> _enrollmentRepository;
+        private readonly IFinanceRepository<EnrollmentPaymentPlanItem> _paymentPlanItemRepository;
+        private readonly IFinanceRepository<EnrollmentPaymentPlan> _paymentPlanRepository;
+        private readonly IFinanceRepository<BillingLedgerEntry> _ledgerRepository;
 
         public CreatePaymentCommandHandler(
-            IAcademicRepository<Payment> paymentRepository,
+            IFinanceRepository<Payment> paymentRepository,
             IAcademicRepository<Student> studentRepository,
-            IAcademicRepository<Invoice> invoiceRepository,
-            IAcademicRepository<Enrollment> enrollmentRepository)
+            IFinanceRepository<Invoice> invoiceRepository,
+            IAcademicRepository<Enrollment> enrollmentRepository,
+            IFinanceRepository<EnrollmentPaymentPlanItem> paymentPlanItemRepository,
+            IFinanceRepository<EnrollmentPaymentPlan> paymentPlanRepository,
+            IFinanceRepository<BillingLedgerEntry> ledgerRepository)
         {
             _paymentRepository = paymentRepository;
             _studentRepository = studentRepository;
             _invoiceRepository = invoiceRepository;
             _enrollmentRepository = enrollmentRepository;
+            _paymentPlanItemRepository = paymentPlanItemRepository;
+            _paymentPlanRepository = paymentPlanRepository;
+            _ledgerRepository = ledgerRepository;
         }
 
         public async Task<Result<PaymentResponse>> Handle(CreatePaymentCommand request, CancellationToken ct)
@@ -53,6 +63,10 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
                 var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, ct);
                 if (invoice is null)
                     return Result<PaymentResponse>.Failure("One or more invoices are not found.", 404);
+                if (invoice.Status == InvoiceStatus.Cancelled)
+                    return Result<PaymentResponse>.Failure("Cannot pay a cancelled invoice.", 400);
+                if (invoice.Status == InvoiceStatus.Paid || invoice.OutstandingAmount <= 0)
+                    return Result<PaymentResponse>.Failure("Cannot pay a fully paid invoice.", 400);
 
                 invoices.Add(invoice);
             }
@@ -70,6 +84,20 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
 
             if (enrollments.Any(x => x.StudentId != request.StudentId))
                 return Result<PaymentResponse>.Failure("Payment student does not match invoice enrollment student.", 400);
+
+            var paymentPlanItemIds = invoices
+                .Where(x => x.PaymentPlanItemId.HasValue)
+                .Select(x => x.PaymentPlanItemId!.Value)
+                .Distinct()
+                .ToList();
+
+            var paymentPlanItems = new List<EnrollmentPaymentPlanItem>();
+            foreach (var itemId in paymentPlanItemIds)
+            {
+                var item = await _paymentPlanItemRepository.GetByIdAsync(itemId, ct);
+                if (item is not null)
+                    paymentPlanItems.Add(item);
+            }
 
             var now = DateTimeOffset.UtcNow;
             var payment = new Payment
@@ -100,6 +128,16 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
                     : InvoiceStatus.PartiallyPaid;
                 invoice.UpdatedAt = now;
 
+                if (invoice.OutstandingAmount == 0 && invoice.PaymentPlanItemId.HasValue)
+                {
+                    var item = paymentPlanItems.FirstOrDefault(x => x.Id == invoice.PaymentPlanItemId.Value);
+                    if (item is not null)
+                    {
+                        item.Status = PaymentPlanItemStatus.Paid;
+                        item.UpdatedAt = now;
+                    }
+                }
+
                 var enrollment = enrollments.First(x => x.Id == invoice.EnrollmentId);
                 enrollment.PaidAmount += allocationRequest.Amount;
                 enrollment.OutstandingAmount -= allocationRequest.Amount;
@@ -113,6 +151,18 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
                     AllocatedAt = now,
                     CreatedAt = now
                 });
+
+                await _ledgerRepository.AddAsync(new BillingLedgerEntry
+                {
+                    EnrollmentId = invoice.EnrollmentId,
+                    InvoiceId = invoice.Id,
+                    Payment = payment,
+                    Type = BillingLedgerEntryType.PaymentAllocated,
+                    CreditAmount = allocationRequest.Amount,
+                    BalanceAfter = invoice.OutstandingAmount,
+                    OccurredAt = now,
+                    Description = "Payment allocated to invoice"
+                }, ct);
             }
 
             payment.Receipt = new Receipt
@@ -125,8 +175,42 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
                 CreatedAt = now
             };
 
+            await UpdateCompletedPaymentPlansAsync(paymentPlanItems, now, ct);
+
             await _paymentRepository.AddAsync(payment, ct);
             return Result<PaymentResponse>.Success(payment.ToResponse(), 201);
+        }
+
+        private async Task UpdateCompletedPaymentPlansAsync(
+            List<EnrollmentPaymentPlanItem> touchedItems,
+            DateTimeOffset now,
+            CancellationToken ct)
+        {
+            var planIds = touchedItems
+                .Select(x => x.PaymentPlanId)
+                .Distinct()
+                .ToList();
+
+            foreach (var planId in planIds)
+            {
+                var plan = await _paymentPlanRepository.GetByIdAsync(planId, ct);
+                if (plan is null || plan.Status == PaymentPlanStatus.Completed)
+                    continue;
+
+                var planItems = await _paymentPlanItemRepository.ListAsync(q => q.Where(x => x.PaymentPlanId == planId), ct);
+                var touchedById = touchedItems.ToDictionary(x => x.Id);
+                foreach (var planItem in planItems)
+                {
+                    if (touchedById.TryGetValue(planItem.Id, out var touchedItem))
+                        planItem.Status = touchedItem.Status;
+                }
+
+                if (planItems.Count > 0 && planItems.All(x => x.Status == PaymentPlanItemStatus.Paid))
+                {
+                    plan.Status = PaymentPlanStatus.Completed;
+                    plan.UpdatedAt = now;
+                }
+            }
         }
     }
 }
