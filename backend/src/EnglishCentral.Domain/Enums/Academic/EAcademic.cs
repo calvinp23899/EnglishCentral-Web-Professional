@@ -85,4 +85,73 @@
         Hourly,
         PerSession
     }
+
+    public enum BillingPolicyType
+    {
+        FullPayment = 1,
+        Monthly = 2,
+        Installment = 3,
+        Custom = 4
+    }
+
+    public enum PaymentPlanType
+    {
+        FullPayment = 1,
+        Monthly = 2,
+        Installment = 3,
+        Custom = 4
+    }
+
+    public enum PaymentPlanStatus
+    {
+        Draft = 1,
+        Active = 2,
+        Completed = 3,
+        Cancelled = 4
+    }
+
+    public enum PaymentPlanItemStatus
+    {
+        Pending = 1,
+        Invoiced = 2,
+        Paid = 3,
+        Overdue = 4,
+        Cancelled = 5
+    }
+
+    public enum InvoiceStatus
+    {
+        Draft = 1,
+        Issued = 2,
+        PartiallyPaid = 3,
+        Paid = 4,
+        Overdue = 5,
+        Cancelled = 6
+    }
+
+    public enum BillingItemType
+    {
+        Tuition = 1,
+        MaterialFee = 2,
+        ExamFee = 3,
+        RegistrationFee = 4,
+        Adjustment = 5
+    }
+
+    public enum PaymentMethod
+    {
+        Cash = 1,
+        BankTransfer = 2,
+        Card = 3,
+        EWallet = 4
+    }
+
+    public enum PaymentStatus
+    {
+        Pending = 1,
+        Completed = 2,
+        Failed = 3,
+        Cancelled = 4,
+        Refunded = 5
+    }
 }

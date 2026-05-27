@@ -1,4 +1,5 @@
-﻿using EnglishCentral.Domain.Common;
+using EnglishCentral.Domain.Common;
+using EnglishCentral.Domain.Entities.Finance;
 using EnglishCentral.Domain.Enums.Academic;
 
 namespace EnglishCentral.Domain.Entities.Academic
@@ -42,5 +43,9 @@ namespace EnglishCentral.Domain.Entities.Academic
         public Student Student { get; set; } = default!;
 
         public Class Class { get; set; } = default!;
+
+        public EnrollmentPaymentPlan? PaymentPlan { get; set; }
+
+        public ICollection<Invoice> Invoices { get; set; } = [];
     }
 }

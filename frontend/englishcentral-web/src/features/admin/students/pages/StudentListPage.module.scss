@@ -196,8 +196,12 @@
   tbody tr {
     transition: background 0.16s ease;
 
+    &:nth-child(even) {
+      background: #eef3f8;
+    }
+
     &:hover {
-      background: #f8fbff;
+      background: #eef6ff;
     }
   }
 

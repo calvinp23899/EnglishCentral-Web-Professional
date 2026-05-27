@@ -161,8 +161,12 @@
     text-transform: uppercase;
   }
 
+  tbody tr:nth-child(even) {
+    background: #eef3f8;
+  }
+
   tbody tr:hover {
-    background: #f8fbff;
+    background: #eef6ff;
   }
 
   td strong {

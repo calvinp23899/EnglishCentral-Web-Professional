@@ -1,4 +1,5 @@
-﻿using EnglishCentral.Domain.Common;
+using EnglishCentral.Domain.Common;
+using EnglishCentral.Domain.Entities.Finance;
 using EnglishCentral.Domain.Enums.Academic;
 
 namespace EnglishCentral.Domain.Entities.Academic
@@ -10,6 +11,8 @@ namespace EnglishCentral.Domain.Entities.Academic
         public long TeacherId { get; set; }
 
         public long? RoomId { get; set; }
+
+        public long? BillingPolicyId { get; set; }
 
         public string Code { get; set; } = default!;
 
@@ -42,6 +45,8 @@ namespace EnglishCentral.Domain.Entities.Academic
         public Teacher Teacher { get; set; } = default!;
 
         public Room? Room { get; set; }
+
+        public BillingPolicy? BillingPolicy { get; set; }
 
         public ICollection<Enrollment> Enrollments { get; set; } = [];
 
