@@ -1,13 +1,20 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Lock,
   MessagesSquare,
   ShieldCheck,
 } from "lucide-react";
-import { Button, Card, ErrorMessage, Input } from "@/components/ui";
+import { Button, Card, ErrorMessage, Input, toastDanger } from "@/components/ui";
+import {
+  authApi,
+  clearAuthSession,
+  getAuthErrorMessage,
+  hasAdminPortalAccess,
+  saveAuthSession,
+} from "@/features/public/auth/api/auth-api";
 
 import styles from "./AdminLoginPage.module.scss";
 
@@ -20,9 +27,11 @@ const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value);
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [errors, setErrors] = useState<AdminLoginErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") ?? "").trim();
@@ -45,7 +54,38 @@ export function AdminLoginPage() {
       return;
     }
 
-    navigate("/admin");
+    setIsSubmitting(true);
+
+    try {
+      const session = await authApi.login({
+        email,
+        password,
+      });
+
+      if (!hasAdminPortalAccess(session)) {
+        clearAuthSession();
+        toastDanger("Tài khoản này không có quyền truy cập trang quản trị.");
+        return;
+      }
+
+      saveAuthSession(session, formData.get("rememberLogin") === "on");
+
+      const fromPath =
+        typeof location.state === "object" &&
+        location.state !== null &&
+        "from" in location.state &&
+        typeof location.state.from === "string" &&
+        location.state.from.startsWith("/admin") &&
+        location.state.from !== "/admin/login"
+          ? location.state.from
+          : "/admin";
+
+      navigate(fromPath, { replace: true });
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -104,6 +144,7 @@ export function AdminLoginPage() {
                   aria-describedby={errors.email ? "admin-email-error" : undefined}
                   aria-invalid={Boolean(errors.email)}
                   id="admin-email"
+                  disabled={isSubmitting}
                   name="email"
                   onChange={() =>
                     setErrors((current) => ({ ...current, email: undefined }))
@@ -122,6 +163,7 @@ export function AdminLoginPage() {
                   }
                   aria-invalid={Boolean(errors.password)}
                   id="admin-password"
+                  disabled={isSubmitting}
                   name="password"
                   onChange={() =>
                     setErrors((current) => ({ ...current, password: undefined }))
@@ -135,7 +177,12 @@ export function AdminLoginPage() {
 
               <div className={styles.actionsRow}>
                 <label className={styles.rememberMe}>
-                  <input id="admin-remember" type="checkbox" />
+                  <input
+                    disabled={isSubmitting}
+                    id="admin-remember"
+                    name="rememberLogin"
+                    type="checkbox"
+                  />
                   Remember me
                 </label>
 
@@ -144,8 +191,8 @@ export function AdminLoginPage() {
                 </button>
               </div>
 
-              <Button fullWidth size="lg" type="submit">
-                Sign In to Dashboard
+              <Button disabled={isSubmitting} fullWidth size="lg" type="submit">
+                {isSubmitting ? "Signing in..." : "Sign In to Dashboard"}
               </Button>
             </form>
 

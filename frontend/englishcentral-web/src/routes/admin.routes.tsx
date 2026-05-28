@@ -22,6 +22,7 @@ import { StudentListPage } from "@/features/admin/students/pages/StudentListPage
 import { TeacherFormPage } from "@/features/admin/teachers/pages/TeacherFormPage";
 import { TeacherListPage } from "@/features/admin/teachers/pages/TeacherListPage";
 import { TeacherViewPage } from "@/features/admin/teachers/pages/TeacherViewPage";
+import { AdminProtectedRoute } from "./protected-route";
 
 const adminModuleRoutes = [
   {
@@ -62,6 +63,75 @@ const adminModuleRoutes = [
   },
 ];
 
+const financeRoutes = [
+  {
+    path: "finance/overview",
+    title: "Tổng quan tài chính",
+    description:
+      "Theo dõi doanh thu, công nợ, dòng tiền, hóa đơn đến hạn và các chỉ số tài chính chính của trung tâm.",
+  },
+  {
+    path: "finance/tuition-policies",
+    title: "Chính sách học phí",
+    description:
+      "Quản lý bảng học phí, quy tắc áp dụng theo khóa học, lớp học, kỳ học và nhóm học viên.",
+  },
+  {
+    path: "finance/payment-plans",
+    title: "Kế hoạch thanh toán",
+    description:
+      "Thiết lập lịch thanh toán, kỳ hạn, nhắc hạn và trạng thái thu tiền theo từng học viên hoặc đăng ký học.",
+  },
+  {
+    path: "finance/invoices",
+    title: "Hóa đơn",
+    description:
+      "Tạo, phát hành, theo dõi và đối soát hóa đơn học phí, dịch vụ và các khoản thu liên quan.",
+  },
+  {
+    path: "finance/payments",
+    title: "Thanh toán",
+    description:
+      "Ghi nhận giao dịch thanh toán, phương thức thu tiền, trạng thái xử lý và kết quả đối soát.",
+  },
+  {
+    path: "finance/receipts",
+    title: "Biên lai",
+    description:
+      "Quản lý biên lai thu tiền, lịch sử phát hành, thông tin người nộp và chứng từ liên quan.",
+  },
+  {
+    path: "finance/discounts",
+    title: "Giảm giá",
+    description:
+      "Cấu hình mã giảm giá, ưu đãi học phí, điều kiện áp dụng và hiệu lực theo chương trình.",
+  },
+  {
+    path: "finance/refunds",
+    title: "Hoàn tiền",
+    description:
+      "Theo dõi yêu cầu hoàn tiền, khoản hoàn, lý do xử lý và trạng thái phê duyệt.",
+  },
+  {
+    path: "finance/credit-notes",
+    title: "Phiếu ghi có",
+    description:
+      "Quản lý phiếu ghi có, điều chỉnh công nợ, khoản bù trừ và liên kết với hóa đơn gốc.",
+  },
+  {
+    path: "finance/ledger",
+    title: "Sổ cái",
+    description:
+      "Xem các bút toán, tài khoản, phát sinh nợ có và dữ liệu kế toán tổng hợp.",
+  },
+  {
+    path: "finance/background-jobs",
+    title: "Tác vụ nền",
+    description:
+      "Theo dõi tác vụ tự động như nhắc thanh toán, đồng bộ giao dịch, phát hành hóa đơn và đối soát định kỳ.",
+  },
+];
+
 export const adminRoutes = [
   {
     path: "/admin/login",
@@ -70,7 +140,11 @@ export const adminRoutes = [
   },
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: (
+      <AdminProtectedRoute>
+        <AdminLayout />
+      </AdminProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -183,6 +257,19 @@ export const adminRoutes = [
           />
         ),
       },
+      {
+        path: "finance",
+        element: <Navigate to="/admin/finance/overview" replace />,
+      },
+      ...financeRoutes.map((route) => ({
+        path: route.path,
+        element: (
+          <AdminPlaceholderPage
+            description={route.description}
+            title={route.title}
+          />
+        ),
+      })),
       {
         path: "courses",
         element: <CourseListPage />,

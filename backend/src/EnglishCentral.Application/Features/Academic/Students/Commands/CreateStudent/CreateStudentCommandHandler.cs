@@ -3,6 +3,7 @@ using EnglishCentral.Application.Interfaces.Academic;
 using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Domain.Entities.Academic;
 using EnglishCentral.Domain.Entities.Authentication;
+using EnglishCentral.Shared.Common.Helpers;
 using EnglishCentral.Shared.Constants;
 using EnglishCentral.Shared.Results;
 using MediatR;
@@ -36,8 +37,8 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
                     resultAccount.Error!,
                     resultAccount.StatusCode);
             }
-
-            var existedStudentCode = await _studentRepository.GetByStudentCodeAsync(request.StudentCode, ct);
+            var newStdCode = CodeGeneratorHelper.GenerateWithPrefixAndTick("ST");
+            var existedStudentCode = await _studentRepository.GetByStudentCodeAsync(newStdCode, ct);
             if (existedStudentCode is not null)
             {
                 return Result<StudentResponse>.Failure("Student code already exists.", 409);
@@ -46,7 +47,7 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
             var student = new Student
             {
                 PublicId = Guid.NewGuid(),
-                StudentCode = request.StudentCode.Trim(),
+                StudentCode = newStdCode,
                 User = resultAccount.Data,
                 FullName = request.FullName.Trim(),
                 DateOfBirth = request.DateOfBirth,

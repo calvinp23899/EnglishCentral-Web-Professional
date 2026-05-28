@@ -18,7 +18,7 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Logout
 
         public async Task<Result<bool>> Handle(LogoutCommand request, CancellationToken ct)
         {
-            var token = await _refreshTokenRepository.GetTokenByRefreshTokenAndUserIdAsync(request.userPublicId, request.rawRefreshToken);
+            var token = await _refreshTokenRepository.GetTokenByRefreshTokenAsync(request.rawRefreshToken, ct: ct);
             if (token is null)
             {
                 return Result<bool>.Failure("Invalid refresh token", 400);

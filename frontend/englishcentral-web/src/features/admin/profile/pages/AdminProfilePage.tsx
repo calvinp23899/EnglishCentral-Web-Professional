@@ -1,16 +1,16 @@
 import { CalendarDays, Mail, Phone, ShieldCheck, UserRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
+import { toastDanger } from "@/components/ui";
+import {
+  adminProfileApi,
+  type AdminMeProfile,
+} from "@/features/admin/profile/api/admin-profile-api";
 import { AdminPageHeader } from "@/features/admin/shared/components/AdminPageHeader/AdminPageHeader";
 import { AdminSectionCard } from "@/features/admin/shared/components/AdminSectionCard/AdminSectionCard";
+import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 import styles from "./AdminProfilePage.module.scss";
-
-const profileFields = [
-  { label: "CCCD", value: "2026******" },
-  { label: "Giới tính", value: "Nam / Nữ" },
-  { label: "Ngày sinh", value: "**/**/****" },
-  { label: "Địa chỉ", value: "Đà Nẵng" },
-];
 
 const permissionItems = [
   "Quản lý học viên",
@@ -20,7 +20,103 @@ const permissionItems = [
   "Cấu hình hệ thống",
 ];
 
+const getInitials = (name?: string) => {
+  if (!name?.trim()) {
+    return "AD";
+  }
+
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+};
+
+const formatDate = (value?: string) => {
+  if (!value) {
+    return "Chưa cập nhật";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("vi-VN").format(date);
+};
+
+const formatGender = (value?: string | number) => {
+  if (value === undefined || value === null || value === "") {
+    return "Chưa cập nhật";
+  }
+
+  const normalized = String(value).toLowerCase();
+
+  if (normalized === "0" || normalized === "male" || normalized === "nam") {
+    return "Nam";
+  }
+
+  if (normalized === "1" || normalized === "female" || normalized === "nữ") {
+    return "Nữ";
+  }
+
+  return String(value);
+};
+
 export function AdminProfilePage() {
+  const [profile, setProfile] = useState<AdminMeProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      try {
+        const nextProfile = await adminProfileApi.getMeProfile();
+
+        if (isMounted) {
+          setProfile(nextProfile);
+        }
+      } catch (error) {
+        toastDanger(getAuthErrorMessage(error));
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const teacher = profile?.teacher;
+  const displayName = teacher?.fullName ?? profile?.fullName ?? "Admin";
+  const displayEmail = teacher?.email ?? profile?.email ?? "Chưa cập nhật";
+  const displayPhone =
+    teacher?.phoneNumber ?? profile?.phoneNumber ?? "Chưa cập nhật";
+  const roleName = teacher?.specialization ?? teacher?.degree ?? "Quản trị viên";
+  const profileFields = useMemo(
+    () => [
+      { label: "Mã giáo viên", value: teacher?.teacherCode ?? "Chưa cập nhật" },
+      { label: "CCCD", value: teacher?.nationalId ?? "Chưa cập nhật" },
+      { label: "Giới tính", value: formatGender(teacher?.gender) },
+      { label: "Ngày sinh", value: formatDate(teacher?.dateOfBirth) },
+      { label: "Địa chỉ", value: teacher?.address ?? "Chưa cập nhật" },
+      {
+        label: "Ngày vào làm",
+        value: formatDate(teacher?.hireDate),
+      },
+    ],
+    [teacher]
+  );
+
   return (
     <div className={styles.page}>
       <AdminPageHeader
@@ -29,11 +125,11 @@ export function AdminProfilePage() {
       />
 
       <section className={styles.profileHero}>
-        <div className={styles.avatar}>AD</div>
+        <div className={styles.avatar}>{getInitials(displayName)}</div>
         <div>
-          <span>Quản trị viên</span>
-          <h2>Admin English Central</h2>
-          <p>Academic Operations · English Central Management</p>
+          <span>{isLoading ? "Đang tải hồ sơ" : roleName}</span>
+          <h2>{isLoading ? "Đang tải..." : displayName}</h2>
+          <p>{displayEmail} · English Central Management</p>
         </div>
         <button type="button">Chỉnh sửa hồ sơ</button>
       </section>
@@ -53,8 +149,8 @@ export function AdminProfilePage() {
         <AdminSectionCard icon={ShieldCheck} title="Vai trò & quyền truy cập">
           <div className={styles.roleCard}>
             <span>Vai trò hiện tại</span>
-            <strong>Super Admin</strong>
-            <p>Toàn quyền quản lý hệ thống LMS và dữ liệu vận hành.</p>
+            <strong>{roleName}</strong>
+            <p>{teacher?.bio ?? "Tài khoản có quyền truy cập trang quản trị."}</p>
           </div>
 
           <div className={styles.permissionList}>
@@ -68,11 +164,11 @@ export function AdminProfilePage() {
           <div className={styles.contactList}>
             <div>
               <Mail aria-hidden="true" size={16} />
-              <span>admin@englishcentral.vn</span>
+              <span>{displayEmail}</span>
             </div>
             <div>
               <Phone aria-hidden="true" size={16} />
-              <span>0909 123 456</span>
+              <span>{displayPhone}</span>
             </div>
           </div>
         </AdminSectionCard>

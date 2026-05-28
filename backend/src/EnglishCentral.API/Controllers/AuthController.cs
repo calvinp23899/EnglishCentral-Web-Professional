@@ -58,7 +58,7 @@ namespace EnglishCentral.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("logout")]
-        public async Task<IActionResult> Logout(LogoutRequest request, CancellationToken ct)
+        public async Task<IActionResult> Logout(CancellationToken ct)
         {
             var rawRefreshToken = Request.Cookies[RefreshTokenCookieName];
 
@@ -67,7 +67,7 @@ namespace EnglishCentral.API.Controllers
                 return BadRequest(new { error = "Refresh token is required." });
             }
 
-            var command = new LogoutCommand(request.UserPublicId, rawRefreshToken);
+            var command = new LogoutCommand(rawRefreshToken);
             var result = await _mediator.Send(command, ct);
 
             if (result.IsSuccess)
@@ -81,17 +81,16 @@ namespace EnglishCentral.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh(RefreshTokenRequest request, CancellationToken ct)
+        public async Task<IActionResult> Refresh(CancellationToken ct)
         {
-            var rawRefreshToken = request.RefreshToken
-                ?? Request.Cookies[RefreshTokenCookieName];
+            var rawRefreshToken = Request.Cookies[RefreshTokenCookieName];
 
             if (string.IsNullOrWhiteSpace(rawRefreshToken))
             {
                 return BadRequest(new { error = "Refresh token is required." });
             }
 
-            var command = new RefreshTokenCommand(request.UserPublicId, rawRefreshToken);
+            var command = new RefreshTokenCommand(rawRefreshToken);
             var result = await _mediator.Send(command, ct);
 
             return ToAuthResponse(result);

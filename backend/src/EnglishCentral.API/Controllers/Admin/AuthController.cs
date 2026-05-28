@@ -1,3 +1,4 @@
+using EnglishCentral.Application.Features.Identity.Queries.GetAdminMeProfile;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Shared.Constants;
 using MediatR;
@@ -17,6 +18,21 @@ namespace EnglishCentral.API.Controllers.Admin
             _mediator = mediator;
             _hangfireAuthProtector = dataProtectionProvider.CreateProtector(
                 HangfireDashboardAuthorizationFilter.DataProtectionPurpose);
+        }
+
+        [HttpGet("me-profile")]
+        public async Task<IActionResult> GetMeProfile(CancellationToken ct)
+        {
+            if (CurrentUserPublicId is not { } publicId)
+            {
+                return Unauthorized(new { error = "Invalid access token." });
+            }
+
+            var result = await _mediator.Send(new GetAdminMeProfileQuery(publicId), ct);
+
+            return result.IsSuccess
+                ? Ok(result.Data)
+                : StatusCode(result.StatusCode, new { error = result.Error });
         }
 
         [HasPermission(SystemPermissions.BillingRead)]
