@@ -31,7 +31,7 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Commands.CreateT
 
         public async Task<Result<TeacherResponse>> Handle(CreateTeacherCommand request, CancellationToken ct)
         {
-            var teacherCode = CodeGeneratorHelper.GenerateWithPrefix(SystemDefault.TeacherCode);
+            var teacherCode = CodeGeneratorHelper.GenerateWithPrefixAndTick(SystemDefault.TeacherCode);
             var existedTeacherCode = await _teacherRepository.GetByTeacherCodeAsync(teacherCode, ct);
             if (existedTeacherCode is not null)
             {

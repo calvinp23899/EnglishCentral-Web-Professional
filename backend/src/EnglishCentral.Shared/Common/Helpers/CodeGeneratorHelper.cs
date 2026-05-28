@@ -11,9 +11,10 @@
             return _random.Next(min, max).ToString();
         }
 
-        public static string GenerateWithPrefix(string prefix, int digits = 5)
+        public static string GenerateWithPrefixAndTick(string prefix)
         {
-            return $"{prefix}-{GenerateNumeric(digits)}";
+            var tick = DateTimeOffset.UtcNow.Ticks;
+            return $"{prefix}-{tick}";
         }
     }
 }

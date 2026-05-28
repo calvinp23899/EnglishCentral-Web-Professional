@@ -10,6 +10,8 @@ export type AuthUser = {
   gender?: string;
   dateOfBirth?: string;
   level?: string;
+  roles?: string[];
+  permissions?: string[];
 };
 
 export type LoginPayload = {
@@ -24,7 +26,7 @@ export type RegisterPayload = {
   password: string;
 };
 
-type AuthSession = {
+export type AuthSession = {
   accessToken?: string;
   accessTokenExpiresAt?: string;
   user: AuthUser;
@@ -65,6 +67,34 @@ const readString = (source: RawObject, keys: string[]) => {
   return undefined;
 };
 
+const readStringArray = (source: RawObject, keys: string[]) => {
+  const values: string[] = [];
+
+  for (const key of keys) {
+    const value = source[key];
+
+    if (Array.isArray(value)) {
+      values.push(
+        ...value
+          .filter((item): item is string | number =>
+            typeof item === "string" || typeof item === "number"
+          )
+          .map(String)
+      );
+      continue;
+    }
+
+    if (
+      (typeof value === "string" && value.trim()) ||
+      typeof value === "number"
+    ) {
+      values.push(String(value));
+    }
+  }
+
+  return Array.from(new Set(values));
+};
+
 const decodeJwtPayload = (token?: string): RawObject | null => {
   if (!token) {
     return null;
@@ -86,6 +116,29 @@ const decodeJwtPayload = (token?: string): RawObject | null => {
     return null;
   }
 };
+
+const roleClaimKeys = [
+  "role",
+  "roles",
+  "Role",
+  "Roles",
+  "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
+];
+
+const permissionClaimKeys = [
+  "permission",
+  "permissions",
+  "Permission",
+  "Permissions",
+];
+
+export const ADMIN_PORTAL_ROLES = [
+  "Admin",
+  "BranchManager",
+  "Teacher",
+  "HR",
+  "Accountant",
+];
 
 const findUserSource = (data: unknown): RawObject => {
   if (!isObject(data)) {
@@ -134,6 +187,8 @@ const normalizeUser = (data: unknown, accessToken?: string): AuthUser => {
     gender: readString(source, ["gender", "Gender", "sex"]),
     dateOfBirth: readString(source, ["dateOfBirth", "DateOfBirth", "birthDate", "dob"]),
     level: readString(source, ["level"]) ?? "IELTS",
+    roles: readStringArray(source, roleClaimKeys),
+    permissions: readStringArray(source, permissionClaimKeys),
   };
 };
 
@@ -247,6 +302,50 @@ export const getStoredUser = (): AuthUser | null => {
   } catch {
     return null;
   }
+};
+
+export const getStoredAccessToken = () =>
+  window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) ??
+  window.sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+
+export const getStoredAuthSession = (): AuthSession | null => {
+  const user = getStoredUser();
+  const accessToken = getStoredAccessToken();
+  const accessTokenExpiresAt =
+    window.localStorage.getItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY) ??
+    window.sessionStorage.getItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY) ??
+    undefined;
+
+  if (!user || !accessToken) {
+    return null;
+  }
+
+  return {
+    accessToken,
+    accessTokenExpiresAt,
+    user,
+  };
+};
+
+export const hasAdminPortalAccess = (session = getStoredAuthSession()) => {
+  if (!session?.accessToken) {
+    return false;
+  }
+
+  const tokenPayload = decodeJwtPayload(session.accessToken) ?? {};
+  const roles = new Set([
+    ...(session.user.roles ?? []),
+    ...readStringArray(tokenPayload, roleClaimKeys),
+  ]);
+  const permissions = [
+    ...(session.user.permissions ?? []),
+    ...readStringArray(tokenPayload, permissionClaimKeys),
+  ];
+
+  return (
+    ADMIN_PORTAL_ROLES.some((role) => roles.has(role)) ||
+    permissions.length > 0
+  );
 };
 
 export const authApi = {

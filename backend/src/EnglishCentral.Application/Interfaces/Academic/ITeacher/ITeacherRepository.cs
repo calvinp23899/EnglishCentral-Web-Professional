@@ -12,6 +12,8 @@ namespace EnglishCentral.Application.Interfaces.Academic.ITeacher
 
         Task<Teacher?> GetByTeacherIdIncludedAccountAsync(long teacherId, CancellationToken ct = default);
 
+        Task<Teacher?> GetMeProfileByUserPublicIdAsync(Guid userPublicId, CancellationToken ct = default);
+
         Task<(List<Teacher> Items, int TotalItems)> GetPagedAsync(
             int page,
             int pageSize,

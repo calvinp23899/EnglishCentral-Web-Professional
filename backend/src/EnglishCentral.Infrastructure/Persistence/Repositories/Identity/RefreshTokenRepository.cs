@@ -12,13 +12,10 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Identity
         {
         }
 
-        public async Task<RefreshToken?> GetTokenByRefreshTokenAndUserIdAsync(string userPublicId, string rawToken, bool isIncludeRolePermission = false, CancellationToken ct = default)
+        public async Task<RefreshToken?> GetTokenByRefreshTokenAsync(string rawToken, bool isIncludeRolePermission = false, CancellationToken ct = default)
         {
             string hashToken = TokenHashHelper.HashRefreshToken(rawToken);
-            if (!Guid.TryParse(userPublicId, out Guid publicId))
-            {
-                return null;
-            }
+
             IQueryable<RefreshToken> query = _dbContenxt.RefreshTokens;
             if (isIncludeRolePermission)
             {
@@ -29,7 +26,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Identity
                                 .ThenInclude(x => x.RolePermissions)
                                     .ThenInclude(x => x.Permission);
             }
-            return await query.FirstOrDefaultAsync(x => x.User.PublicId == publicId && x.TokenHash == hashToken, ct);
+            return await query.FirstOrDefaultAsync(x => x.TokenHash == hashToken, ct);
         }
     }
 }

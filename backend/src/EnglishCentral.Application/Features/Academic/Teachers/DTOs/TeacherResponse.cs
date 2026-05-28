@@ -20,7 +20,7 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.DTOs
         string? Degree,
         int? YearsOfExperience,
         List<string>? Certifications,
-        DateOnly HireDate,
+        DateOnly? HireDate,
         ContractType? ContractType,
         DateOnly? ContractEndDate,
         TeacherStatus Status,

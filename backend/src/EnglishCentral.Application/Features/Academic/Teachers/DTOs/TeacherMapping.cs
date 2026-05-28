@@ -24,7 +24,7 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.DTOs
                 teacher.Degree,
                 teacher.YearsOfExperience,
                 teacher.CertificationsJson,
-                (DateOnly)teacher.HireDate,
+                teacher.HireDate,
                 teacher.ContractType,
                 teacher.ContractEndDate,
                 teacher.Status,

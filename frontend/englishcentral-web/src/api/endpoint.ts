@@ -7,6 +7,10 @@ export const ENDPOINTS = {
     ME: "/Auth/me",
   },
 
+  ADMIN_AUTH: {
+    ME_PROFILE: "/admin/Auth/me-profile",
+  },
+
   STUDENTS: {
     GET_ALL: "/students",
   },

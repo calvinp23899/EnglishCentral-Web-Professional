@@ -32,6 +32,14 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic.Teache
                 .FirstOrDefaultAsync(x => x.Id == teacherId && !x.IsDeleted, ct);
         }
 
+        public async Task<Teacher?> GetMeProfileByUserPublicIdAsync(Guid userPublicId, CancellationToken ct = default)
+        {
+            return await _dbContenxt.Teachers
+                .AsNoTracking()
+                .Include(x => x.User)
+                .FirstOrDefaultAsync(x => x.User.PublicId == userPublicId && !x.IsDeleted, ct);
+        }
+
         public async Task<(List<Teacher> Items, int TotalItems)> GetPagedAsync(
             int page,
             int pageSize,
