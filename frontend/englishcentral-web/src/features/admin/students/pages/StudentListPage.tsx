@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -11,17 +11,16 @@ import { Link } from "react-router-dom";
 
 import { ConfirmModal, Pagination, toastDanger } from "@/components/ui";
 import {
-  statusLabels,
-  statusToneByValue,
-  students,
-  type Student,
+  adminStudentsApi,
+  type AdminStudent,
   type StudentStatus,
-} from "@/features/admin/students/data/mockStudents";
+} from "@/features/admin/students/api/admin-students-api";
+import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 import styles from "./StudentListPage.module.scss";
 
 type SortKey = keyof Pick<
-  Student,
+  AdminStudent,
   "studentCode" | "fullName" | "email" | "phoneNumber" | "registeredAt" | "status"
 >;
 
@@ -34,8 +33,28 @@ const formatDate = (value: string) =>
     year: "numeric",
   }).format(new Date(value));
 
+const statusLabels: Record<StudentStatus, string> = {
+  1: "Đang học",
+  2: "Tạm dừng",
+};
+
+const statusToneByValue: Record<StudentStatus, "active" | "pending" | "inactive"> = {
+  1: "active",
+  2: "inactive",
+};
+
+const sortByApiField: Record<SortKey, string> = {
+  email: "email",
+  fullName: "fullName",
+  phoneNumber: "phoneNumber",
+  registeredAt: "enrollmentDate",
+  status: "status",
+  studentCode: "studentCode",
+};
+
 export function StudentListPage() {
-  const [studentRecords, setStudentRecords] = useState(students);
+  const [studentRecords, setStudentRecords] = useState<AdminStudent[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StudentStatus | "all">("all");
   const [registeredFrom, setRegisteredFrom] = useState("");
@@ -44,61 +63,62 @@ export function StudentListPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
+  const [deletingStudent, setDeletingStudent] = useState<AdminStudent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredStudents = useMemo(() => {
-    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
-
+  const visibleStudents = useMemo(() => {
     return studentRecords
       .filter((student) => {
-        const matchesSearch =
-          normalizedSearchTerm.length === 0 ||
-          [
-            student.studentCode,
-            student.fullName,
-            student.email,
-            student.phoneNumber,
-          ]
-            .join(" ")
-            .toLowerCase()
-            .includes(normalizedSearchTerm);
-        const matchesStatus =
-          statusFilter === "all" || student.status === statusFilter;
         const matchesFrom =
           registeredFrom.length === 0 ||
           student.registeredAt >= registeredFrom;
         const matchesTo =
           registeredTo.length === 0 || student.registeredAt <= registeredTo;
 
-        return matchesSearch && matchesStatus && matchesFrom && matchesTo;
+        return matchesFrom && matchesTo;
       })
-      .sort((firstStudent, secondStudent) => {
-        const firstValue =
-          sortKey === "status"
-            ? statusLabels[firstStudent.status]
-            : String(firstStudent[sortKey]);
-        const secondValue =
-          sortKey === "status"
-            ? statusLabels[secondStudent.status]
-            : String(secondStudent[sortKey]);
-        const result = firstValue.localeCompare(secondValue, "vi");
+  }, [registeredFrom, registeredTo, studentRecords]);
 
-        return sortDirection === "asc" ? result : -result;
-      });
+  useEffect(() => {
+    const timeoutId = window.setTimeout(async () => {
+      setIsLoading(true);
+
+      try {
+        const result = await adminStudentsApi.getList({
+          page: pageNumber,
+          pageSize,
+          keyword: searchTerm.trim(),
+          sortBy: sortByApiField[sortKey],
+          isDescending: sortDirection === "desc",
+          status: statusFilter === "all" ? undefined : statusFilter,
+          enrollmentDate:
+            registeredFrom && registeredFrom === registeredTo
+              ? registeredFrom
+              : undefined,
+        });
+
+        setStudentRecords(result.items);
+        setTotalItems(result.totalItems);
+      } catch (error) {
+        toastDanger(getAuthErrorMessage(error));
+        setStudentRecords([]);
+        setTotalItems(0);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
   }, [
+    pageNumber,
+    pageSize,
     registeredFrom,
     registeredTo,
     searchTerm,
     sortDirection,
     sortKey,
     statusFilter,
-    studentRecords,
   ]);
-
-  const pagedStudents = filteredStudents.slice(
-    (pageNumber - 1) * pageSize,
-    pageNumber * pageSize,
-  );
 
   const handleSort = (nextSortKey: SortKey) => {
     setPageNumber(1);
@@ -130,10 +150,7 @@ export function StudentListPage() {
       return;
     }
 
-    setStudentRecords((currentRecords) =>
-      currentRecords.filter((student) => student.id !== deletingStudent.id),
-    );
-    toastDanger(`Đã xóa học viên ${deletingStudent.fullName}.`);
+    toastDanger(`Chưa tích hợp API xóa học viên ${deletingStudent.fullName}.`);
     setDeletingStudent(null);
   };
 
@@ -181,8 +198,7 @@ export function StudentListPage() {
           >
             <option value="all">Tất cả</option>
             <option value={1}>Đang học</option>
-            <option value={2}>Chờ tư vấn</option>
-            <option value={3}>Tạm dừng</option>
+            <option value={2}>Tạm dừng</option>
           </select>
         </label>
 
@@ -250,15 +266,15 @@ export function StudentListPage() {
               </tr>
             </thead>
             <tbody>
-              {pagedStudents.map((student) => (
+              {visibleStudents.map((student) => (
                 <tr key={student.id}>
                   <td>
                     <strong>{student.studentCode}</strong>
                   </td>
                   <td>{student.fullName}</td>
-                  <td>{student.email}</td>
-                  <td>{student.phoneNumber}</td>
-                  <td>{formatDate(student.registeredAt)}</td>
+                  <td>{student.email ?? "Chưa cập nhật"}</td>
+                  <td>{student.phoneNumber ?? "Chưa cập nhật"}</td>
+                  <td>{student.registeredAt ? formatDate(student.registeredAt) : "Chưa cập nhật"}</td>
                   <td>
                     <span
                       className={`${styles.statusBadge} ${
@@ -288,7 +304,13 @@ export function StudentListPage() {
             </tbody>
           </table>
 
-          {pagedStudents.length === 0 && (
+              {isLoading && (
+                <div className={styles.emptyState}>
+                  Đang tải danh sách học viên...
+                </div>
+              )}
+
+              {!isLoading && visibleStudents.length === 0 && (
             <div className={styles.emptyState}>
               Không có học viên phù hợp với bộ lọc hiện tại.
             </div>
@@ -298,7 +320,8 @@ export function StudentListPage() {
         <Pagination
           pageNumber={pageNumber}
           pageSize={pageSize}
-          totalItems={filteredStudents.length}
+          pageSizeOptions={[10, 20]}
+          totalItems={totalItems}
           onPageChange={setPageNumber}
           onPageSizeChange={handlePageSizeChange}
         />

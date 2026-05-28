@@ -30,7 +30,7 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public int CompletedSessions { get; set; }
 
-        public ClassStatus Status { get; set; } = ClassStatus.Draft;
+        public EClassStatus Status { get; set; } = EClassStatus.Draft;
 
         public DateTimeOffset? OpenedAt { get; set; }
 

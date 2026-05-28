@@ -47,7 +47,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic
                     && x.User.PublicId == userPublicId
                     && !x.IsDeleted, ct);
         }
-        public async Task<(List<Student> Items, int TotalItems)> GetPagedAsync(int page, int pageSize, string? keyword, string? sortBy, bool isDescending, StudentStatus? status, DateOnly? enrollmentDate, CancellationToken ct = default)
+        public async Task<(List<Student> Items, int TotalItems)> GetPagedAsync(int page, int pageSize, string? keyword, string? sortBy, bool isDescending, EStatus? status, DateOnly? enrollmentDate, CancellationToken ct = default)
         {
             var query = _dbContenxt.Students
                 .AsNoTracking()

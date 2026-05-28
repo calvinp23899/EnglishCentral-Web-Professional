@@ -8,7 +8,7 @@ using MediatR;
 namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Queries.GetBillingPolicies
 {
     public record GetBillingPoliciesQuery(
-        BillingPolicyType? Type = null,
+        EBillingPolicyType? Type = null,
         bool? IsActive = null,
         int Page = 1,
         int PageSize = 20,

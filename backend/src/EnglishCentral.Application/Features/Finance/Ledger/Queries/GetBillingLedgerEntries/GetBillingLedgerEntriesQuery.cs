@@ -7,7 +7,7 @@ using MediatR;
 
 namespace EnglishCentral.Application.Features.Finance.Ledger.Queries.GetBillingLedgerEntries
 {
-    public record GetBillingLedgerEntriesQuery(long? EnrollmentId = null, long? InvoiceId = null, long? PaymentId = null, BillingLedgerEntryType? Type = null, int Page = 1, int PageSize = 20, bool IsDescending = true) : IRequest<Result<PagedResult<BillingLedgerEntryResponse>>>;
+    public record GetBillingLedgerEntriesQuery(long? EnrollmentId = null, long? InvoiceId = null, long? PaymentId = null, EBillingLedgerEntryType? Type = null, int Page = 1, int PageSize = 20, bool IsDescending = true) : IRequest<Result<PagedResult<BillingLedgerEntryResponse>>>;
     public class GetBillingLedgerEntriesQueryValidator : AbstractValidator<GetBillingLedgerEntriesQuery>
     {
         public GetBillingLedgerEntriesQueryValidator()

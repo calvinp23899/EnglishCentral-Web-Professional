@@ -20,7 +20,7 @@ namespace EnglishCentral.Application.Interfaces.Academic.ITeacher
             string? keyword,
             string? sortBy,
             bool isDescending,
-            TeacherStatus? status,
+            ETeacherStatus? status,
             DateOnly? hireDate,
             CancellationToken ct = default);
     }

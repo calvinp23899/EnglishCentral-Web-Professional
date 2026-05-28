@@ -28,7 +28,7 @@ namespace EnglishCentral.Domain.Entities.Finance
 
         public decimal OutstandingAmount { get; set; }
 
-        public InvoiceStatus Status { get; set; } = InvoiceStatus.Issued;
+        public EInvoiceStatus Status { get; set; } = EInvoiceStatus.Issued;
 
         public string? Notes { get; set; }
 

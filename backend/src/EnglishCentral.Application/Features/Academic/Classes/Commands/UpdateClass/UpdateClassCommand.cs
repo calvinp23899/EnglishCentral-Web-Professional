@@ -19,7 +19,7 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.UpdateCl
         decimal? TuitionFeeSnapshot,
         int? TotalSessions,
         int CompletedSessions,
-        ClassStatus Status,
+        EClassStatus Status,
         DateTimeOffset? OpenedAt,
         DateTimeOffset? ClosedAt,
         string? Notes) : IRequest<Result<ClassResponse>>;

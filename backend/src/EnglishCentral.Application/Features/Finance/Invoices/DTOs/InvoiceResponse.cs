@@ -5,7 +5,7 @@ namespace EnglishCentral.Application.Features.Finance.Invoices.DTOs
 {
     public record InvoiceLineResponse(
         long Id,
-        BillingItemType ItemType,
+        EBillingItemType ItemType,
         string Description,
         int Quantity,
         decimal UnitPrice,
@@ -26,7 +26,7 @@ namespace EnglishCentral.Application.Features.Finance.Invoices.DTOs
         decimal TotalAmount,
         decimal PaidAmount,
         decimal OutstandingAmount,
-        InvoiceStatus Status,
+        EInvoiceStatus Status,
         string? Notes,
         IReadOnlyCollection<InvoiceLineResponse> Lines);
 

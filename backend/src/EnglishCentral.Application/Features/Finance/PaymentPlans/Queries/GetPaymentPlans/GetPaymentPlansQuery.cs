@@ -9,7 +9,7 @@ namespace EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPa
 {
     public record GetPaymentPlansQuery(
         long? EnrollmentId = null,
-        PaymentPlanStatus? Status = null,
+        EPaymentPlanStatus? Status = null,
         int Page = 1,
         int PageSize = 20,
         bool IsDescending = true) : IRequest<Result<PagedResult<PaymentPlanResponse>>>;

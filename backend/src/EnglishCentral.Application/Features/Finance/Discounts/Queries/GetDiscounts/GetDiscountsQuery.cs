@@ -7,7 +7,7 @@ using MediatR;
 
 namespace EnglishCentral.Application.Features.Finance.Discounts.Queries.GetDiscounts
 {
-    public record GetDiscountsQuery(DiscountType? Type = null, bool? IsActive = null, int Page = 1, int PageSize = 20, bool IsDescending = true) : IRequest<Result<PagedResult<DiscountResponse>>>;
+    public record GetDiscountsQuery(EDiscountType? Type = null, bool? IsActive = null, int Page = 1, int PageSize = 20, bool IsDescending = true) : IRequest<Result<PagedResult<DiscountResponse>>>;
 
     public class GetDiscountsQueryValidator : AbstractValidator<GetDiscountsQuery>
     {

@@ -25,7 +25,7 @@ namespace EnglishCentral.Application.Features.Finance.CreditNotes.Commands.Apply
             var invoice = await _invoiceRepository.GetByIdAsync(request.InvoiceId, ct);
             if (invoice is null)
                 return Result<bool>.Failure("Invoice is not found.", 404);
-            if (note.Status == CreditNoteStatus.Cancelled || invoice.Status == InvoiceStatus.Cancelled)
+            if (note.Status == ECreditNoteStatus.Cancelled || invoice.Status == EInvoiceStatus.Cancelled)
                 return Result<bool>.Failure("Cancelled credit note or invoice cannot be applied.", 400);
             var enrollment = await _enrollmentRepository.GetByIdAsync(invoice.EnrollmentId, ct);
             if (enrollment is null)
@@ -35,12 +35,12 @@ namespace EnglishCentral.Application.Features.Finance.CreditNotes.Commands.Apply
             if (note.EnrollmentId.HasValue && note.EnrollmentId.Value != invoice.EnrollmentId)
                 return Result<bool>.Failure("Credit note enrollment does not match invoice enrollment.", 400);
             if (request.Amount > note.RemainingAmount || request.Amount > invoice.OutstandingAmount) return Result<bool>.Failure("Apply amount is invalid.", 400);
-            note.AppliedAmount += request.Amount; note.RemainingAmount -= request.Amount; note.Status = note.RemainingAmount == 0 ? CreditNoteStatus.Applied : CreditNoteStatus.PartiallyApplied; note.UpdatedAt = DateTimeOffset.UtcNow;
-            invoice.OutstandingAmount -= request.Amount; invoice.Status = invoice.OutstandingAmount == 0 ? InvoiceStatus.Paid : InvoiceStatus.PartiallyPaid; invoice.UpdatedAt = DateTimeOffset.UtcNow;
+            note.AppliedAmount += request.Amount; note.RemainingAmount -= request.Amount; note.Status = note.RemainingAmount == 0 ? ECreditNoteStatus.Applied : ECreditNoteStatus.PartiallyApplied; note.UpdatedAt = DateTimeOffset.UtcNow;
+            invoice.OutstandingAmount -= request.Amount; invoice.Status = invoice.OutstandingAmount == 0 ? EInvoiceStatus.Paid : EInvoiceStatus.PartiallyPaid; invoice.UpdatedAt = DateTimeOffset.UtcNow;
             enrollment.OutstandingAmount -= request.Amount; enrollment.UpdatedAt = DateTimeOffset.UtcNow;
             var app = new CreditNoteApplication { CreditNoteId = note.Id, InvoiceId = invoice.Id, Amount = request.Amount, AppliedAt = DateTimeOffset.UtcNow, CreatedAt = DateTimeOffset.UtcNow };
             await _applicationRepository.AddAsync(app, ct);
-            await _ledgerRepository.AddAsync(new BillingLedgerEntry { EnrollmentId = invoice.EnrollmentId, InvoiceId = invoice.Id, CreditNoteId = note.Id, Type = BillingLedgerEntryType.CreditNoteApplied, CreditAmount = request.Amount, BalanceAfter = invoice.OutstandingAmount, Description = "Credit note applied", OccurredAt = DateTimeOffset.UtcNow }, ct);
+            await _ledgerRepository.AddAsync(new BillingLedgerEntry { EnrollmentId = invoice.EnrollmentId, InvoiceId = invoice.Id, CreditNoteId = note.Id, Type = EBillingLedgerEntryType.CreditNoteApplied, CreditAmount = request.Amount, BalanceAfter = invoice.OutstandingAmount, Description = "Credit note applied", OccurredAt = DateTimeOffset.UtcNow }, ct);
             return Result<bool>.Success(true);
         }
     }

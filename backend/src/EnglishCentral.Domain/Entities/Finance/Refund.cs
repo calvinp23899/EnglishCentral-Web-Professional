@@ -10,8 +10,8 @@ namespace EnglishCentral.Domain.Entities.Finance
         public long? EnrollmentId { get; set; }
         public string RefundNo { get; set; } = default!;
         public decimal Amount { get; set; }
-        public RefundStatus Status { get; set; } = RefundStatus.Pending;
-        public RefundMethod Method { get; set; }
+        public ERefundStatus Status { get; set; } = ERefundStatus.Pending;
+        public ERefundMethod Method { get; set; }
         public string Reason { get; set; } = default!;
         public DateTimeOffset RequestedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset? RefundedAt { get; set; }

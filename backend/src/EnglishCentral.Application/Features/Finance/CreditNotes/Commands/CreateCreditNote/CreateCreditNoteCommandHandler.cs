@@ -19,9 +19,9 @@ namespace EnglishCentral.Application.Features.Finance.CreditNotes.Commands.Creat
         public async Task<Result<CreditNoteResponse>> Handle(CreateCreditNoteCommand request, CancellationToken ct)
         {
             if (!await _studentRepository.ExistsAsync(x => x.Id == request.StudentId, ct)) return Result<CreditNoteResponse>.Failure("Student is not found.", 404);
-            var note = new CreditNote { StudentId = request.StudentId, EnrollmentId = request.EnrollmentId, InvoiceId = request.InvoiceId, CreditNoteNo = $"CN-{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}", Amount = request.Amount, AppliedAmount = 0, RemainingAmount = request.Amount, Status = CreditNoteStatus.Open, Reason = request.Reason.Trim(), IssuedAt = DateTimeOffset.UtcNow, Notes = request.Notes?.Trim(), CreatedAt = DateTimeOffset.UtcNow };
+            var note = new CreditNote { StudentId = request.StudentId, EnrollmentId = request.EnrollmentId, InvoiceId = request.InvoiceId, CreditNoteNo = $"CN-{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}", Amount = request.Amount, AppliedAmount = 0, RemainingAmount = request.Amount, Status = ECreditNoteStatus.Open, Reason = request.Reason.Trim(), IssuedAt = DateTimeOffset.UtcNow, Notes = request.Notes?.Trim(), CreatedAt = DateTimeOffset.UtcNow };
             await _repository.AddAsync(note, ct);
-            await _ledgerRepository.AddAsync(new BillingLedgerEntry { EnrollmentId = request.EnrollmentId, InvoiceId = request.InvoiceId, CreditNote = note, Type = BillingLedgerEntryType.CreditNoteIssued, CreditAmount = request.Amount, BalanceAfter = 0, Description = request.Reason.Trim(), OccurredAt = DateTimeOffset.UtcNow }, ct);
+            await _ledgerRepository.AddAsync(new BillingLedgerEntry { EnrollmentId = request.EnrollmentId, InvoiceId = request.InvoiceId, CreditNote = note, Type = EBillingLedgerEntryType.CreditNoteIssued, CreditAmount = request.Amount, BalanceAfter = 0, Description = request.Reason.Trim(), OccurredAt = DateTimeOffset.UtcNow }, ct);
             return Result<CreditNoteResponse>.Success(note.ToResponse(), 201);
         }
     }

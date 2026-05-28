@@ -5,7 +5,7 @@ namespace EnglishCentral.Contracts.Requests.Academic.Student
 {
     public record StudentFilterRequest : PaginationRequest
     {
-        public StudentStatus? Status { get; init; }
+        public EStatus? Status { get; init; }
         public DateOnly? EnrollmentDate { get; init; }
     }
 }

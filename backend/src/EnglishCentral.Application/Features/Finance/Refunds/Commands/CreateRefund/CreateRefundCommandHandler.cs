@@ -24,8 +24,8 @@ namespace EnglishCentral.Application.Features.Finance.Refunds.Commands.CreateRef
         {
             var payment = await _paymentRepository.GetByIdAsync(request.PaymentId, ct);
             if (payment is null) return Result<RefundResponse>.Failure("Payment is not found.", 404);
-            if (payment.Status != PaymentStatus.Completed) return Result<RefundResponse>.Failure("Only completed payment can be refunded.", 400);
-            var existingRefunds = await _refundRepository.ListAsync(q => q.Where(x => x.PaymentId == payment.Id && x.Status == RefundStatus.Completed), ct);
+            if (payment.Status != EPaymentStatus.Completed) return Result<RefundResponse>.Failure("Only completed payment can be refunded.", 400);
+            var existingRefunds = await _refundRepository.ListAsync(q => q.Where(x => x.PaymentId == payment.Id && x.Status == ERefundStatus.Completed), ct);
             if (existingRefunds.Sum(x => x.Amount) + request.Amount > payment.Amount)
                 return Result<RefundResponse>.Failure("Refund amount exceeds refundable payment amount.", 400);
             Enrollment? enrollment = null;
@@ -39,9 +39,9 @@ namespace EnglishCentral.Application.Features.Finance.Refunds.Commands.CreateRef
                 enrollment.OutstandingAmount += request.Amount;
                 enrollment.UpdatedAt = DateTimeOffset.UtcNow;
             }
-            var refund = new Refund { PaymentId = payment.Id, EnrollmentId = request.EnrollmentId, RefundNo = $"REF-{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}", Amount = request.Amount, Method = request.Method, Status = RefundStatus.Completed, Reason = request.Reason.Trim(), RequestedAt = DateTimeOffset.UtcNow, RefundedAt = DateTimeOffset.UtcNow, ReferenceCode = request.ReferenceCode?.Trim(), Notes = request.Notes?.Trim(), CreatedAt = DateTimeOffset.UtcNow };
+            var refund = new Refund { PaymentId = payment.Id, EnrollmentId = request.EnrollmentId, RefundNo = $"REF-{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}", Amount = request.Amount, Method = request.Method, Status = ERefundStatus.Completed, Reason = request.Reason.Trim(), RequestedAt = DateTimeOffset.UtcNow, RefundedAt = DateTimeOffset.UtcNow, ReferenceCode = request.ReferenceCode?.Trim(), Notes = request.Notes?.Trim(), CreatedAt = DateTimeOffset.UtcNow };
             await _refundRepository.AddAsync(refund, ct);
-            await _ledgerRepository.AddAsync(new BillingLedgerEntry { EnrollmentId = request.EnrollmentId, PaymentId = payment.Id, Refund = refund, Type = BillingLedgerEntryType.RefundIssued, DebitAmount = request.Amount, BalanceAfter = enrollment?.OutstandingAmount ?? 0, Description = request.Reason.Trim(), OccurredAt = DateTimeOffset.UtcNow }, ct);
+            await _ledgerRepository.AddAsync(new BillingLedgerEntry { EnrollmentId = request.EnrollmentId, PaymentId = payment.Id, Refund = refund, Type = EBillingLedgerEntryType.RefundIssued, DebitAmount = request.Amount, BalanceAfter = enrollment?.OutstandingAmount ?? 0, Description = request.Reason.Trim(), OccurredAt = DateTimeOffset.UtcNow }, ct);
             return Result<RefundResponse>.Success(refund.ToResponse(), 201);
         }
     }

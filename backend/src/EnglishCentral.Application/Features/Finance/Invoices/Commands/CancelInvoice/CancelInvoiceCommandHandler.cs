@@ -27,14 +27,14 @@ namespace EnglishCentral.Application.Features.Finance.Invoices.Commands.CancelIn
             if (invoice.PaidAmount > 0)
                 return Result<bool>.Failure("Paid invoice cannot be cancelled. Cancel/refund payment first.", 400);
 
-            invoice.Status = InvoiceStatus.Cancelled;
+            invoice.Status = EInvoiceStatus.Cancelled;
             invoice.UpdatedAt = DateTimeOffset.UtcNow;
             if (invoice.PaymentPlanItemId.HasValue)
             {
                 var item = await _itemRepository.GetByIdAsync(invoice.PaymentPlanItemId.Value, ct);
                 if (item is not null)
                 {
-                    item.Status = PaymentPlanItemStatus.Cancelled;
+                    item.Status = EPaymentPlanItemStatus.Cancelled;
                     item.UpdatedAt = DateTimeOffset.UtcNow;
                 }
             }
@@ -43,7 +43,7 @@ namespace EnglishCentral.Application.Features.Finance.Invoices.Commands.CancelIn
             {
                 EnrollmentId = invoice.EnrollmentId,
                 InvoiceId = invoice.Id,
-                Type = BillingLedgerEntryType.InvoiceCancelled,
+                Type = EBillingLedgerEntryType.InvoiceCancelled,
                 CreditAmount = invoice.OutstandingAmount,
                 BalanceAfter = 0,
                 OccurredAt = DateTimeOffset.UtcNow,

@@ -12,7 +12,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.DTOs
         DateTimeOffset EnrolledAt,
         DateOnly? StartDate,
         DateOnly? EndDate,
-        EnrollmentStatus Status,
+        EEnrollmentStatus Status,
         decimal TuitionFee,
         decimal DiscountAmount,
         decimal FinalAmount,

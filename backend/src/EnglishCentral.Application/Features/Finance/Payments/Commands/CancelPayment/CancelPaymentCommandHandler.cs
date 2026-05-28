@@ -30,7 +30,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CancelPa
             var payment = await _paymentRepository.GetByIdAsync(request.Id, ct);
             if (payment is null)
                 return Result<bool>.Failure("Payment is not found.", 404);
-            if (payment.Status != PaymentStatus.Completed)
+            if (payment.Status != EPaymentStatus.Completed)
                 return Result<bool>.Failure("Only completed payment can be cancelled.", 400);
 
             var allocations = await _allocationRepository.ListAsync(q => q.Where(x => x.PaymentId == payment.Id), ct);
@@ -40,7 +40,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CancelPa
                 if (invoice is null) continue;
                 invoice.PaidAmount -= allocation.Amount;
                 invoice.OutstandingAmount += allocation.Amount;
-                invoice.Status = invoice.PaidAmount == 0 ? InvoiceStatus.Issued : InvoiceStatus.PartiallyPaid;
+                invoice.Status = invoice.PaidAmount == 0 ? EInvoiceStatus.Issued : EInvoiceStatus.PartiallyPaid;
                 invoice.UpdatedAt = DateTimeOffset.UtcNow;
 
                 var enrollment = await _enrollmentRepository.GetByIdAsync(invoice.EnrollmentId, ct);
@@ -57,7 +57,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CancelPa
                     InvoiceId = invoice.Id,
                     PaymentId = payment.Id,
                     PaymentAllocationId = allocation.Id,
-                    Type = BillingLedgerEntryType.PaymentCancelled,
+                    Type = EBillingLedgerEntryType.PaymentCancelled,
                     DebitAmount = allocation.Amount,
                     BalanceAfter = invoice.OutstandingAmount,
                     OccurredAt = DateTimeOffset.UtcNow,
@@ -65,7 +65,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CancelPa
                 }, ct);
             }
 
-            payment.Status = PaymentStatus.Cancelled;
+            payment.Status = EPaymentStatus.Cancelled;
             payment.UpdatedAt = DateTimeOffset.UtcNow;
             return Result<bool>.Success(true);
         }

@@ -10,7 +10,7 @@ namespace EnglishCentral.Application.Features.Finance.PaymentPlans.DTOs
         string Name,
         DateOnly DueDate,
         decimal Amount,
-        PaymentPlanItemStatus Status,
+        EPaymentPlanItemStatus Status,
         long? InvoiceId);
 
     public record PaymentPlanResponse(
@@ -18,10 +18,10 @@ namespace EnglishCentral.Application.Features.Finance.PaymentPlans.DTOs
         long Id,
         long EnrollmentId,
         long? BillingPolicyId,
-        PaymentPlanType Type,
+        EPaymentPlanType Type,
         decimal TotalAmount,
         int? NumberOfInstallments,
-        PaymentPlanStatus Status,
+        EPaymentPlanStatus Status,
         string? Notes,
         IReadOnlyCollection<PaymentPlanItemResponse> Items);
 

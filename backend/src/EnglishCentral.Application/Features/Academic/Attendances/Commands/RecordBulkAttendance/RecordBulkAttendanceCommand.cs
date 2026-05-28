@@ -13,7 +13,7 @@ namespace EnglishCentral.Application.Features.Academic.Attendances.Commands.Reco
 
     public record RecordBulkAttendanceItem(
         long StudentId,
-        AttendanceStatus Status,
+        EAttendanceStatus Status,
         DateTimeOffset? CheckedAt,
         long? CheckedBy,
         string? AbsenceReason,

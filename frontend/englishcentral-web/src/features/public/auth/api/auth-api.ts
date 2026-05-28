@@ -233,6 +233,10 @@ export const getAuthErrorMessage = (error: unknown) => {
     }
   }
 
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
   return "Không thể kết nối tới server";
 };
 
@@ -364,34 +368,15 @@ export const authApi = {
   },
 
   async logout() {
-    const user = getStoredUser();
-
-    if (!user?.id) {
-      return;
-    }
-
-    await api.post(
-      ENDPOINTS.AUTH.LOGOUT,
-      {
-        userPublicId: user.id,
-      },
-      {
-        withCredentials: true,
-      }
-    );
+    await api.post(ENDPOINTS.AUTH.LOGOUT, undefined, {
+      withCredentials: true,
+    });
   },
 
   async refresh() {
-    const user = getStoredUser();
-    const response = await api.post(
-      ENDPOINTS.AUTH.REFRESH,
-      {
-        userPublicId: user?.id,
-      },
-      {
-        withCredentials: true,
-      }
-    );
+    const response = await api.post(ENDPOINTS.AUTH.REFRESH, undefined, {
+      withCredentials: true,
+    });
 
     return normalizeSession(response.data);
   },

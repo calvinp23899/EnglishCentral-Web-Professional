@@ -12,7 +12,7 @@ namespace EnglishCentral.Domain.Entities.Finance
         public long? PaymentAllocationId { get; set; }
         public long? RefundId { get; set; }
         public long? CreditNoteId { get; set; }
-        public BillingLedgerEntryType Type { get; set; }
+        public EBillingLedgerEntryType Type { get; set; }
         public decimal DebitAmount { get; set; }
         public decimal CreditAmount { get; set; }
         public decimal BalanceAfter { get; set; }

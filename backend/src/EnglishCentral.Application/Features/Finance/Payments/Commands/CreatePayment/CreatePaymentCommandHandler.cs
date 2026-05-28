@@ -63,9 +63,9 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
                 var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, ct);
                 if (invoice is null)
                     return Result<PaymentResponse>.Failure("One or more invoices are not found.", 404);
-                if (invoice.Status == InvoiceStatus.Cancelled)
+                if (invoice.Status == EInvoiceStatus.Cancelled)
                     return Result<PaymentResponse>.Failure("Cannot pay a cancelled invoice.", 400);
-                if (invoice.Status == InvoiceStatus.Paid || invoice.OutstandingAmount <= 0)
+                if (invoice.Status == EInvoiceStatus.Paid || invoice.OutstandingAmount <= 0)
                     return Result<PaymentResponse>.Failure("Cannot pay a fully paid invoice.", 400);
 
                 invoices.Add(invoice);
@@ -107,7 +107,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
                 PaidAt = request.PaidAt ?? now,
                 Amount = request.Amount,
                 Method = request.Method,
-                Status = PaymentStatus.Completed,
+                Status = EPaymentStatus.Completed,
                 ReferenceCode = request.ReferenceCode?.Trim(),
                 PayerName = request.PayerName?.Trim(),
                 PayerPhone = request.PayerPhone?.Trim(),
@@ -124,8 +124,8 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
                 invoice.PaidAmount += allocationRequest.Amount;
                 invoice.OutstandingAmount -= allocationRequest.Amount;
                 invoice.Status = invoice.OutstandingAmount == 0
-                    ? InvoiceStatus.Paid
-                    : InvoiceStatus.PartiallyPaid;
+                    ? EInvoiceStatus.Paid
+                    : EInvoiceStatus.PartiallyPaid;
                 invoice.UpdatedAt = now;
 
                 if (invoice.OutstandingAmount == 0 && invoice.PaymentPlanItemId.HasValue)
@@ -133,7 +133,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
                     var item = paymentPlanItems.FirstOrDefault(x => x.Id == invoice.PaymentPlanItemId.Value);
                     if (item is not null)
                     {
-                        item.Status = PaymentPlanItemStatus.Paid;
+                        item.Status = EPaymentPlanItemStatus.Paid;
                         item.UpdatedAt = now;
                     }
                 }
@@ -157,7 +157,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
                     EnrollmentId = invoice.EnrollmentId,
                     InvoiceId = invoice.Id,
                     Payment = payment,
-                    Type = BillingLedgerEntryType.PaymentAllocated,
+                    Type = EBillingLedgerEntryType.PaymentAllocated,
                     CreditAmount = allocationRequest.Amount,
                     BalanceAfter = invoice.OutstandingAmount,
                     OccurredAt = now,
@@ -194,7 +194,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
             foreach (var planId in planIds)
             {
                 var plan = await _paymentPlanRepository.GetByIdAsync(planId, ct);
-                if (plan is null || plan.Status == PaymentPlanStatus.Completed)
+                if (plan is null || plan.Status == EPaymentPlanStatus.Completed)
                     continue;
 
                 var planItems = await _paymentPlanItemRepository.ListAsync(q => q.Where(x => x.PaymentPlanId == planId), ct);
@@ -205,9 +205,9 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
                         planItem.Status = touchedItem.Status;
                 }
 
-                if (planItems.Count > 0 && planItems.All(x => x.Status == PaymentPlanItemStatus.Paid))
+                if (planItems.Count > 0 && planItems.All(x => x.Status == EPaymentPlanItemStatus.Paid))
                 {
-                    plan.Status = PaymentPlanStatus.Completed;
+                    plan.Status = EPaymentPlanStatus.Completed;
                     plan.UpdatedAt = now;
                 }
             }

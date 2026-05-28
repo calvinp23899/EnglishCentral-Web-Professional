@@ -14,9 +14,9 @@ namespace EnglishCentral.Domain.Entities.Finance
 
         public decimal Amount { get; set; }
 
-        public PaymentMethod Method { get; set; }
+        public EPaymentMethod Method { get; set; }
 
-        public PaymentStatus Status { get; set; } = PaymentStatus.Completed;
+        public EPaymentStatus Status { get; set; } = EPaymentStatus.Completed;
 
         public string? ReferenceCode { get; set; }
 

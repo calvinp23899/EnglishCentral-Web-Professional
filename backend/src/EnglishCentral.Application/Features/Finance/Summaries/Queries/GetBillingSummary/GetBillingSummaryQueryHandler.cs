@@ -39,7 +39,7 @@ namespace EnglishCentral.Application.Features.Finance.Summaries.Queries.GetBilli
                 enrollments.Sum(x => x.PaidAmount),
                 enrollments.Sum(x => x.OutstandingAmount),
                 invoices.Count,
-                invoices.Count(x => x.Status == InvoiceStatus.Overdue)));
+                invoices.Count(x => x.Status == EInvoiceStatus.Overdue)));
         }
     }
 }

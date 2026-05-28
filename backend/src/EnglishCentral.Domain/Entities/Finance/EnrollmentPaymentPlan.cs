@@ -10,13 +10,13 @@ namespace EnglishCentral.Domain.Entities.Finance
 
         public long? BillingPolicyId { get; set; }
 
-        public PaymentPlanType Type { get; set; }
+        public EPaymentPlanType Type { get; set; }
 
         public decimal TotalAmount { get; set; }
 
         public int? NumberOfInstallments { get; set; }
 
-        public PaymentPlanStatus Status { get; set; } = PaymentPlanStatus.Active;
+        public EPaymentPlanStatus Status { get; set; } = EPaymentPlanStatus.Active;
 
         public string? Notes { get; set; }
 

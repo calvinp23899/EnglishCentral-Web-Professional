@@ -13,7 +13,7 @@ namespace EnglishCentral.Application.Features.Academic.ClassSessions.Queries.Get
         public bool IsDescending { get; init; } = true;
         public long? ClassId { get; init; }
         public long? TeacherId { get; init; }
-        public SessionStatus? Status { get; init; }
+        public ESessionStatus? Status { get; init; }
         public DateOnly? Date { get; init; }
     }
 }

@@ -15,7 +15,7 @@ namespace EnglishCentral.Application.Behaviors
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             var requestName = typeof(TRequest).Name;
-            _logger.LogInformation("Audit request {RequestName} at {AuditTime}", requestName, DateTimeOffset.UtcNow);
+            _logger.LogInformation("----------Audit request {RequestName} at {AuditTime}----------", requestName, DateTimeOffset.UtcNow);
             return await next();
         }
     }

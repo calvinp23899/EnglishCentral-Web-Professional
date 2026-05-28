@@ -18,7 +18,7 @@ namespace EnglishCentral.Application.Features.Academic.Students.Queries.GetStude
 
         public bool IsDescending { get; init; } = true;
 
-        public StudentStatus? Status { get; init; }
+        public EStatus? Status { get; init; }
 
         public DateOnly? Date { get; init; }
     };

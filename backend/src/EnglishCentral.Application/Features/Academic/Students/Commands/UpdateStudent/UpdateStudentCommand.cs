@@ -9,14 +9,14 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.UpdateS
         long Id,
         string FullName,
         DateOnly? DateOfBirth,
-        Gender Gender,
+        EGender Gender,
         string? Email,
         string? PhoneNumber,
         string? Address,
         string? ParentName,
         string? ParentPhoneNumber,
         //DateOnly EnrollmentDate,
-        StudentStatus Status,
+        EStatus Status,
         string? Notes
     ) : IRequest<Result<StudentResponse>>;
 }

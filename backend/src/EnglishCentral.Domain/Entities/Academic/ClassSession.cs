@@ -25,7 +25,7 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public DateTimeOffset? EndedAt { get; set; }
 
-        public SessionStatus Status { get; set; } = SessionStatus.Scheduled;
+        public ESessionStatus Status { get; set; } = ESessionStatus.Scheduled;
 
         public string? CancellationReason { get; set; }
 

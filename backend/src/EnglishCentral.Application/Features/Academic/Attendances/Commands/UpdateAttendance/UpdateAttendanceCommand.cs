@@ -10,7 +10,7 @@ namespace EnglishCentral.Application.Features.Academic.Attendances.Commands.Upda
         long Id,
         long SessionId,
         long StudentId,
-        AttendanceStatus Status,
+        EAttendanceStatus Status,
         DateTimeOffset? CheckedAt,
         long? CheckedBy,
         DateTimeOffset? RecordedAt,

@@ -13,7 +13,7 @@ namespace EnglishCentral.Domain.Entities.Finance
         public decimal Amount { get; set; }
         public decimal AppliedAmount { get; set; }
         public decimal RemainingAmount { get; set; }
-        public CreditNoteStatus Status { get; set; } = CreditNoteStatus.Open;
+        public ECreditNoteStatus Status { get; set; } = ECreditNoteStatus.Open;
         public string Reason { get; set; } = default!;
         public DateTimeOffset IssuedAt { get; set; } = DateTimeOffset.UtcNow;
         public string? Notes { get; set; }

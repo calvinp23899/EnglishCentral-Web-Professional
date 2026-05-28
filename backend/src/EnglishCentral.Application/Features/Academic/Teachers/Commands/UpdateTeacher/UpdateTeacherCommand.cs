@@ -13,7 +13,7 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Commands.UpdateT
     string? Email,
     string? PhoneNumber,
     DateOnly? DateOfBirth,
-    Gender Gender,
+    EGender Gender,
     string? Address,
 
     // === National ID ===
@@ -29,11 +29,11 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Commands.UpdateT
     List<string>? Certifications,
 
     DateOnly HireDate,
-    ContractType? ContractType,
+    EContractType? ContractType,
     DateOnly? ContractEndDate,
-    TeacherStatus Status,
+    ETeacherStatus Status,
 
-    SalaryType SalaryType,
+    ESalaryType SalaryType,
     decimal? BaseSalary,
     decimal? HourlyRate,
     string? BankAccountNumber,

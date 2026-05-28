@@ -147,9 +147,9 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             return Result<List<EnrollmentDiscount>>.Success(result);
         }
 
-        private static decimal CalculateDiscountAmount(decimal baseAmount, DiscountType type, decimal value)
+        private static decimal CalculateDiscountAmount(decimal baseAmount, EDiscountType type, decimal value)
         {
-            return type == DiscountType.Percentage
+            return type == EDiscountType.Percentage
                 ? Math.Round(baseAmount * value / 100m, 2)
                 : value;
         }
@@ -183,12 +183,12 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             if (itemsTotal != finalAmount)
                 return Result<bool>.Failure("Payment plan items total amount must equal enrollment final amount.", 400);
 
-            var planType = planRequest?.Type ?? PaymentPlanType.FullPayment;
+            var planType = planRequest?.Type ?? EPaymentPlanType.FullPayment;
             var numberOfInstallments = planRequest?.NumberOfInstallments;
 
-            if (planType == PaymentPlanType.FullPayment && items.Count != 1)
+            if (planType == EPaymentPlanType.FullPayment && items.Count != 1)
                 return Result<bool>.Failure("Full payment plan must have exactly one item.", 400);
-            if (planType == PaymentPlanType.Installment && numberOfInstallments.HasValue && items.Count != numberOfInstallments.Value)
+            if (planType == EPaymentPlanType.Installment && numberOfInstallments.HasValue && items.Count != numberOfInstallments.Value)
                 return Result<bool>.Failure("Installment count must match payment plan item count.", 400);
 
             var paymentPlan = new EnrollmentPaymentPlan
@@ -198,7 +198,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
                 Type = planType,
                 NumberOfInstallments = numberOfInstallments,
                 TotalAmount = finalAmount,
-                Status = PaymentPlanStatus.Active,
+                Status = EPaymentPlanStatus.Active,
                 Notes = planRequest?.Notes?.Trim(),
                 CreatedAt = DateTimeOffset.UtcNow
             };
@@ -212,7 +212,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
                     Name = itemRequest.Name.Trim(),
                     DueDate = itemRequest.DueDate,
                     Amount = itemRequest.Amount,
-                    Status = PaymentPlanItemStatus.Pending,
+                    Status = EPaymentPlanItemStatus.Pending,
                     CreatedAt = DateTimeOffset.UtcNow
                 };
 

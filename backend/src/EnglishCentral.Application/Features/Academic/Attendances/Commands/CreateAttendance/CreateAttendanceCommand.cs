@@ -9,7 +9,7 @@ namespace EnglishCentral.Application.Features.Academic.Attendances.Commands.Crea
     public record CreateAttendanceCommand(
         long SessionId,
         long StudentId,
-        AttendanceStatus Status,
+        EAttendanceStatus Status,
         DateTimeOffset? CheckedAt,
         long? CheckedBy,
         DateTimeOffset? RecordedAt,
