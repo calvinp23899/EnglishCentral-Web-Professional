@@ -18,7 +18,7 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public DateOnly? EndDate { get; set; }
 
-        public EnrollmentStatus Status { get; set; } = EnrollmentStatus.Active;
+        public EEnrollmentStatus Status { get; set; } = EEnrollmentStatus.Active;
 
         public decimal TuitionFee { get; set; }
 

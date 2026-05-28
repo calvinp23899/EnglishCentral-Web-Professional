@@ -13,6 +13,6 @@ namespace EnglishCentral.Application.Features.Academic.Attendances.Queries.GetAt
         public bool IsDescending { get; init; } = true;
         public long? SessionId { get; init; }
         public long? StudentId { get; init; }
-        public AttendanceStatus? Status { get; init; }
+        public EAttendanceStatus? Status { get; init; }
     }
 }

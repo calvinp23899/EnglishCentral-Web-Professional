@@ -6,17 +6,16 @@ using MediatR;
 namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateStudent
 {
     public record CreateStudentCommand(
-         string StudentCode,
         string FullName,
         DateOnly? DateOfBirth,
-        Gender Gender,
-        string? Email,
-        string? PhoneNumber,
-        string? Address,
+        EGender Gender,
+        string Email,
+        string PhoneNumber,
+        string Address,
         string? ParentName,
         string? ParentPhoneNumber,
         DateOnly EnrollmentDate,
-        StudentStatus Status,
+        EStatus Status,
         string? Notes,
         bool IsAccountExists,
         StudentAccountDto Account
@@ -24,9 +23,6 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
 
     public record StudentAccountDto(
         long? UserId,
-        string? Email,
-        string? PhoneNumber,
-        string? FullName,
         string? Password
     );
 }

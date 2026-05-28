@@ -24,7 +24,7 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
 
             var invoices = await _db.Set<Invoice>()
                 .Where(x =>
-                    (x.Status == InvoiceStatus.Issued || x.Status == InvoiceStatus.PartiallyPaid) &&
+                    (x.Status == EInvoiceStatus.Issued || x.Status == EInvoiceStatus.PartiallyPaid) &&
                     x.OutstandingAmount > 0 &&
                     x.DueDate < today)
                 .ToListAsync(cancellationToken);
@@ -47,13 +47,13 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
 
             foreach (var invoice in invoices)
             {
-                invoice.Status = InvoiceStatus.Overdue;
+                invoice.Status = EInvoiceStatus.Overdue;
                 invoice.UpdatedAt = now;
             }
 
             foreach (var item in items)
             {
-                item.Status = PaymentPlanItemStatus.Overdue;
+                item.Status = EPaymentPlanItemStatus.Overdue;
                 item.UpdatedAt = now;
             }
 

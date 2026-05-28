@@ -9,7 +9,7 @@ namespace EnglishCentral.Domain.Entities.Finance
         public long EnrollmentId { get; set; }
         public long? DiscountId { get; set; }
         public string Name { get; set; } = default!;
-        public DiscountType Type { get; set; }
+        public EDiscountType Type { get; set; }
         public decimal Value { get; set; }
         public decimal Amount { get; set; }
         public string? Reason { get; set; }

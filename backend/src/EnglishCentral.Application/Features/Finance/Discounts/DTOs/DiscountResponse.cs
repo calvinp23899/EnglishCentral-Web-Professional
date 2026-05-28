@@ -3,7 +3,7 @@ using EnglishCentral.Domain.Enums.Academic;
 
 namespace EnglishCentral.Application.Features.Finance.Discounts.DTOs
 {
-    public record DiscountResponse(Guid PublicId, long Id, string Code, string Name, DiscountType Type, decimal Value, DateOnly? ValidFrom, DateOnly? ValidTo, bool IsActive, string? Description);
+    public record DiscountResponse(Guid PublicId, long Id, string Code, string Name, EDiscountType Type, decimal Value, DateOnly? ValidFrom, DateOnly? ValidTo, bool IsActive, string? Description);
 
     public static class DiscountMapping
     {

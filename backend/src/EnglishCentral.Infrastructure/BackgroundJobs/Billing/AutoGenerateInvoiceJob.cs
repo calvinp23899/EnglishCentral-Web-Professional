@@ -26,7 +26,7 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
             var items = await _db.Set<EnrollmentPaymentPlanItem>()
                 .Include(x => x.PaymentPlan)
                 .Where(x =>
-                    x.Status == PaymentPlanItemStatus.Pending &&
+                    x.Status == EPaymentPlanItemStatus.Pending &&
                     x.DueDate <= generateUntil)
                 .OrderBy(x => x.DueDate)
                 .ThenBy(x => x.SequenceNumber)
@@ -66,7 +66,7 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
                     TotalAmount = invoiceTotal,
                     PaidAmount = 0,
                     OutstandingAmount = invoiceTotal,
-                    Status = InvoiceStatus.Issued,
+                    Status = EInvoiceStatus.Issued,
                     Notes = item.Name,
                     CreatedAt = now
                 };
@@ -74,7 +74,7 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
                 invoice.Lines.Add(new InvoiceLine
                 {
                     Invoice = invoice,
-                    ItemType = BillingItemType.Tuition,
+                    ItemType = EBillingItemType.Tuition,
                     Description = item.Name,
                     Quantity = 1,
                     UnitPrice = item.Amount,
@@ -88,7 +88,7 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
                     invoice.Lines.Add(new InvoiceLine
                     {
                         Invoice = invoice,
-                        ItemType = BillingItemType.Discount,
+                        ItemType = EBillingItemType.Discount,
                         Description = "Allocated enrollment discount",
                         Quantity = 1,
                         UnitPrice = -discountAmount,
@@ -101,7 +101,7 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
                     {
                         Invoice = invoice,
                         Name = "Allocated enrollment discount",
-                        Type = DiscountType.FixedAmount,
+                        Type = EDiscountType.FixedAmount,
                         Value = discountAmount,
                         Amount = discountAmount,
                         Reason = "Auto allocated from enrollment discounts",
@@ -109,7 +109,7 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
                     });
                 }
 
-                item.Status = PaymentPlanItemStatus.Invoiced;
+                item.Status = EPaymentPlanItemStatus.Invoiced;
                 item.UpdatedAt = now;
                 _db.Set<Invoice>().Add(invoice);
             }

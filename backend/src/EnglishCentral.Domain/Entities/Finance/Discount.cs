@@ -7,7 +7,7 @@ namespace EnglishCentral.Domain.Entities.Finance
     {
         public string Code { get; set; } = default!;
         public string Name { get; set; } = default!;
-        public DiscountType Type { get; set; }
+        public EDiscountType Type { get; set; }
         public decimal Value { get; set; }
         public DateOnly? ValidFrom { get; set; }
         public DateOnly? ValidTo { get; set; }

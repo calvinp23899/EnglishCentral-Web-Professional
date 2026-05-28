@@ -13,7 +13,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
         DateTimeOffset? EnrolledAt,
         DateOnly? StartDate,
         DateOnly? EndDate,
-        EnrollmentStatus Status,
+        EEnrollmentStatus Status,
         decimal TuitionFee,
         decimal DiscountAmount,
         decimal FinalAmount,
@@ -29,14 +29,14 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
     public record CreateEnrollmentDiscountRequest(
         long? DiscountId,
         string? Name,
-        DiscountType Type,
+        EDiscountType Type,
         decimal Value,
         decimal? Amount,
         string? Reason);
 
     public record CreateEnrollmentPaymentPlanRequest(
         long? BillingPolicyId,
-        PaymentPlanType Type,
+        EPaymentPlanType Type,
         int? NumberOfInstallments,
         string? Notes,
         IReadOnlyCollection<CreateEnrollmentPaymentPlanItemRequest> Items);

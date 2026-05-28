@@ -3,17 +3,16 @@
 namespace EnglishCentral.Contracts.Requests.Academic.Student
 {
     public record CreateStudentRequest(
-        string StudentCode,
         string FullName,
-        DateOnly? DateOfBirth,
-        Gender Gender,
-        string? Email,
-        string? PhoneNumber,
+        DateOnly DateOfBirth,
+        EGender Gender,
+        string Email,
+        string PhoneNumber,
         string? Address,
         string? ParentName,
         string? ParentPhoneNumber,
         DateOnly EnrollmentDate,
-        StudentStatus Status,
+        EStatus Status,
         string? Notes,
         bool IsAccountExists,
         StudentAccountRequest Account

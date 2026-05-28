@@ -9,7 +9,7 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public long StudentId { get; set; }
 
-        public AttendanceStatus Status { get; set; }
+        public EAttendanceStatus Status { get; set; }
 
         public DateTimeOffset? CheckedAt { get; set; }
 

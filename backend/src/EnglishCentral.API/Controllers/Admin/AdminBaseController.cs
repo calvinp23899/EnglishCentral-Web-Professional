@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using EnglishCentral.Contracts.Responses.Metadata;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
@@ -21,6 +22,16 @@ namespace EnglishCentral.API.Controllers.Admin
                     ? publicId
                     : null;
             }
+        }
+
+        protected List<MetadataOptionResponse> GetEnumMetadata<T>() where T : struct, Enum
+        {
+            return Enum.GetValues<T>()
+                .Select(x => new MetadataOptionResponse(
+                    Label: x.ToString(),
+                    Value: x.ToString(),
+                    Code: Convert.ToInt32(x)))
+                .ToList();
         }
     }
 }

@@ -7,7 +7,7 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.DTOs
         Guid PublicId,
         long Id,
         string Name,
-        BillingPolicyType Type,
+        EBillingPolicyType Type,
         int? NumberOfInstallments,
         bool IsDefault,
         bool IsActive,

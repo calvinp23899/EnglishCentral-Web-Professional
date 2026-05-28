@@ -6,7 +6,7 @@ using MediatR;
 
 namespace EnglishCentral.Application.Features.Finance.Refunds.Commands.CreateRefund
 {
-    public record CreateRefundCommand(long PaymentId, long? EnrollmentId, decimal Amount, RefundMethod Method, string Reason, string? ReferenceCode, string? Notes) : IRequest<Result<RefundResponse>>;
+    public record CreateRefundCommand(long PaymentId, long? EnrollmentId, decimal Amount, ERefundMethod Method, string Reason, string? ReferenceCode, string? Notes) : IRequest<Result<RefundResponse>>;
     public class CreateRefundCommandValidator : AbstractValidator<CreateRefundCommand>
     {
         public CreateRefundCommandValidator()

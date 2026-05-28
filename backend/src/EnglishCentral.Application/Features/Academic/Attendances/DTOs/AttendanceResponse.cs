@@ -8,7 +8,7 @@ namespace EnglishCentral.Application.Features.Academic.Attendances.DTOs
         long Id,
         long SessionId,
         long StudentId,
-        AttendanceStatus Status,
+        EAttendanceStatus Status,
         DateTimeOffset? CheckedAt,
         long? CheckedBy,
         DateTimeOffset? RecordedAt,

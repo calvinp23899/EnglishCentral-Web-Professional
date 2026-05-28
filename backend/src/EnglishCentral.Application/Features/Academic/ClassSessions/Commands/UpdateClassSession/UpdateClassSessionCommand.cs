@@ -18,7 +18,7 @@ namespace EnglishCentral.Application.Features.Academic.ClassSessions.Commands.Up
         TimeOnly EndTime,
         DateTimeOffset? StartedAt,
         DateTimeOffset? EndedAt,
-        SessionStatus Status,
+        ESessionStatus Status,
         string? CancellationReason,
         bool IsPayrollLocked,
         string? Notes) : IRequest<Result<ClassSessionResponse>>;

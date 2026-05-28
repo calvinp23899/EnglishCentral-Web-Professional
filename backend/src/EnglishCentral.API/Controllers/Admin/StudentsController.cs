@@ -35,7 +35,7 @@ namespace EnglishCentral.API.Controllers.Admin
                 SortBy = request.SortBy,
                 IsDescending = request.IsDescending,
                 Status = request.Status.HasValue
-                        ? (StudentStatus?)request.Status.Value
+                        ? (EStatus?)request.Status.Value
                         : null,
                 Date = request.EnrollmentDate
             };
@@ -56,7 +56,6 @@ namespace EnglishCentral.API.Controllers.Admin
         public async Task<IActionResult> CreateStudent(CreateStudentRequest request, CancellationToken ct)
         {
             var command = new CreateStudentCommand(
-                request.StudentCode,
                 request.FullName,
                 request.DateOfBirth,
                 request.Gender,
@@ -71,9 +70,6 @@ namespace EnglishCentral.API.Controllers.Admin
                 request.IsAccountExists,
                 new StudentAccountDto(
                     request.Account.UserId,
-                    request.Account.Email,
-                    request.Account.PhoneNumber,
-                    request.Account.FullName,
                     request.Account.Password
                 )
             );

@@ -8,7 +8,7 @@ namespace EnglishCentral.Domain.Entities.Finance
     {
         public string Name { get; set; } = default!;
 
-        public BillingPolicyType Type { get; set; }
+        public EBillingPolicyType Type { get; set; }
 
         public int? NumberOfInstallments { get; set; }
 

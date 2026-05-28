@@ -13,6 +13,6 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Queries.GetEn
         public bool IsDescending { get; init; } = true;
         public long? StudentId { get; init; }
         public long? ClassId { get; init; }
-        public EnrollmentStatus? Status { get; init; }
+        public EEnrollmentStatus? Status { get; init; }
     }
 }

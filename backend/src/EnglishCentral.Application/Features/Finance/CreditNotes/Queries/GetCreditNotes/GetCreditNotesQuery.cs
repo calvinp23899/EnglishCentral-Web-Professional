@@ -7,7 +7,7 @@ using MediatR;
 
 namespace EnglishCentral.Application.Features.Finance.CreditNotes.Queries.GetCreditNotes
 {
-    public record GetCreditNotesQuery(long? StudentId = null, long? EnrollmentId = null, CreditNoteStatus? Status = null, int Page = 1, int PageSize = 20, bool IsDescending = true) : IRequest<Result<PagedResult<CreditNoteResponse>>>;
+    public record GetCreditNotesQuery(long? StudentId = null, long? EnrollmentId = null, ECreditNoteStatus? Status = null, int Page = 1, int PageSize = 20, bool IsDescending = true) : IRequest<Result<PagedResult<CreditNoteResponse>>>;
     public class GetCreditNotesQueryValidator : AbstractValidator<GetCreditNotesQuery>
     {
         public GetCreditNotesQueryValidator()

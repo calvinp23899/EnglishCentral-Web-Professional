@@ -7,7 +7,7 @@ namespace EnglishCentral.Domain.Entities.Finance
     {
         public long InvoiceId { get; set; }
 
-        public BillingItemType ItemType { get; set; }
+        public EBillingItemType ItemType { get; set; }
 
         public string Description { get; set; } = default!;
 

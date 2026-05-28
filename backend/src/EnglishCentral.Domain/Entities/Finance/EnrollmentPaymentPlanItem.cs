@@ -15,7 +15,7 @@ namespace EnglishCentral.Domain.Entities.Finance
 
         public decimal Amount { get; set; }
 
-        public PaymentPlanItemStatus Status { get; set; } = PaymentPlanItemStatus.Pending;
+        public EPaymentPlanItemStatus Status { get; set; } = EPaymentPlanItemStatus.Pending;
 
         public EnrollmentPaymentPlan PaymentPlan { get; set; } = default!;
 

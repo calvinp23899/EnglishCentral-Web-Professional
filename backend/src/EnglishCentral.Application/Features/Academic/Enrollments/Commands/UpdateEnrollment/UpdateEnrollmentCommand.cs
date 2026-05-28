@@ -11,7 +11,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Upda
         string? EnrollmentCode,
         DateOnly? StartDate,
         DateOnly? EndDate,
-        EnrollmentStatus Status,
+        EEnrollmentStatus Status,
         decimal TuitionFee,
         decimal DiscountAmount,
         decimal FinalAmount,

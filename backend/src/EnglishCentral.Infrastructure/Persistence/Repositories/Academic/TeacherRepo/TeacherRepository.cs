@@ -46,7 +46,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic.Teache
             string? keyword,
             string? sortBy,
             bool isDescending,
-            TeacherStatus? status,
+            ETeacherStatus? status,
             DateOnly? hireDate,
             CancellationToken ct = default)
         {

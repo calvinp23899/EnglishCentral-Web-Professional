@@ -15,7 +15,7 @@ namespace EnglishCentral.Domain.Entities.Academic
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
         public DateOnly? DateOfBirth { get; set; }
-        public Gender Gender { get; set; }
+        public EGender Gender { get; set; }
         public string? Address { get; set; }
 
         // === National ID ==
@@ -32,12 +32,12 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         // === Employment ===
         public DateOnly? HireDate { get; set; }
-        public ContractType? ContractType { get; set; }
+        public EContractType? ContractType { get; set; }
         public DateOnly? ContractEndDate { get; set; }
-        public TeacherStatus Status { get; set; } = TeacherStatus.Active;
+        public ETeacherStatus Status { get; set; } = ETeacherStatus.Active;
 
         // === Payroll ===
-        public SalaryType SalaryType { get; set; }
+        public ESalaryType SalaryType { get; set; }
         public decimal? BaseSalary { get; set; }
         public decimal? HourlyRate { get; set; }
         public string? BankAccountNumber { get; set; }

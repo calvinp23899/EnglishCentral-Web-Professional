@@ -10,7 +10,7 @@ namespace EnglishCentral.Application.Features.Finance.Invoices.Queries.GetInvoic
     public record GetInvoicesQuery(
         long? EnrollmentId = null,
         long? StudentId = null,
-        InvoiceStatus? Status = null,
+        EInvoiceStatus? Status = null,
         int Page = 1,
         int PageSize = 20,
         bool IsDescending = true) : IRequest<Result<PagedResult<InvoiceResponse>>>;

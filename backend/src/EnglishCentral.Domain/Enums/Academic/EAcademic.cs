@@ -1,21 +1,19 @@
 ﻿namespace EnglishCentral.Domain.Enums.Academic
 {
-    public enum Gender
+    public enum EGender
     {
         Male = 1,
         Female = 2,
         Other = 3
     }
 
-    public enum StudentStatus
+    public enum EStatus
     {
         Active = 1,
         Inactive = 2,
-        Suspended = 3,
-        Graduated = 4
     }
 
-    public enum TeacherStatus
+    public enum ETeacherStatus
     {
         Active = 1,
         Inactive = 2,
@@ -23,7 +21,7 @@
         Resigned = 4
     }
 
-    public enum ClassStatus
+    public enum EClassStatus
     {
         Draft = 1,
         Open = 2,
@@ -32,7 +30,7 @@
         Cancelled = 5
     }
 
-    public enum EnrollmentStatus
+    public enum EEnrollmentStatus
     {
         Active = 1,
         Dropped = 2,
@@ -40,7 +38,7 @@
         Completed = 4
     }
 
-    public enum AttendanceStatus
+    public enum EAttendanceStatus
     {
         Present = 1,
         Late = 2,
@@ -48,7 +46,7 @@
         Excused = 4
     }
 
-    public enum SessionStatus
+    public enum ESessionStatus
     {
         Scheduled = 1,
         Completed = 2,
@@ -56,7 +54,7 @@
         Rescheduled = 4
     }
 
-    public enum CourseLevel
+    public enum ECourseLevel
     {
         Beginner = 1,
         Elementary = 2,
@@ -73,20 +71,20 @@
         TOEIC850 = 13
     }
 
-    public enum ContractType
+    public enum EContractType
     {
         FullTime,
         PartTime,
         Freelance
     }
-    public enum SalaryType
+    public enum ESalaryType
     {
         Fixed,
         Hourly,
         PerSession
     }
 
-    public enum BillingPolicyType
+    public enum EBillingPolicyType
     {
         FullPayment = 1,
         Monthly = 2,
@@ -94,7 +92,7 @@
         Custom = 4
     }
 
-    public enum PaymentPlanType
+    public enum EPaymentPlanType
     {
         FullPayment = 1,
         Monthly = 2,
@@ -102,7 +100,7 @@
         Custom = 4
     }
 
-    public enum PaymentPlanStatus
+    public enum EPaymentPlanStatus
     {
         Draft = 1,
         Active = 2,
@@ -110,7 +108,7 @@
         Cancelled = 4
     }
 
-    public enum PaymentPlanItemStatus
+    public enum EPaymentPlanItemStatus
     {
         Pending = 1,
         Invoiced = 2,
@@ -119,7 +117,7 @@
         Cancelled = 5
     }
 
-    public enum InvoiceStatus
+    public enum EInvoiceStatus
     {
         Draft = 1,
         Issued = 2,
@@ -129,7 +127,7 @@
         Cancelled = 6
     }
 
-    public enum BillingItemType
+    public enum EBillingItemType
     {
         Tuition = 1,
         MaterialFee = 2,
@@ -139,7 +137,7 @@
         Discount = 6
     }
 
-    public enum PaymentMethod
+    public enum EPaymentMethod
     {
         Cash = 1,
         BankTransfer = 2,
@@ -147,7 +145,7 @@
         EWallet = 4
     }
 
-    public enum PaymentStatus
+    public enum EPaymentStatus
     {
         Pending = 1,
         Completed = 2,
@@ -156,20 +154,20 @@
         Refunded = 5
     }
 
-    public enum DiscountType
+    public enum EDiscountType
     {
         FixedAmount = 1,
         Percentage = 2
     }
 
-    public enum RefundStatus
+    public enum ERefundStatus
     {
         Pending = 1,
         Completed = 2,
         Cancelled = 3
     }
 
-    public enum RefundMethod
+    public enum ERefundMethod
     {
         Cash = 1,
         BankTransfer = 2,
@@ -177,7 +175,7 @@
         EWallet = 4
     }
 
-    public enum CreditNoteStatus
+    public enum ECreditNoteStatus
     {
         Open = 1,
         PartiallyApplied = 2,
@@ -185,7 +183,7 @@
         Cancelled = 4
     }
 
-    public enum BillingLedgerEntryType
+    public enum EBillingLedgerEntryType
     {
         InvoiceIssued = 1,
         PaymentReceived = 2,

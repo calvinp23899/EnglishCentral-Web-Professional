@@ -246,6 +246,18 @@
   }
 }
 
+.requiredMark {
+  color: #dc2626;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.requiredHint {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .notesField {
   grid-column: 1 / -1;
 }

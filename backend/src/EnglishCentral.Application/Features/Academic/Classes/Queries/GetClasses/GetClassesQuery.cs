@@ -15,6 +15,6 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Queries.GetClasse
         public bool IsDescending { get; init; } = true;
         public long? CourseId { get; init; }
         public long? TeacherId { get; init; }
-        public ClassStatus? Status { get; init; }
+        public EClassStatus? Status { get; init; }
     }
 }

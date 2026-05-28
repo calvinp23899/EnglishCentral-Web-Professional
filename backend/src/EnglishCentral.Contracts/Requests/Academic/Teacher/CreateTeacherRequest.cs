@@ -8,7 +8,7 @@ namespace EnglishCentral.Contracts.Requests.Academic.Teacher
         string? Email,
         string? PhoneNumber,
         DateOnly? DateOfBirth,
-        Gender Gender,
+        EGender Gender,
         string? Address,
 
         // === National ID ===
@@ -25,12 +25,12 @@ namespace EnglishCentral.Contracts.Requests.Academic.Teacher
 
         // === Employment ===
         DateOnly HireDate,
-        ContractType? ContractType,
+        EContractType? ContractType,
         DateOnly? ContractEndDate,
-        TeacherStatus Status,
+        ETeacherStatus Status,
 
         // === Payroll ===
-        SalaryType SalaryType,
+        ESalaryType SalaryType,
         decimal? BaseSalary,
         decimal? HourlyRate,
         string? BankAccountNumber,

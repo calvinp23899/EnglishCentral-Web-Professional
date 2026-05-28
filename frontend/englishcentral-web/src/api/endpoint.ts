@@ -14,4 +14,14 @@ export const ENDPOINTS = {
   STUDENTS: {
     GET_ALL: "/students",
   },
+
+  ADMIN_STUDENTS: {
+    GET_LIST: "/admin/academic/students/get-list",
+    CREATE: "/admin/academic/students/insert",
+  },
+
+  ADMIN_METADATA: {
+    STATUS: "/admin/metadata/status",
+    GENDER: "/admin/metadata/gender-status",
+  },
 };

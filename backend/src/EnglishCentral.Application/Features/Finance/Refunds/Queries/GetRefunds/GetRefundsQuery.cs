@@ -7,7 +7,7 @@ using MediatR;
 
 namespace EnglishCentral.Application.Features.Finance.Refunds.Queries.GetRefunds
 {
-    public record GetRefundsQuery(long? PaymentId = null, long? EnrollmentId = null, RefundStatus? Status = null, int Page = 1, int PageSize = 20, bool IsDescending = true) : IRequest<Result<PagedResult<RefundResponse>>>;
+    public record GetRefundsQuery(long? PaymentId = null, long? EnrollmentId = null, ERefundStatus? Status = null, int Page = 1, int PageSize = 20, bool IsDescending = true) : IRequest<Result<PagedResult<RefundResponse>>>;
     public class GetRefundsQueryValidator : AbstractValidator<GetRefundsQuery>
     {
         public GetRefundsQueryValidator()

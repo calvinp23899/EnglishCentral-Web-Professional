@@ -11,7 +11,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
         string? PaymentNo,
         DateTimeOffset? PaidAt,
         decimal Amount,
-        PaymentMethod Method,
+        EPaymentMethod Method,
         string? ReferenceCode,
         string? PayerName,
         string? PayerPhone,

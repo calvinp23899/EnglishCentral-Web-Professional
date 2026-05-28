@@ -98,7 +98,7 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
 
         private async Task<Result<User>> CreateAccountAsync(CreateStudentCommand request, CancellationToken ct)
         {
-            var email = request.Account.Email!.Trim();
+            var email = request.Email!.Trim();
 
             var emailExists = await _userRepository.IsEmailExistsAsync(email, ct);
             if (emailExists)
@@ -115,9 +115,9 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
             var user = new User
             {
                 PublicId = Guid.NewGuid(),
-                FullName = request.Account.FullName!.Trim(),
+                FullName = request.FullName!.Trim(),
                 Email = email,
-                PhoneNumber = request.Account.PhoneNumber?.Trim(),
+                PhoneNumber = request.PhoneNumber?.Trim(),
                 PasswordHash = _passwordService.Hash(request.Account.Password!),
                 IsActive = true,
                 EmailConfirmed = false,

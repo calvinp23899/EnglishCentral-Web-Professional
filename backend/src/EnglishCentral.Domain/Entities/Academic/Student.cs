@@ -15,7 +15,7 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public DateOnly? DateOfBirth { get; set; }
 
-        public Gender Gender { get; set; }
+        public EGender Gender { get; set; }
 
         public string? Email { get; set; }
 
@@ -29,7 +29,7 @@ namespace EnglishCentral.Domain.Entities.Academic
 
         public DateOnly EnrollmentDate { get; set; }
 
-        public StudentStatus Status { get; set; } = StudentStatus.Active;
+        public EStatus Status { get; set; } = EStatus.Active;
 
         public string? Notes { get; set; }
 
