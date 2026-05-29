@@ -17,16 +17,14 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { ErrorMessage, toastDanger, toastSuccess } from "@/components/ui";
 import {
+  adminAccountsApi,
+  type AdminAccount,
+} from "@/features/admin/accounts/api/admin-accounts-api";
+import {
   adminMetadataApi,
   type MetadataOption,
 } from "@/features/admin/shared/api/admin-metadata-api";
-import {
-  adminStudentsApi,
-} from "@/features/admin/students/api/admin-students-api";
-import {
-  statusLabels,
-  students,
-} from "@/features/admin/students/data/mockStudents";
+import { adminStudentsApi } from "@/features/admin/students/api/admin-students-api";
 import { generatePassword } from "@/features/admin/shared/utils/password";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
@@ -91,14 +89,6 @@ const initialAccountForm: AccountForm = {
   password: "",
 };
 
-const accountRecords = students.map((student) => ({
-  id: student.id,
-  fullName: student.fullName,
-  email: student.email,
-  phoneNumber: student.phoneNumber,
-  status: statusLabels[student.status],
-}));
-
 const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value);
 
 export function StudentCreatePage() {
@@ -113,6 +103,8 @@ export function StudentCreatePage() {
   const [showAccountPassword, setShowAccountPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<StudentCreateErrors>({});
+  const [accountRecords, setAccountRecords] = useState<AdminAccount[]>([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
   const [statusOptions, setStatusOptions] = useState<MetadataOption[]>([]);
   const [genderOptions, setGenderOptions] = useState<MetadataOption[]>([]);
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
@@ -200,17 +192,42 @@ export function StudentCreatePage() {
     };
   }, []);
 
-  const matchedAccounts = useMemo(() => {
-    const searchTerm = accountSearch.trim().toLowerCase();
-
-    if (searchTerm.length === 0) {
-      return accountRecords.slice(0, 4);
+  useEffect(() => {
+    if (accountMode !== "existing") {
+      return;
     }
 
-    return accountRecords.filter((account) =>
-      [account.email, account.phoneNumber].join(" ").toLowerCase().includes(searchTerm),
-    );
-  }, [accountSearch]);
+    let isMounted = true;
+    const timeoutId = window.setTimeout(async () => {
+      setIsLoadingAccounts(true);
+
+      try {
+        const accounts = await adminAccountsApi.getAccounts(accountSearch);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setAccountRecords(accounts);
+      } catch (error) {
+        if (isMounted) {
+          toastDanger(getAuthErrorMessage(error));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingAccounts(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      isMounted = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [accountMode, accountSearch]);
+
+  const matchedAccounts = useMemo(() => accountRecords, [accountRecords]);
+  const hasMatchedAccounts = matchedAccounts.length > 0;
 
   const updateStudentInfo = <Key extends keyof StudentInfoForm>(
     field: Key,
@@ -437,7 +454,9 @@ export function StudentCreatePage() {
               </label>
 
               <label className={styles.field}>
-                <span>Ngày sinh</span>
+                <span>
+                  Ngày sinh <em className={styles.requiredMark}>*</em>
+                </span>
                 <input
                   aria-describedby={errors.dateOfBirth ? "student-date-of-birth-error" : undefined}
                   aria-invalid={Boolean(errors.dateOfBirth)}
@@ -477,7 +496,9 @@ export function StudentCreatePage() {
               </label>
 
               <label className={styles.field}>
-                <span>Email</span>
+                <span>
+                  Email <em className={styles.requiredMark}>*</em>
+                </span>
                 <input
                   aria-describedby={errors.email ? "student-email-error" : undefined}
                   aria-invalid={Boolean(errors.email)}
@@ -489,7 +510,9 @@ export function StudentCreatePage() {
               </label>
 
               <label className={styles.field}>
-                <span>Số điện thoại</span>
+                <span>
+                  Số điện thoại <em className={styles.requiredMark}>*</em>
+                </span>
                 <input
                   aria-describedby={errors.phoneNumber ? "student-phone-error" : undefined}
                   aria-invalid={Boolean(errors.phoneNumber)}
@@ -629,6 +652,7 @@ export function StudentCreatePage() {
                   disabled={isSubmitting}
                   onClick={() => {
                     setAccountMode("existing");
+                    setSelectedAccountId("");
                     setErrors({});
                   }}
                 >
@@ -665,7 +689,10 @@ export function StudentCreatePage() {
                       placeholder="Tìm theo email hoặc SĐT"
                       value={accountSearch}
                       disabled={isSubmitting}
-                      onChange={(event) => setAccountSearch(event.target.value)}
+                      onChange={(event) => {
+                        setAccountSearch(event.target.value);
+                        setSelectedAccountId("");
+                      }}
                     />
                   </label>
                   <span className={styles.requiredHint}>
@@ -673,39 +700,52 @@ export function StudentCreatePage() {
                   </span>
 
                   <div className={styles.resultList}>
-                    {matchedAccounts.map((account) => (
-                      <button
-                        className={
-                          selectedAccountId === account.id ? styles.selectedAccount : ""
-                        }
-                        key={account.id}
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={() => {
-                          setSelectedAccountId(account.id);
-                          setErrors((currentErrors) => ({
-                            ...currentErrors,
-                            selectedAccountId: undefined,
-                          }));
-                        }}
-                      >
-                        <span className={styles.avatar}>
-                          {account.fullName.slice(0, 1)}
-                        </span>
-                        <span>
-                          <strong>{account.fullName}</strong>
-                          <em>
-                            <Mail aria-hidden="true" size={13} />
-                            {account.email}
-                          </em>
-                          <em>
-                            <Phone aria-hidden="true" size={13} />
-                            {account.phoneNumber}
-                          </em>
-                        </span>
-                        <small>{account.status}</small>
-                      </button>
-                    ))}
+                    {hasMatchedAccounts ? (
+                      matchedAccounts.map((account) => {
+                        const accountId = String(account.id);
+
+                        return (
+                          <button
+                            className={
+                              selectedAccountId === accountId
+                                ? styles.selectedAccount
+                                : ""
+                            }
+                            key={account.id}
+                            type="button"
+                            disabled={isSubmitting}
+                            onClick={() => {
+                              setSelectedAccountId(accountId);
+                              setErrors((currentErrors) => ({
+                                ...currentErrors,
+                                selectedAccountId: undefined,
+                              }));
+                            }}
+                          >
+                            <span className={styles.avatar}>
+                              {account.fullName.slice(0, 1)}
+                            </span>
+                            <span>
+                              <strong>{account.fullName}</strong>
+                              <em>
+                                <Mail aria-hidden="true" size={13} />
+                                {account.email}
+                              </em>
+                              <em>
+                                <Phone aria-hidden="true" size={13} />
+                                {account.phoneNumber || "Chưa có SĐT"}
+                              </em>
+                            </span>
+                          </button>
+                        );
+                      })
+                    ) : isLoadingAccounts ? (
+                      <p className={styles.accountState}>Đang tải tài khoản...</p>
+                    ) : (
+                      <p className={styles.accountState}>
+                        Không tìm thấy tài khoản phù hợp.
+                      </p>
+                    )}
                   </div>
                   <ErrorMessage
                     id="student-selected-account-error"

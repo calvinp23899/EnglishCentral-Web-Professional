@@ -163,8 +163,22 @@
   }
 }
 
+.requiredMark {
+  color: #dc2626;
+  font-style: normal;
+  font-weight: 900;
+}
+
 .notesField {
   grid-column: 1 / -1;
+}
+
+.stateBlock {
+  padding: 38px 20px;
+  color: #64748b;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .formActions {

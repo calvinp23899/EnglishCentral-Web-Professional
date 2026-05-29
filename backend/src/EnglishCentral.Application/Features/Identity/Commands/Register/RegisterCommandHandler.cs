@@ -35,11 +35,9 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
 
         public async Task<Result<AuthTokenResult>> Handle(RegisterCommand request, CancellationToken ct)
         {
-            _logger.LogInformation($"-----Starting running {typeof(RegisterCommandHandler)} -----");
             var exists = await _userRepository.IsEmailExistsAsync(request.Email, ct);
             if (exists)
             {
-                _logger.LogWarning("Register failed because email already exists {0}", request.Email);
                 return Result<AuthTokenResult>.Failure("Email already in use.", 409);
             }
             var user = new User
@@ -68,12 +66,9 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Register
             });
 
             await _userRepository.AddAsync(user, ct);
-            _logger.LogInformation("Adding successfully user with email - {0}", request.Email);
 
             var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(user);
             var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user, ct);
-            _logger.LogInformation("Generating token successfuly accessToken - {0}", string.Empty);
-            _logger.LogInformation($"-----Ending running {typeof(RegisterCommandHandler)} ------");
             return Result<AuthTokenResult>.Success(new AuthTokenResult(
                 user.PublicId,
                 user.FullName,

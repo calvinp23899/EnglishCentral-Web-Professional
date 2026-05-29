@@ -19,6 +19,7 @@ import { AdminPlaceholderPage } from "@/features/admin/shared/pages/AdminPlaceho
 import { StudentCreatePage } from "@/features/admin/students/pages/StudentCreatePage";
 import { StudentEditPage } from "@/features/admin/students/pages/StudentEditPage";
 import { StudentListPage } from "@/features/admin/students/pages/StudentListPage";
+import { StudentViewPage } from "@/features/admin/students/pages/StudentViewPage";
 import { TeacherFormPage } from "@/features/admin/teachers/pages/TeacherFormPage";
 import { TeacherListPage } from "@/features/admin/teachers/pages/TeacherListPage";
 import { TeacherViewPage } from "@/features/admin/teachers/pages/TeacherViewPage";
@@ -161,6 +162,10 @@ export const adminRoutes = [
       {
         path: "students/:studentId/edit",
         element: <StudentEditPage />,
+      },
+      {
+        path: "students/:studentId/view",
+        element: <StudentViewPage />,
       },
       {
         path: "schedule",

@@ -49,6 +49,11 @@
     border-color: #bfdbfe;
     color: #2563eb;
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
 }
 
 .icon {
@@ -102,6 +107,11 @@
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
 }
 
 .cancelButton {
@@ -123,7 +133,7 @@
   &.danger {
     background: #dc2626;
 
-    &:hover {
+    &:not(:disabled):hover {
       background: #b91c1c;
     }
   }
@@ -131,7 +141,7 @@
   &.primary {
     background: #2563eb;
 
-    &:hover {
+    &:not(:disabled):hover {
       background: #1d4ed8;
     }
   }

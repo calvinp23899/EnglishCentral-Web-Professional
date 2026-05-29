@@ -1,7 +1,8 @@
 import { api } from "@/api/axios";
 import { ENDPOINTS } from "@/api/endpoint";
 
-export type StudentStatus = 1 | 2;
+export type StudentStatus = string;
+export type RawStudentStatus = string | number;
 
 export type AdminStudent = {
   publicId: string;
@@ -58,11 +59,26 @@ export type CreateAdminStudentPayload = {
 
 type RawAdminStudent = Omit<
   AdminStudent,
-  "id" | "registeredAt" | "enrollmentDate"
+  "id" | "registeredAt" | "enrollmentDate" | "status"
 > & {
   id?: string;
   enrollmentDate?: string;
   registeredAt?: string;
+  status: RawStudentStatus;
+};
+
+export type UpdateAdminStudentPayload = {
+  fullName: string;
+  dateOfBirth?: string | null;
+  gender: string;
+  email?: string | null;
+  phoneNumber?: string | null;
+  address?: string | null;
+  parentName?: string | null;
+  parentPhoneNumber?: string | null;
+  enrollmentDate: string;
+  status: string;
+  notes?: string | null;
 };
 
 type PagedResult<T> = {
@@ -82,13 +98,27 @@ type ApiResult<T> = {
 
 const normalizeStudent = (student: RawAdminStudent): AdminStudent => {
   const enrollmentDate = student.enrollmentDate ?? student.registeredAt ?? "";
+  const status = normalizeStudentStatus(student.status);
 
   return {
     ...student,
-    id: student.id ?? student.publicId,
+    id: student.id ?? String(student.userId ?? student.publicId),
     enrollmentDate,
     registeredAt: enrollmentDate,
+    status,
   };
+};
+
+const normalizeStudentStatus = (status: RawStudentStatus): StudentStatus => {
+  if (status === 1 || status === "Active") {
+    return "Active";
+  }
+
+  if (status === 2 || status === "Inactive") {
+    return "Inactive";
+  }
+
+  return String(status);
 };
 
 export const adminStudentsApi = {
@@ -118,6 +148,18 @@ export const adminStudentsApi = {
     };
   },
 
+  async getById(id: string | number) {
+    const response = await api.get<ApiResult<RawAdminStudent>>(
+      ENDPOINTS.ADMIN_STUDENTS.GET_BY_ID(id)
+    );
+
+    if (!response.data.isSuccess || !response.data.data) {
+      throw new Error(response.data.error ?? "Không thể tải thông tin học viên.");
+    }
+
+    return normalizeStudent(response.data.data);
+  },
+
   async create(payload: CreateAdminStudentPayload) {
     const response = await api.post<ApiResult<RawAdminStudent>>(
       ENDPOINTS.ADMIN_STUDENTS.CREATE,
@@ -129,5 +171,30 @@ export const adminStudentsApi = {
     }
 
     return normalizeStudent(response.data.data);
+  },
+
+  async update(id: string | number, payload: UpdateAdminStudentPayload) {
+    const response = await api.put<ApiResult<RawAdminStudent>>(
+      ENDPOINTS.ADMIN_STUDENTS.UPDATE(id),
+      payload
+    );
+
+    if (!response.data.isSuccess || !response.data.data) {
+      throw new Error(response.data.error ?? "Không thể cập nhật học viên.");
+    }
+
+    return normalizeStudent(response.data.data);
+  },
+
+  async delete(id: string | number) {
+    const response = await api.delete<ApiResult<boolean>>(
+      ENDPOINTS.ADMIN_STUDENTS.DELETE(id)
+    );
+
+    if (!response.data.isSuccess || !response.data.data) {
+      throw new Error(response.data.error ?? "Không thể xóa học viên.");
+    }
+
+    return response.data.data;
   },
 };
