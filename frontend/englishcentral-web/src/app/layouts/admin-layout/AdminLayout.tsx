@@ -101,6 +101,7 @@ const breadcrumbLabels: Record<string, string> = {
   config: "Cấu Hình",
   content: "Nội Dung Quản Lý",
   courses: "Khóa học",
+  "change-password": "Đổi mật khẩu",
   dropdown: "Dropdown",
   footer: "Footer",
   finance: "Quản Lý Tài Chính",
@@ -408,10 +409,10 @@ export function AdminLayout() {
                     <Settings aria-hidden="true" size={16} />
                     Cài đặt
                   </Link>
-                  <button type="button" role="menuitem">
+                  <Link role="menuitem" to="/admin/profile/change-password">
                     <LockKeyhole aria-hidden="true" size={16} />
                     Đổi mật khẩu
-                  </button>
+                  </Link>
                   <Link
                     className={styles.logoutItem}
                     role="menuitem"

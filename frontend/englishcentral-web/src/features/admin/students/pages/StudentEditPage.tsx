@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Save, UserRoundPen } from "lucide-react";
+import Skeleton from "react-loading-skeleton";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -73,6 +74,29 @@ const toStudentForm = (student: AdminStudent): StudentForm => ({
 });
 
 const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value);
+
+function StudentEditSkeleton() {
+  return (
+    <>
+      <div className={styles.formGrid}>
+        {Array.from({ length: 9 }).map((_, index) => (
+          <label className={styles.field} key={`student-edit-skeleton-${index}`}>
+            <Skeleton height={14} width={index % 2 === 0 ? 130 : 90} />
+            <Skeleton borderRadius={8} height={44} />
+          </label>
+        ))}
+        <label className={`${styles.field} ${styles.notesField}`}>
+          <Skeleton height={14} width={70} />
+          <Skeleton borderRadius={8} height={110} />
+        </label>
+      </div>
+      <div className={styles.formActions}>
+        <Skeleton borderRadius={8} height={40} width={76} />
+        <Skeleton borderRadius={8} height={40} width={138} />
+      </div>
+    </>
+  );
+}
 
 export function StudentEditPage() {
   const navigate = useNavigate();
@@ -282,9 +306,7 @@ export function StudentEditPage() {
             </div>
           </div>
 
-          {isLoading && (
-            <div className={styles.stateBlock}>Đang tải thông tin học viên...</div>
-          )}
+          {isLoading && <StudentEditSkeleton />}
 
           {!isLoading && errorMessage && (
             <div className={styles.stateBlock}>{errorMessage}</div>

@@ -8,6 +8,7 @@ import { ClassViewPage } from "@/features/admin/classes/pages/ClassViewPage";
 import { CourseFormPage } from "@/features/admin/courses/pages/CourseFormPage";
 import { CourseListPage } from "@/features/admin/courses/pages/CourseListPage";
 import { AdminDashboardPage } from "@/features/admin/dashboard/pages/AdminDashboardPage";
+import { AdminChangePasswordPage } from "@/features/admin/profile/pages/AdminChangePasswordPage";
 import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePage";
 import { IeltsHubPage } from "@/features/admin/practice-bank/ielts/pages/IeltsHubPage";
 import { IeltsReadingCreatePage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingCreatePage";
@@ -366,6 +367,10 @@ export const adminRoutes = [
       {
         path: "profile/settings",
         element: <AdminSettingsPage />,
+      },
+      {
+        path: "profile/change-password",
+        element: <AdminChangePasswordPage />,
       },
     ],
   },

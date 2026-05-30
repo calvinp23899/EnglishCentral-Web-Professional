@@ -13,6 +13,7 @@ import {
   UserPlus,
   UserRoundCheck,
 } from "lucide-react";
+import Skeleton from "react-loading-skeleton";
 import { Link, useNavigate } from "react-router-dom";
 
 import { ErrorMessage, toastDanger, toastSuccess } from "@/components/ui";
@@ -740,7 +741,16 @@ export function StudentCreatePage() {
                         );
                       })
                     ) : isLoadingAccounts ? (
-                      <p className={styles.accountState}>Đang tải tài khoản...</p>
+                      Array.from({ length: 4 }).map((_, index) => (
+                        <div className={styles.accountSkeletonItem} key={`account-skeleton-${index}`}>
+                          <Skeleton borderRadius={8} height={42} width={42} />
+                          <span>
+                            <Skeleton height={18} width={160} />
+                            <Skeleton height={14} width={210} />
+                            <Skeleton height={14} width={120} />
+                          </span>
+                        </div>
+                      ))
                     ) : (
                       <p className={styles.accountState}>
                         Không tìm thấy tài khoản phù hợp.

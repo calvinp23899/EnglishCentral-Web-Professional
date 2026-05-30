@@ -8,6 +8,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import Skeleton from "react-loading-skeleton";
 import { Link } from "react-router-dom";
 
 import { ConfirmModal, Pagination, toastDanger, toastSuccess } from "@/components/ui";
@@ -69,6 +70,7 @@ export function StudentListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [statusOptions, setStatusOptions] = useState<MetadataOption[]>([]);
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
+  const shouldShowTableSkeleton = isLoading && studentRecords.length === 0;
 
   const visibleStudents = useMemo(() => {
     return studentRecords
@@ -329,6 +331,37 @@ export function StudentListPage() {
               </tr>
             </thead>
             <tbody>
+              {shouldShowTableSkeleton &&
+                Array.from({ length: pageSize }).map((_, index) => (
+                  <tr key={`student-skeleton-${index}`}>
+                    <td>
+                      <Skeleton height={18} width={96} />
+                    </td>
+                    <td>
+                      <Skeleton height={18} width={150} />
+                    </td>
+                    <td>
+                      <Skeleton height={18} width={210} />
+                    </td>
+                    <td>
+                      <Skeleton height={18} width={120} />
+                    </td>
+                    <td>
+                      <Skeleton height={18} width={96} />
+                    </td>
+                    <td>
+                      <Skeleton borderRadius={999} height={28} width={92} />
+                    </td>
+                    <td>
+                      <div className={styles.actions}>
+                        <Skeleton borderRadius={8} height={34} width={34} />
+                        <Skeleton borderRadius={8} height={34} width={34} />
+                        <Skeleton borderRadius={8} height={34} width={34} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
               {visibleStudents.map((student) => (
                 <tr key={student.id}>
                   <td>
@@ -378,12 +411,6 @@ export function StudentListPage() {
               ))}
             </tbody>
           </table>
-
-              {isLoading && (
-                <div className={styles.emptyState}>
-                  Đang tải danh sách học viên...
-                </div>
-              )}
 
               {!isLoading && visibleStudents.length === 0 && (
             <div className={styles.emptyState}>

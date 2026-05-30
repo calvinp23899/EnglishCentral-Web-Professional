@@ -10,6 +10,7 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
+import Skeleton from "react-loading-skeleton";
 import { Link, useParams } from "react-router-dom";
 
 import {
@@ -49,6 +50,28 @@ const formatDate = (value?: string) => {
 
 const displayValue = (value?: string | number | null) =>
   value === undefined || value === null || value === "" ? "Chưa cập nhật" : value;
+
+function StudentDetailSkeleton() {
+  return (
+    <div className={styles.infoGrid}>
+      <article className={styles.profileCard}>
+        <Skeleton borderRadius={8} height={24} width={24} />
+        <div>
+          <Skeleton height={12} width={90} />
+          <Skeleton height={22} width={180} />
+          <Skeleton height={16} width="60%" />
+        </div>
+      </article>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <article key={`student-detail-skeleton-${index}`}>
+          <Skeleton borderRadius={8} height={20} width={20} />
+          <Skeleton height={12} width={110} />
+          <Skeleton height={20} width="70%" />
+        </article>
+      ))}
+    </div>
+  );
+}
 
 export function StudentViewPage() {
   const { studentId } = useParams();
@@ -136,7 +159,7 @@ export function StudentViewPage() {
           ))}
         </div>
 
-        {isLoading && <div className={styles.stateBlock}>Đang tải thông tin học viên...</div>}
+        {isLoading && <StudentDetailSkeleton />}
 
         {!isLoading && errorMessage && (
           <div className={styles.stateBlock}>{errorMessage}</div>
