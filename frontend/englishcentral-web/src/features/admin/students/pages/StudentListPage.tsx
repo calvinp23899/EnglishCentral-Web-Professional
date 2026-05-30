@@ -3,13 +3,19 @@ import {
   ArrowDown,
   ArrowUp,
   Edit3,
+  Eye,
   Plus,
   Search,
   Trash2,
 } from "lucide-react";
+import Skeleton from "react-loading-skeleton";
 import { Link } from "react-router-dom";
 
-import { ConfirmModal, Pagination, toastDanger } from "@/components/ui";
+import { ConfirmModal, Pagination, toastDanger, toastSuccess } from "@/components/ui";
+import {
+  adminMetadataApi,
+  type MetadataOption,
+} from "@/features/admin/shared/api/admin-metadata-api";
 import {
   adminStudentsApi,
   type AdminStudent,
@@ -33,14 +39,9 @@ const formatDate = (value: string) =>
     year: "numeric",
   }).format(new Date(value));
 
-const statusLabels: Record<StudentStatus, string> = {
-  1: "Đang học",
-  2: "Tạm dừng",
-};
-
-const statusToneByValue: Record<StudentStatus, "active" | "pending" | "inactive"> = {
-  1: "active",
-  2: "inactive",
+const statusToneByValue: Record<string, "active" | "pending" | "inactive"> = {
+  Active: "active",
+  Inactive: "inactive",
 };
 
 const sortByApiField: Record<SortKey, string> = {
@@ -64,7 +65,12 @@ export function StudentListPage() {
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [deletingStudent, setDeletingStudent] = useState<AdminStudent | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [refreshVersion, setRefreshVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [statusOptions, setStatusOptions] = useState<MetadataOption[]>([]);
+  const [isLoadingStatuses, setIsLoadingStatuses] = useState(false);
+  const shouldShowTableSkeleton = isLoading && studentRecords.length === 0;
 
   const visibleStudents = useMemo(() => {
     return studentRecords
@@ -78,6 +84,36 @@ export function StudentListPage() {
         return matchesFrom && matchesTo;
       })
   }, [registeredFrom, registeredTo, studentRecords]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadStatusOptions = async () => {
+      setIsLoadingStatuses(true);
+
+      try {
+        const options = await adminMetadataApi.getStatusOptions();
+
+        if (isMounted) {
+          setStatusOptions(options);
+        }
+      } catch (error) {
+        if (isMounted) {
+          toastDanger(getAuthErrorMessage(error));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingStatuses(false);
+        }
+      }
+    };
+
+    loadStatusOptions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(async () => {
@@ -114,6 +150,7 @@ export function StudentListPage() {
     pageSize,
     registeredFrom,
     registeredTo,
+    refreshVersion,
     searchTerm,
     sortDirection,
     sortKey,
@@ -145,13 +182,37 @@ export function StudentListPage() {
     );
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deletingStudent) {
       return;
     }
 
-    toastDanger(`Chưa tích hợp API xóa học viên ${deletingStudent.fullName}.`);
-    setDeletingStudent(null);
+    if (isDeleting) {
+      return;
+    }
+
+    if (!deletingStudent.id) {
+      toastDanger("Không tìm thấy mã học viên cần xóa.");
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      await adminStudentsApi.delete(deletingStudent.id);
+      toastSuccess("Xóa học viên thành công.");
+      setDeletingStudent(null);
+
+      if (visibleStudents.length === 1 && pageNumber > 1) {
+        setPageNumber((currentPage) => currentPage - 1);
+      } else {
+        setRefreshVersion((currentVersion) => currentVersion + 1);
+      }
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -189,16 +250,20 @@ export function StudentListPage() {
           <span>Trạng thái</span>
           <select
             value={statusFilter}
+            disabled={isLoadingStatuses}
             onChange={(event) => {
               const value = event.target.value;
 
-              setStatusFilter(value === "all" ? "all" : (Number(value) as StudentStatus));
+              setStatusFilter(value === "all" ? "all" : (value as StudentStatus));
               setPageNumber(1);
             }}
           >
             <option value="all">Tất cả</option>
-            <option value={1}>Đang học</option>
-            <option value={2}>Tạm dừng</option>
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.value}
+              </option>
+            ))}
           </select>
         </label>
 
@@ -266,6 +331,37 @@ export function StudentListPage() {
               </tr>
             </thead>
             <tbody>
+              {shouldShowTableSkeleton &&
+                Array.from({ length: pageSize }).map((_, index) => (
+                  <tr key={`student-skeleton-${index}`}>
+                    <td>
+                      <Skeleton height={18} width={96} />
+                    </td>
+                    <td>
+                      <Skeleton height={18} width={150} />
+                    </td>
+                    <td>
+                      <Skeleton height={18} width={210} />
+                    </td>
+                    <td>
+                      <Skeleton height={18} width={120} />
+                    </td>
+                    <td>
+                      <Skeleton height={18} width={96} />
+                    </td>
+                    <td>
+                      <Skeleton borderRadius={999} height={28} width={92} />
+                    </td>
+                    <td>
+                      <div className={styles.actions}>
+                        <Skeleton borderRadius={8} height={34} width={34} />
+                        <Skeleton borderRadius={8} height={34} width={34} />
+                        <Skeleton borderRadius={8} height={34} width={34} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
               {visibleStudents.map((student) => (
                 <tr key={student.id}>
                   <td>
@@ -278,21 +374,33 @@ export function StudentListPage() {
                   <td>
                     <span
                       className={`${styles.statusBadge} ${
-                        styles[statusToneByValue[student.status]]
+                        styles[statusToneByValue[student.status] ?? "pending"]
                       }`}
                     >
-                      {statusLabels[student.status]}
+                      {student.status}
                     </span>
                   </td>
                   <td>
                     <div className={styles.actions}>
-                      <Link to={`/admin/students/${student.id}/edit`} aria-label={`Sửa ${student.fullName}`}>
+                      <Link
+                        to={`/admin/students/${student.id}/view`}
+                        aria-label={`Xem ${student.fullName}`}
+                        title="Xem chi tiết"
+                      >
+                        <Eye aria-hidden="true" size={16} />
+                      </Link>
+                      <Link
+                        to={`/admin/students/${student.id}/edit`}
+                        aria-label={`Sửa ${student.fullName}`}
+                        title="Chỉnh sửa"
+                      >
                         <Edit3 aria-hidden="true" size={16} />
                       </Link>
                       <button
                         className={styles.deleteAction}
                         type="button"
                         aria-label={`Xóa ${student.fullName}`}
+                        title="Xóa"
                         onClick={() => setDeletingStudent(student)}
                       >
                         <Trash2 aria-hidden="true" size={16} />
@@ -303,12 +411,6 @@ export function StudentListPage() {
               ))}
             </tbody>
           </table>
-
-              {isLoading && (
-                <div className={styles.emptyState}>
-                  Đang tải danh sách học viên...
-                </div>
-              )}
 
               {!isLoading && visibleStudents.length === 0 && (
             <div className={styles.emptyState}>
@@ -330,16 +432,21 @@ export function StudentListPage() {
 
       <ConfirmModal
         cancelText="Hủy"
-        confirmText="Xóa"
+        confirmText={isDeleting ? "Đang xóa..." : "Xóa"}
         description={
           deletingStudent
             ? `Bạn có chắc muốn xóa học viên ${deletingStudent.fullName}? Hành động này không thể hoàn tác.`
             : ""
         }
+        isConfirmDisabled={isDeleting}
         isOpen={Boolean(deletingStudent)}
         title="Xác nhận xóa record"
         tone="danger"
-        onCancel={() => setDeletingStudent(null)}
+        onCancel={() => {
+          if (!isDeleting) {
+            setDeletingStudent(null);
+          }
+        }}
         onConfirm={handleConfirmDelete}
       />
     </>

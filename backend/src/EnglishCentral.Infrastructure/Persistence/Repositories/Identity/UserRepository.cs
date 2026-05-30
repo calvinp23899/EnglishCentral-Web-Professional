@@ -43,5 +43,31 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Identity
                     x.Id == id,
                     ct);
         }
+
+        public async Task<List<User>> GetUserAccountBySearch(string search, CancellationToken ct = default)
+        {
+            var query = _dbContenxt.Users
+                .AsNoTracking()
+                .Where(x => !x.IsDeleted && x.IsActive)
+                .AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var keyword = search.Trim().ToLower();
+                query = query.Where(x =>
+                       x.FullName.ToLower().Contains(keyword)
+                       || (x.Email != null && x.Email.ToLower().Contains(keyword))
+                       || (x.PhoneNumber != null && x.PhoneNumber.Contains(keyword)));
+            }
+            return await query
+                    .Skip((1 - 1) * 10)
+                    .Take(5)
+                    .ToListAsync(ct);
+        }
+
+        public async Task<bool> IsPhoneNumberExistsAsync(string phoneNumber, CancellationToken ct = default)
+        {
+            return await _dbContenxt.Users
+                .AnyAsync(u => u.PhoneNumber.Equals(phoneNumber) && !u.IsDeleted, ct);
+        }
     }
 }

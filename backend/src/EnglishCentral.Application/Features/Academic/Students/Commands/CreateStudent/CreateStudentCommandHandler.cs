@@ -78,21 +78,17 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
         private async Task<Result<User>> ValidateAccountAsync(CreateStudentCommand request, CancellationToken ct)
         {
             var accountUserId = request.Account.UserId!.Value;
-
             var user = await _userRepository.GetByIdAsync(accountUserId, ct);
-
             if (user is null)
             {
-                throw new KeyNotFoundException("User is not found.");
+                return Result<User>.Failure("User is not found.", 404);
             }
 
             var alreadyLinked = await _studentRepository.ExistsByUserIdAsync(accountUserId, ct);
-
             if (alreadyLinked)
             {
-                throw new Exception("This account is already linked to another student.");
+                return Result<User>.Failure("This account is already linked to another student.", 400);
             }
-
             return Result<User>.Success(user);
         }
 
@@ -103,15 +99,20 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
             var emailExists = await _userRepository.IsEmailExistsAsync(email, ct);
             if (emailExists)
             {
-                throw new Exception("Email already in use.");
+                return Result<User>.Failure("Email is already in use.", 400);
+            }
+
+            var isPhoneExist = await _userRepository.IsPhoneNumberExistsAsync(request.PhoneNumber, ct);
+            if (isPhoneExist)
+            {
+                return Result<User>.Failure("PhoneNumber is already in use.", 400);
             }
 
             var studentRole = await _roleRepository.GetByNameAsync(SystemRoles.Student, ct);
             if (studentRole is null)
             {
-                throw new Exception("Default student role not found.");
+                return Result<User>.Failure("Default student role not found.", 400);
             }
-
             var user = new User
             {
                 PublicId = Guid.NewGuid(),
@@ -123,15 +124,12 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
                 EmailConfirmed = false,
                 CreatedAt = DateTimeOffset.UtcNow
             };
-
             user.UserRoles.Add(new UserRole
             {
                 RoleId = studentRole.Id,
                 User = user
             });
-
             await _userRepository.AddAsync(user, ct);
-
             return Result<User>.Success(user);
         }
     }

@@ -415,12 +415,46 @@
   }
 }
 
+.accountState {
+  min-height: 72px;
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.accountSkeletonItem {
+  width: 100%;
+  min-height: 78px;
+  padding: 14px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+
+  > span {
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+  }
+}
+
 .avatar {
   width: 42px;
   height: 42px;
   border-radius: 8px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: #cd82c7;
+  color: #ebedf0;
   display: grid;
   place-items: center;
   font-size: 15px;

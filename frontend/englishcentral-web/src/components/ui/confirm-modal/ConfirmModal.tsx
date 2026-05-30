@@ -6,6 +6,7 @@ type Props = {
   cancelText?: string;
   confirmText?: string;
   description: string;
+  isConfirmDisabled?: boolean;
   isOpen: boolean;
   title: string;
   tone?: "danger" | "primary";
@@ -17,6 +18,7 @@ export function ConfirmModal({
   cancelText = "Hủy",
   confirmText = "Xác nhận",
   description,
+  isConfirmDisabled = false,
   isOpen,
   title,
   tone = "danger",
@@ -28,7 +30,11 @@ export function ConfirmModal({
   }
 
   return (
-    <div className={styles.backdrop} role="presentation" onMouseDown={onCancel}>
+    <div
+      className={styles.backdrop}
+      role="presentation"
+      onMouseDown={isConfirmDisabled ? undefined : onCancel}
+    >
       <section
         aria-modal="true"
         className={styles.modal}
@@ -39,6 +45,7 @@ export function ConfirmModal({
           className={styles.closeButton}
           type="button"
           aria-label="Đóng"
+          disabled={isConfirmDisabled}
           onClick={onCancel}
         >
           <X aria-hidden="true" size={18} />
@@ -54,12 +61,18 @@ export function ConfirmModal({
         </div>
 
         <div className={styles.actions}>
-          <button className={styles.cancelButton} type="button" onClick={onCancel}>
+          <button
+            className={styles.cancelButton}
+            type="button"
+            disabled={isConfirmDisabled}
+            onClick={onCancel}
+          >
             {cancelText}
           </button>
           <button
             className={`${styles.confirmButton} ${styles[tone]}`}
             type="button"
+            disabled={isConfirmDisabled}
             onClick={onConfirm}
           >
             {confirmText}

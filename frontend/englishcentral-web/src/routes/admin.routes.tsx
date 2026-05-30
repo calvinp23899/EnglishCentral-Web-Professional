@@ -8,6 +8,7 @@ import { ClassViewPage } from "@/features/admin/classes/pages/ClassViewPage";
 import { CourseFormPage } from "@/features/admin/courses/pages/CourseFormPage";
 import { CourseListPage } from "@/features/admin/courses/pages/CourseListPage";
 import { AdminDashboardPage } from "@/features/admin/dashboard/pages/AdminDashboardPage";
+import { AdminChangePasswordPage } from "@/features/admin/profile/pages/AdminChangePasswordPage";
 import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePage";
 import { IeltsHubPage } from "@/features/admin/practice-bank/ielts/pages/IeltsHubPage";
 import { IeltsReadingCreatePage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingCreatePage";
@@ -19,6 +20,7 @@ import { AdminPlaceholderPage } from "@/features/admin/shared/pages/AdminPlaceho
 import { StudentCreatePage } from "@/features/admin/students/pages/StudentCreatePage";
 import { StudentEditPage } from "@/features/admin/students/pages/StudentEditPage";
 import { StudentListPage } from "@/features/admin/students/pages/StudentListPage";
+import { StudentViewPage } from "@/features/admin/students/pages/StudentViewPage";
 import { TeacherFormPage } from "@/features/admin/teachers/pages/TeacherFormPage";
 import { TeacherListPage } from "@/features/admin/teachers/pages/TeacherListPage";
 import { TeacherViewPage } from "@/features/admin/teachers/pages/TeacherViewPage";
@@ -161,6 +163,10 @@ export const adminRoutes = [
       {
         path: "students/:studentId/edit",
         element: <StudentEditPage />,
+      },
+      {
+        path: "students/:studentId/view",
+        element: <StudentViewPage />,
       },
       {
         path: "schedule",
@@ -361,6 +367,10 @@ export const adminRoutes = [
       {
         path: "profile/settings",
         element: <AdminSettingsPage />,
+      },
+      {
+        path: "profile/change-password",
+        element: <AdminChangePasswordPage />,
       },
     ],
   },
