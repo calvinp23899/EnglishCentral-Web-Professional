@@ -33,7 +33,10 @@ namespace EnglishCentral.API.Controllers.Admin.Academic
                 SortBy = request.SortBy,
                 IsDescending = request.IsDescending,
                 Status = request.Status,
-                Date = request.HireDate
+                Date = request.HireDate,
+                Role = request.Role,
+                HireDateFrom = request.HireDateFrom,
+                HireDateTo = request.HireDateTo,
             };
             var result = await _mediator.Send(query, ct);
             return StatusCode(result.StatusCode, result);

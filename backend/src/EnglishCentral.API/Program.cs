@@ -1,8 +1,8 @@
 using EnglishCentral.API.Middlewares;
 using EnglishCentral.Application;
 using EnglishCentral.Infrastructure;
-using EnglishCentral.Infrastructure.BackgroundJobs;
 using EnglishCentral.Infrastructure.Authorization;
+using EnglishCentral.Infrastructure.BackgroundJobs;
 using EnglishCentral.Infrastructure.Extensions;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
 using Hangfire;

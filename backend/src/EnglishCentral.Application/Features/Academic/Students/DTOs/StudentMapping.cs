@@ -8,6 +8,7 @@ namespace EnglishCentral.Application.Features.Academic.Students.DTOs
         {
             return new StudentResponse(
                 student.PublicId,
+                student.Id,
                 student.StudentCode,
                 student.FullName,
                 student.DateOfBirth,

@@ -19,7 +19,9 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Queries.GetTeach
         public bool IsDescending { get; init; }
 
         public ETeacherStatus? Status { get; init; }
-
         public DateOnly? Date { get; init; }
+        public string? Role { get; init; }
+        public DateOnly? HireDateFrom { get; init; }
+        public DateOnly? HireDateTo { get; init; }
     }
 }

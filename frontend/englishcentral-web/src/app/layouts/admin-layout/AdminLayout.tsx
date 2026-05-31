@@ -4,12 +4,9 @@ import {
   BarChart3,
   Bell,
   BookOpen,
-  CalendarDays,
-  CalendarRange,
   ChevronDown,
   GraduationCap,
   LayoutDashboard,
-  LibraryBig,
   LockKeyhole,
   LogOut,
   MessageSquareText,
@@ -18,8 +15,8 @@ import {
   Settings,
   ShieldCheck,
   SlidersHorizontal,
+  SquareStack,
   UserRound,
-  UsersRound,
   WalletCards,
 } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
@@ -46,11 +43,33 @@ type NavigationChild =
 
 const navigationItems: NavigationItem[] = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
-  { label: "Học viên", path: "/admin/students", icon: UsersRound },
-  { label: "Lịch", path: "/admin/schedule", icon: CalendarRange },
-  { label: "Khóa học", path: "/admin/courses", icon: LibraryBig },
-  { label: "Lớp học", path: "/admin/classes", icon: CalendarDays },
-  { label: "Giáo viên", path: "/admin/teachers", icon: GraduationCap },
+  {
+    label: "Quản Lý Đào Tạo",
+    path: "/admin/training",
+    icon: GraduationCap,
+    children: [
+      { label: "Học viên", path: "/admin/students" },
+      { label: "Nhân Viên", path: "/admin/teachers" },
+      { label: "Lịch học", path: "/admin/schedule" },
+      { label: "Khóa học", path: "/admin/courses" },
+      { label: "Lớp học", path: "/admin/classes" },
+    ],
+  },
+  {
+    label: "LMS",
+    path: "/admin/lms",
+    icon: SquareStack,
+    children: [
+      { label: "Chương trình học", path: "/admin/lms/programs" },
+      { label: "Module học", path: "/admin/lms/modules" },
+      { label: "Bài học", path: "/admin/lms/lessons" },
+      { label: "Video", path: "/admin/lms/videos" },
+      { label: "Tài liệu", path: "/admin/lms/documents" },
+      { label: "Bài tập", path: "/admin/lms/exercises" },
+      { label: "Quiz", path: "/admin/lms/quizzes" },
+      { label: "Tiến độ học tập", path: "/admin/lms/progress" },
+    ],
+  },
   {
     label: "Ngân hàng bài tập",
     path: "/admin/practice-bank",
@@ -111,7 +130,10 @@ const breadcrumbLabels: Record<string, string> = {
   logs: "Nhật Ký Hệ Thống",
   invoices: "Hóa đơn",
   ledger: "Sổ cái",
+  lessons: "Bài học",
+  lms: "LMS",
   messages: "Tin nhắn",
+  modules: "Module học",
   navbar: "Navbar",
   overview: "Tổng quan",
   payments: "Thanh toán",
@@ -120,6 +142,9 @@ const breadcrumbLabels: Record<string, string> = {
   permissions: "Phân Quyền",
   "practice-bank": "Ngân hàng bài tập",
   profile: "Hồ sơ",
+  programs: "Chương trình học",
+  progress: "Tiến độ học tập",
+  quizzes: "Quiz",
   receipts: "Biên lai",
   reports: "Báo cáo",
   refunds: "Hoàn tiền",
@@ -130,6 +155,9 @@ const breadcrumbLabels: Record<string, string> = {
   teachers: "Giáo viên",
   "tuition-policies": "Chính sách học phí",
   toeic: "TOEIC",
+  videos: "Video",
+  documents: "Tài liệu",
+  exercises: "Bài tập",
 };
 
 const getBreadcrumbItems = (pathname: string) => {
@@ -215,7 +243,11 @@ export function AdminLayout() {
         <nav className={styles.nav} aria-label="Admin navigation">
           {navigationItems.map((item) => {
             const Icon = item.icon;
-            const isGroupActive = location.pathname.startsWith(item.path);
+            const isGroupActive =
+              location.pathname.startsWith(item.path) ||
+              item.children?.some(
+                (child) => child.type !== "section" && location.pathname.startsWith(child.path),
+              ) === true;
             const isGroupOpen = openNavGroups[item.path] ?? isGroupActive;
 
             return (

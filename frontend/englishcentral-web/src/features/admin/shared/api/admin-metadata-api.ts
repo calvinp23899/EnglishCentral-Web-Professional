@@ -37,6 +37,22 @@ export const adminMetadataApi = {
     return response.data;
   },
 
+  async getContractTypeOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.CONTRACT_TYPE
+    );
+
+    return response.data;
+  },
+
+  async getSalaryTypeOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.SALARY_TYPE
+    );
+
+    return response.data;
+  },
+
   async getRoleOptions() {
     const response = await api.get<RoleMetadataOption[]>(
       ENDPOINTS.ADMIN_METADATA.ROLE

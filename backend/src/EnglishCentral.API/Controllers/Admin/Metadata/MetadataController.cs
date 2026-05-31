@@ -30,10 +30,24 @@ namespace EnglishCentral.API.Controllers.Admin.Metadata
             return Ok(result);
         }
 
-        [HttpGet("teacher-status")]
+        [HttpGet("get-teacher-status")]
         public IActionResult GetMetadataTeacherStatus()
         {
             var result = GetEnumMetadata<ETeacherStatus>();
+            return Ok(result);
+        }
+
+        [HttpGet("get-contract-type")]
+        public IActionResult GetMetadataContractType()
+        {
+            var result = GetEnumMetadata<EContractType>();
+            return Ok(result);
+        }
+
+        [HttpGet("get-salary-type")]
+        public IActionResult GetMetadataSalaryType()
+        {
+            var result = GetEnumMetadata<ESalaryType>();
             return Ok(result);
         }
 

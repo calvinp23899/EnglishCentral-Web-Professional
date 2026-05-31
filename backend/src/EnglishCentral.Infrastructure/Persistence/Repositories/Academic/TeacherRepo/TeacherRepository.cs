@@ -48,6 +48,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic.Teache
             bool isDescending,
             ETeacherStatus? status,
             DateOnly? hireDate,
+            string? role,
+            DateOnly? hireDateFrom,
+            DateOnly? hireDateTo,
             CancellationToken ct = default)
         {
             var query = _dbContenxt.Teachers
@@ -76,6 +79,21 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic.Teache
             if (hireDate.HasValue)
             {
                 query = query.Where(x => x.HireDate == hireDate.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                query = query.Where(x => x.User.UserRoles.Any(userRole => userRole.Role.Name == role));
+            }
+
+            if (hireDateFrom.HasValue)
+            {
+                query = query.Where(x => x.HireDate >= hireDateFrom.Value);
+            }
+
+            if (hireDateTo.HasValue)
+            {
+                query = query.Where(x => x.HireDate <= hireDateTo.Value);
             }
 
             query = sortBy?.Trim().ToLower() switch

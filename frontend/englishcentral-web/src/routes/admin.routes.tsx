@@ -134,6 +134,17 @@ const financeRoutes = [
   },
 ];
 
+const lmsRoutes = [
+  { path: "lms/programs", title: "Chương trình học" },
+  { path: "lms/modules", title: "Module học" },
+  { path: "lms/lessons", title: "Bài học" },
+  { path: "lms/videos", title: "Video" },
+  { path: "lms/documents", title: "Tài liệu" },
+  { path: "lms/exercises", title: "Bài tập" },
+  { path: "lms/quizzes", title: "Quiz" },
+  { path: "lms/progress", title: "Tiến độ học tập" },
+];
+
 export const adminRoutes = [
   {
     path: "/admin/login",
@@ -227,6 +238,19 @@ export const adminRoutes = [
         path: "content",
         element: <Navigate to="/admin/content/components/footer" replace />,
       },
+      {
+        path: "lms",
+        element: <Navigate to="/admin/lms/programs" replace />,
+      },
+      ...lmsRoutes.map((route) => ({
+        path: route.path,
+        element: (
+          <AdminPlaceholderPage
+            title={route.title}
+            description="Chức năng LMS đang được xây dựng."
+          />
+        ),
+      })),
       {
         path: "content/components/footer",
         element: (

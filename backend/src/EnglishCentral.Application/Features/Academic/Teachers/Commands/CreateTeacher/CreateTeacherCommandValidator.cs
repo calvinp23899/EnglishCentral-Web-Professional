@@ -9,23 +9,27 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Commands.CreateT
             // === Basic Info ===
             RuleFor(x => x.FullName)
                 .NotEmpty()
-                .MaximumLength(255);
+                .MaximumLength(20);
 
             RuleFor(x => x.Email)
+                .NotEmpty()
                 .EmailAddress()
-                .MaximumLength(255)
-                .When(x => !string.IsNullOrWhiteSpace(x.Email));
+                .MaximumLength(20);
 
             RuleFor(x => x.PhoneNumber)
+                .NotEmpty()
                 .MaximumLength(20)
-                .Matches(@"^\+?[0-9\s\-\(\)]+$")
-                .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
+                .Matches(@"^\+?[0-9\s\-\(\)]+$");
+
+            RuleFor(x => x.DateOfBirth)
+                .NotEmpty();
 
             RuleFor(x => x.DateOfBirth)
                 .LessThan(DateOnly.FromDateTime(DateTime.Today))
                 .When(x => x.DateOfBirth.HasValue);
 
             RuleFor(x => x.Gender)
+                .NotEmpty()
                 .IsInEnum();
 
             RuleFor(x => x.Address)
@@ -33,10 +37,15 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Commands.CreateT
 
             // === National ID ===
             RuleFor(x => x.NationalId)
+                .NotEmpty()
                 .MaximumLength(50);
 
             RuleFor(x => x.NationalIdIssuedPlace)
+                .NotEmpty()
                 .MaximumLength(255);
+
+            RuleFor(x => x.NationalIdIssuedDate)
+                .NotEmpty();
 
             RuleFor(x => x.NationalIdIssuedDate)
                 .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.Today))
@@ -47,7 +56,7 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Commands.CreateT
                 .MaximumLength(255);
 
             RuleFor(x => x.Bio)
-                .MaximumLength(2000);
+                .MaximumLength(500);
 
             RuleFor(x => x.Degree)
                 .MaximumLength(255);
@@ -88,12 +97,15 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Commands.CreateT
                 .When(x => x.HourlyRate.HasValue);
 
             RuleFor(x => x.BankAccountNumber)
+                .NotEmpty()
                 .MaximumLength(50);
 
             RuleFor(x => x.BankName)
-                .MaximumLength(255);
+                .NotEmpty()
+                .MaximumLength(50);
 
             RuleFor(x => x.TaxCode)
+                .NotEmpty()
                 .MaximumLength(50);
 
             // === Account ===

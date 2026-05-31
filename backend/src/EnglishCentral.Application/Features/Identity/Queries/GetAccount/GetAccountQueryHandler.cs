@@ -16,7 +16,10 @@ namespace EnglishCentral.Application.Features.Identity.Queries.GetAccount
 
         public async Task<Result<List<AccountResponse>>> Handle(GetAccountQuery request, CancellationToken cancellationToken)
         {
-            var users = await _userRepository.GetUserAccountBySearch(request.Search);
+            var users = await _userRepository.GetUserAccountBySearch(
+                request.Search,
+                request.RoleName,
+                cancellationToken);
             if (!users.Any())
                 return Result<List<AccountResponse>>.Failure("Search is not found", 404);
             var accounts = users.Select(x => new AccountResponse(

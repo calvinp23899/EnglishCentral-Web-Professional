@@ -29,6 +29,9 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Queries.GetTeach
                     request.IsDescending,
                     request.Status,
                     request.Date,
+                    request.Role,
+                    request.HireDateFrom,
+                    request.HireDateTo,
                     ct);
             var items = result.Items
                     .Select(x => x.ToResponse())

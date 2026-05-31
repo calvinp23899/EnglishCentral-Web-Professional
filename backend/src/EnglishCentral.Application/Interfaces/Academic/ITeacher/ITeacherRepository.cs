@@ -22,6 +22,9 @@ namespace EnglishCentral.Application.Interfaces.Academic.ITeacher
             bool isDescending,
             ETeacherStatus? status,
             DateOnly? hireDate,
+            string? role,
+            DateOnly? hireDateFrom,
+            DateOnly? hireDateTo,
             CancellationToken ct = default);
     }
 }

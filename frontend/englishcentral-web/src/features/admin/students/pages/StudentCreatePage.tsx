@@ -203,7 +203,7 @@ export function StudentCreatePage() {
       setIsLoadingAccounts(true);
 
       try {
-        const accounts = await adminAccountsApi.getAccounts(accountSearch);
+        const accounts = await adminAccountsApi.getStudentAccounts(accountSearch);
 
         if (!isMounted) {
           return;
