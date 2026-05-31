@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Save, UserRoundPen } from "lucide-react";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Save,
+  UserRoundPen,
+  WandSparkles,
+} from "lucide-react";
 import Skeleton from "react-loading-skeleton";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -17,6 +25,7 @@ import {
   adminStudentsApi,
   type AdminStudent,
 } from "@/features/admin/students/api/admin-students-api";
+import { generatePassword } from "@/features/admin/shared/utils/password";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 import styles from "./StudentEditPage.module.scss";
@@ -36,6 +45,7 @@ type StudentForm = {
 };
 
 type StudentEditErrors = Partial<Record<keyof StudentForm, string>>;
+type StudentEditTab = "info" | "account";
 
 const emptyForm: StudentForm = {
   fullName: "",
@@ -104,7 +114,11 @@ export function StudentEditPage() {
   const [student, setStudent] = useState<AdminStudent | null>(null);
   const [formValue, setFormValue] = useState<StudentForm>(emptyForm);
   const [initialFormValue, setInitialFormValue] = useState<StudentForm>(emptyForm);
+  const [newPassword, setNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [errors, setErrors] = useState<StudentEditErrors>({});
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [activeTab, setActiveTab] = useState<StudentEditTab>("info");
   const [statusOptions, setStatusOptions] = useState<MetadataOption[]>([]);
   const [genderOptions, setGenderOptions] = useState<MetadataOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -171,6 +185,14 @@ export function StudentEditPage() {
     return `${student.studentCode} - ${student.fullName}`;
   }, [student]);
 
+  const hasLinkedAccount = Boolean(student?.account?.accountEmail);
+
+  const handleGeneratePassword = () => {
+    setNewPassword(generatePassword());
+    setNewPasswordError("");
+    setShowNewPassword(true);
+  };
+
   const updateField = <Key extends keyof StudentForm>(
     field: Key,
     value: StudentForm[Key]
@@ -230,9 +252,15 @@ export function StudentEditPage() {
     event.preventDefault();
 
     const nextErrors = validateForm();
+    const trimmedNewPassword = newPassword.trim();
+    const nextPasswordError =
+      hasLinkedAccount && trimmedNewPassword.length > 0 && trimmedNewPassword.length < 6
+        ? "Mật khẩu mới cần tối thiểu 6 ký tự."
+        : "";
     setErrors(nextErrors);
+    setNewPasswordError(nextPasswordError);
 
-    if (Object.keys(nextErrors).length > 0) {
+    if (Object.keys(nextErrors).length > 0 || nextPasswordError) {
       return;
     }
 
@@ -263,6 +291,7 @@ export function StudentEditPage() {
         enrollmentDate: formValue.enrollmentDate || initialFormValue.enrollmentDate,
         status: formValue.status,
         notes: formValue.notes.trim() || null,
+        newPassword: hasLinkedAccount && newPassword.trim() ? newPassword.trim() : null,
       });
 
       setIsConfirmOpen(false);
@@ -299,11 +328,25 @@ export function StudentEditPage() {
         </section>
 
         <form className={styles.formPanel} onSubmit={handleSubmit}>
-          <div className={styles.formHeader}>
-            <div>
-              <h2>Thông tin học viên</h2>
-              <p>Cập nhật hồ sơ học viên theo dữ liệu từ hệ thống.</p>
-            </div>
+          <div className={styles.tabs} role="tablist" aria-label="Chỉnh sửa học viên">
+            <button
+              className={activeTab === "info" ? styles.activeTab : ""}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "info"}
+              onClick={() => setActiveTab("info")}
+            >
+              Thông tin học viên
+            </button>
+            <button
+              className={activeTab === "account" ? styles.activeTab : ""}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "account"}
+              onClick={() => setActiveTab("account")}
+            >
+              Tài khoản
+            </button>
           </div>
 
           {isLoading && <StudentEditSkeleton />}
@@ -314,7 +357,15 @@ export function StudentEditPage() {
 
           {!isLoading && !errorMessage && (
             <>
-              <div className={styles.formGrid}>
+              {activeTab === "info" && (
+                <>
+                  <div className={styles.formHeader}>
+                    <div>
+                      <h2>Thông tin học viên</h2>
+                      <p>Cập nhật hồ sơ học viên theo dữ liệu từ hệ thống.</p>
+                    </div>
+                  </div>
+                  <div className={styles.formGrid}>
                 <label className={styles.field}>
                   <span>
                     Họ tên học viên <em className={styles.requiredMark}>*</em>
@@ -449,7 +500,90 @@ export function StudentEditPage() {
                     onChange={(event) => updateField("notes", event.target.value)}
                   />
                 </label>
-              </div>
+                  </div>
+                </>
+              )}
+
+              {activeTab === "account" && (
+                <>
+                  <div className={styles.formHeader}>
+                    <div>
+                      <h2>Tài khoản</h2>
+                      <p>Cập nhật thông tin đăng nhập của học viên.</p>
+                    </div>
+                  </div>
+
+                  {hasLinkedAccount ? (
+                    <div className={styles.accountGrid}>
+                      <label className={styles.field}>
+                        <span>Email</span>
+                        <input
+                          type="email"
+                          value={student?.account?.accountEmail ?? ""}
+                          readOnly
+                        />
+                      </label>
+
+                      <label className={styles.field}>
+                        <span>Mật khẩu mới</span>
+                        <span className={styles.passwordInput}>
+                          <LockKeyhole
+                            aria-hidden="true"
+                            className={styles.passwordIcon}
+                            size={16}
+                          />
+                          <input
+                            aria-describedby={
+                              newPasswordError ? "student-edit-new-password-error" : undefined
+                            }
+                            aria-invalid={Boolean(newPasswordError)}
+                            autoComplete="new-password"
+                            name="student-edit-new-password"
+                            placeholder="Để trống nếu không đổi mật khẩu"
+                            type={showNewPassword ? "text" : "password"}
+                            value={newPassword}
+                            disabled={isSubmitting}
+                            onChange={(event) => {
+                              setNewPassword(event.target.value);
+                              setNewPasswordError("");
+                            }}
+                          />
+                          <span className={styles.passwordActions}>
+                            <button
+                              type="button"
+                              disabled={isSubmitting}
+                              aria-label={showNewPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                              title={showNewPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                              onClick={() => setShowNewPassword((currentValue) => !currentValue)}
+                            >
+                              {showNewPassword ? (
+                                <EyeOff aria-hidden="true" size={17} />
+                              ) : (
+                                <Eye aria-hidden="true" size={17} />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isSubmitting}
+                              aria-label="Tự sinh mật khẩu"
+                              title="Tự sinh mật khẩu"
+                              onClick={handleGeneratePassword}
+                            >
+                              <WandSparkles aria-hidden="true" size={17} />
+                            </button>
+                          </span>
+                        </span>
+                        <ErrorMessage
+                          id="student-edit-new-password-error"
+                          message={newPasswordError}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className={styles.stateBlock}>Chưa có tài khoản liên kết</div>
+                  )}
+                </>
+              )}
 
               <div className={styles.formActions}>
                 <button
@@ -458,7 +592,10 @@ export function StudentEditPage() {
                   disabled={isSubmitting}
                   onClick={() => {
                     setFormValue(initialFormValue);
+                    setNewPassword("");
+                    setShowNewPassword(false);
                     setErrors({});
+                    setNewPasswordError("");
                   }}
                 >
                   Hủy

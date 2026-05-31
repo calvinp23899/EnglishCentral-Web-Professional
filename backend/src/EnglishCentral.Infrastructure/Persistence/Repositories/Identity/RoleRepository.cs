@@ -13,9 +13,14 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Identity
         {
         }
 
+        public async Task<List<Role>?> GetAllRoleAsync(CancellationToken ct = default)
+        {
+            return await _dbContenxt.Roles.AsNoTracking().ToListAsync();
+        }
+
         public async Task<Role?> GetByNameAsync(string name, CancellationToken ct = default)
         {
-            return await _dbContenxt.Roles.FirstOrDefaultAsync(x => x.Name == name, ct);
+            return await _dbContenxt.Roles.FirstOrDefaultAsync(x => x.Name.ToLower().Trim() == name.ToLower().Trim(), ct);
         }
     }
 }

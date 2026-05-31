@@ -8,7 +8,7 @@ using EnglishCentral.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EnglishCentral.API.Controllers.Admin
+namespace EnglishCentral.API.Controllers.Admin.Finance
 {
     [Route("api/admin/billing/discounts")]
     [ApiController]

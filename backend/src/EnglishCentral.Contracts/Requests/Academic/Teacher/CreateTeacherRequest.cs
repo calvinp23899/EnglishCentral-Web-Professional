@@ -47,6 +47,7 @@ namespace EnglishCentral.Contracts.Requests.Academic.Teacher
         string? Email,
         string? PhoneNumber,
         string? FullName,
+        string? Role,
         string? Password
     );
 }

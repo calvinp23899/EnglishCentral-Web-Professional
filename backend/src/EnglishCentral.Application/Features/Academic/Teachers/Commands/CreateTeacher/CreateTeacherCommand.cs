@@ -39,6 +39,7 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Commands.CreateT
         string? Email,
         string? PhoneNumber,
         string? FullName,
+        string? Role,
         string? Password
     );
 }

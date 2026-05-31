@@ -1,9 +1,9 @@
 ﻿using EnglishCentral.Application.Features.Academic.Students.DTOs;
+using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Academic;
 using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Domain.Entities.Academic;
 using EnglishCentral.Domain.Entities.Authentication;
-using EnglishCentral.Shared.Common.Helpers;
 using EnglishCentral.Shared.Constants;
 using EnglishCentral.Shared.Results;
 using MediatR;
@@ -16,16 +16,19 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
         private readonly IUserRepository _userRepository;
         private readonly IRoleRepository _roleRepository;
         private readonly IPasswordService _passwordService;
+        private readonly ICodeGenerator _codeGeneratorService;
         public CreateStudentCommandHandler(
                 IStudentRepository studentRepository,
                 IUserRepository userRepository,
                 IRoleRepository roleRepository,
-                IPasswordService passwordService)
+                IPasswordService passwordService,
+                ICodeGenerator codeGeneratorService)
         {
             _studentRepository = studentRepository;
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _passwordService = passwordService;
+            _codeGeneratorService = codeGeneratorService;
         }
 
         public async Task<Result<StudentResponse>> Handle(CreateStudentCommand request, CancellationToken ct)
@@ -37,7 +40,7 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.CreateS
                     resultAccount.Error!,
                     resultAccount.StatusCode);
             }
-            var newStdCode = CodeGeneratorHelper.GenerateWithPrefixAndTick("ST");
+            var newStdCode = $"STU-{_codeGeneratorService.GenerateCode()}";
             var existedStudentCode = await _studentRepository.GetByStudentCodeAsync(newStdCode, ct);
             if (existedStudentCode is not null)
             {

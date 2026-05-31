@@ -23,6 +23,14 @@ export const ENDPOINTS = {
     DELETE: (id: string | number) => `/admin/academic/students/${id}/delete`,
   },
 
+  ADMIN_TEACHERS: {
+    GET_LIST: "/admin/academic/teachers/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/academic/teachers/${id}/get-by-id`,
+    CREATE: "/admin/academic/teachers/insert",
+    UPDATE: (id: string | number) => `/admin/academic/teachers/${id}/update`,
+    DELETE: (id: string | number) => `/admin/academic/teachers/${id}/delete`,
+  },
+
   ADMIN_ACCOUNT: {
     GET_ACCOUNT: "/admin/account/get-account",
   },
@@ -30,5 +38,7 @@ export const ENDPOINTS = {
   ADMIN_METADATA: {
     STATUS: "/admin/metadata/status",
     GENDER: "/admin/metadata/gender-status",
+    TEACHER_STATUS: "/admin/metadata/teacher-status",
+    ROLE: "/admin/metadata/role-dropdown",
   },
 };

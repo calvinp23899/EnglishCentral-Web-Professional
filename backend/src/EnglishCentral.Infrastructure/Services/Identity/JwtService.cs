@@ -22,7 +22,7 @@ namespace EnglishCentral.Infrastructure.Services.Identity
             _refreshTokenRepository = refreshTokenRepository;
         }
 
-        public (string AccessToken, DateTimeOffset ExpiresAt) GenerateAccessToken(User user)
+        public (string AccessToken, DateTimeOffset ExpiresAt) GenerateAccessToken(User user, bool isAdminPage = false)
         {
             var expiresAt = DateTimeOffset.UtcNow.AddMinutes(_settings.AccessTokenMinutes);
             var roleClaims = user.UserRoles.Select(x => new Claim(ClaimTypes.Role, x.Role.Name));
@@ -37,6 +37,10 @@ namespace EnglishCentral.Infrastructure.Services.Identity
                 new Claim(JwtRegisteredClaimNames.Name, user.FullName),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
+            if (isAdminPage == true)
+            {
+                claims.Add(new Claim("userId", user.Id.ToString()));
+            }
             claims.AddRange(roleClaims);
             claims.AddRange(permissionClaims);
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SecretKey));

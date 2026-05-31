@@ -4,13 +4,12 @@ using EnglishCentral.Application.Features.Academic.Students.Commands.UpdateStude
 using EnglishCentral.Application.Features.Academic.Students.Queries.GetStudentById;
 using EnglishCentral.Application.Features.Academic.Students.Queries.GetStudents;
 using EnglishCentral.Contracts.Requests.Academic.Student;
-using EnglishCentral.Domain.Enums.Academic;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EnglishCentral.API.Controllers.Admin
+namespace EnglishCentral.API.Controllers.Admin.Academic
 {
     [Route("api/admin/academic/students")]
     [ApiController]
@@ -35,7 +34,7 @@ namespace EnglishCentral.API.Controllers.Admin
                 SortBy = request.SortBy,
                 IsDescending = request.IsDescending,
                 Status = request.Status.HasValue
-                        ? (EStatus?)request.Status.Value
+                        ? request.Status.Value
                         : null,
                 Date = request.EnrollmentDate
             };
@@ -93,7 +92,8 @@ namespace EnglishCentral.API.Controllers.Admin
                 request.ParentName,
                 request.ParentPhoneNumber,
                 request.Status,
-                request.Notes
+                request.Notes,
+                request.NewPassword
             );
             var result = await _mediator.Send(command, ct);
             return StatusCode(result.StatusCode, result);

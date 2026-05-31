@@ -15,8 +15,8 @@ namespace EnglishCentral.Application.Features.Academic.Students.Commands.UpdateS
         string? Address,
         string? ParentName,
         string? ParentPhoneNumber,
-        //DateOnly EnrollmentDate,
         EStatus Status,
-        string? Notes
+        string? Notes,
+        string? NewPassword
     ) : IRequest<Result<StudentResponse>>;
 }

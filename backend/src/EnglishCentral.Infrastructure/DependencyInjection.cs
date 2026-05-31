@@ -10,11 +10,14 @@ using EnglishCentral.Infrastructure.Persistence.Repositories.Academic;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Academic.TeacherRepo;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Finance;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Identity;
+using EnglishCentral.Infrastructure.Services.CodeGenerator;
+using EnglishCentral.Infrastructure.Services.CurrentUser;
 using EnglishCentral.Infrastructure.Services.Identity;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
 using EnglishCentral.Shared.Constants;
 using Hangfire;
 using Hangfire.PostgreSql;
+using IdGen;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -81,6 +84,18 @@ namespace EnglishCentral.Infrastructure
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
             #endregion
 
+            #region CodeGenerator
+            services.AddSingleton<IdGenerator>(_ =>
+            {
+                return new IdGenerator(0);
+            });
+            services.AddSingleton<ICodeGenerator, SnowflakeIdGenerator>();
+            #endregion
+
+            #region CurrentUser
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            #endregion
             return services;
         }
 

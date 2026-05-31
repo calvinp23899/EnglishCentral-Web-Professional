@@ -31,10 +31,27 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Commands.UpdateT
             teacher.FullName = request.FullName;
             teacher.Email = request.Email;
             teacher.PhoneNumber = request.PhoneNumber;
+            teacher.DateOfBirth = request.DateOfBirth;
+            teacher.Gender = request.Gender;
+            teacher.Address = request.Address;
+            teacher.NationalId = request.NationalId;
+            teacher.NationalIdIssuedDate = request.NationalIdIssuedDate;
+            teacher.NationalIdIssuedPlace = request.NationalIdIssuedPlace;
             teacher.Specialization = request.Specialization;
             teacher.Bio = request.Bio;
+            teacher.Degree = request.Degree;
+            teacher.YearsOfExperience = request.YearsOfExperience;
+            teacher.CertificationsJson = request.Certifications;
             teacher.HireDate = request.HireDate;
+            teacher.ContractType = request.ContractType;
+            teacher.ContractEndDate = request.ContractEndDate;
             teacher.Status = request.Status;
+            teacher.SalaryType = request.SalaryType;
+            teacher.BaseSalary = request.BaseSalary;
+            teacher.HourlyRate = request.HourlyRate;
+            teacher.BankAccountNumber = request.BankAccountNumber;
+            teacher.BankName = request.BankName;
+            teacher.TaxCode = request.TaxCode;
 
             return Result<TeacherResponse>
                 .Success(

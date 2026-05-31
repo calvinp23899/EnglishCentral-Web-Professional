@@ -3,7 +3,7 @@ using EnglishCentral.Infrastructure.BackgroundJobs.Billing;
 using EnglishCentral.Shared.Constants;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EnglishCentral.API.Controllers.Admin
+namespace EnglishCentral.API.Controllers.Admin.Finance
 {
     [Route("api/admin/billing/jobs")]
     [ApiController]

@@ -97,6 +97,10 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Commands.CreateT
                 .MaximumLength(50);
 
             // === Account ===
+            RuleFor(x => x.Account.Role)
+                .NotEmpty()
+                .WithMessage("Role is required.");
+
             When(x => x.IsAccountExists, () =>
             {
                 RuleFor(x => x.Account.UserId)

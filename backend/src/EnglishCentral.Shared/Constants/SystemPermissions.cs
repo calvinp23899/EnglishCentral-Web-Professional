@@ -2,6 +2,15 @@
 {
     public static class SystemPermissions
     {
+        #region Security Permissions
+        // Role
+        public const string RoleRead = "role.read";
+        public const string RoleCreate = "role.create";
+        public const string RoleUpdate = "role.update";
+        public const string RoleDelete = "role.delete";
+        #endregion
+
+        #region Academic Permissions
         // Students
         public const string StudentRead = "student.read";
         public const string StudentCreate = "student.create";
@@ -61,12 +70,16 @@
         public const string AttendanceCreate = "attendance.create";
         public const string AttendanceUpdate = "attendance.update";
         public const string AttendanceDelete = "attendance.delete";
+        #endregion
 
+        #region Finance Permissions
         // Billing
         public const string BillingRead = "billing.read";
         public const string BillingCreate = "billing.create";
         public const string BillingUpdate = "billing.update";
         public const string BillingDelete = "billing.delete";
         public const string BillingPaymentCreate = "billing.payment.create";
+        #endregion
+
     }
 }

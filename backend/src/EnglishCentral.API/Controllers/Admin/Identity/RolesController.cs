@@ -4,23 +4,22 @@ using EnglishCentral.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EnglishCentral.API.Controllers.Admin
+namespace EnglishCentral.API.Controllers.Admin.Identity
 {
-    [Route("api/admin/account")]
-    [ApiController]
-    public class AccountsController : AdminBaseController
+    [Route("api/admin/roles")]
+    public class RolesController : AdminBaseController
     {
         private readonly IMediator _mediator;
-
-        public AccountsController(IMediator mediator)
+        public RolesController(IMediator mediator)
         {
             _mediator = mediator;
         }
 
-        [HttpGet("get-account")]
-        [HasPermission(SystemPermissions.StudentRead)]
-        public async Task<IActionResult> GetAccountByFilter([FromQuery] string? search, CancellationToken ct)
+        [HttpGet("get-all")]
+        [HasPermission(SystemPermissions.RoleRead)]
+        public async Task<IActionResult> GetAllRoles([FromQuery] string? search, CancellationToken ct)
         {
+            //TODO: Update Get Role for Role screen management
             var query = new GetAccountQuery
             {
                 Search = search

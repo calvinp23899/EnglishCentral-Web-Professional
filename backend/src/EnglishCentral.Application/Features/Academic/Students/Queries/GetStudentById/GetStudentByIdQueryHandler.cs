@@ -16,7 +16,7 @@ namespace EnglishCentral.Application.Features.Academic.Students.Queries.GetStude
 
         public async Task<Result<StudentResponse>> Handle(GetStudentByIdQuery request, CancellationToken ct)
         {
-            var student = await _studentRepository.GetByStudentIdIncludedAccountAsync(request.userId, ct);
+            var student = await _studentRepository.GetByStudentIdIncludedAccountAsync(request.userId, false, ct);
 
             if (student is null)
             {
