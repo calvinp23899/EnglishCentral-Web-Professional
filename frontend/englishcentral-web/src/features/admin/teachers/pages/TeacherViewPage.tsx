@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   BarChart3,
@@ -12,7 +12,13 @@ import {
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
-import { teacherRecords } from "./teacherCrud.config";
+import { toastDanger } from "@/components/ui";
+import {
+  adminTeachersApi,
+  type AdminTeacher,
+} from "@/features/admin/teachers/api/admin-teachers-api";
+import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
+
 import styles from "./TeacherViewPage.module.scss";
 
 type TabKey = "info" | "schedule" | "performance";
@@ -55,9 +61,14 @@ const lessonRecords: Record<string, TeacherLesson[]> = {
 };
 
 const statusLabel: Record<string, string> = {
-  active: "Đang dạy",
-  inactive: "Tạm dừng",
-  pending: "Chờ duyệt",
+  "1": "Đang dạy",
+  "2": "Tạm dừng",
+  "3": "Tạm khóa",
+  "4": "Đã nghỉ",
+  Active: "Đang dạy",
+  Inactive: "Tạm dừng",
+  Suspended: "Tạm khóa",
+  Resigned: "Đã nghỉ",
 };
 
 const toDateKey = (date: Date) => {
@@ -103,12 +114,23 @@ const formatLongDate = (date: Date) =>
 
 export function TeacherViewPage() {
   const { recordId } = useParams();
-  const teacher = teacherRecords.find((record) => String(record.id) === recordId) ?? teacherRecords[0];
-  const teacherLessons = lessonRecords[String(teacher.id)] ?? [];
+  const [teacher, setTeacher] = useState<AdminTeacher | null>(null);
+  const teacherLessons = lessonRecords[String(teacher?.id ?? "")] ?? [];
   const [activeTab, setActiveTab] = useState<TabKey>("info");
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [activeDate, setActiveDate] = useState(() => new Date(2026, 4, 23));
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!recordId) {
+      return;
+    }
+
+    adminTeachersApi
+      .getById(recordId)
+      .then(setTeacher)
+      .catch((error) => toastDanger(getAuthErrorMessage(error)));
+  }, [recordId]);
 
   const weekDays = useMemo(() => {
     const startDate = getWeekStart(activeDate);
@@ -132,6 +154,10 @@ export function TeacherViewPage() {
       : formatLongDate(activeDate);
 
   const totalHours = teacherLessons.reduce((total, lesson) => total + lesson.duration, 0);
+
+  if (!teacher) {
+    return <div className={styles.page}>Đang tải thông tin giáo viên...</div>;
+  }
 
   const handleNavigate = (direction: -1 | 1) => {
     setActiveDate((currentDate) =>
@@ -165,7 +191,7 @@ export function TeacherViewPage() {
             Quay lại danh sách
           </Link>
           <h1>{teacher.fullName}</h1>
-          <p>{teacher.code} · {teacher.specialty} · {statusLabel[String(teacher.status)]}</p>
+          <p>{teacher.teacherCode} · {teacher.specialization} · {statusLabel[String(teacher.status)]}</p>
         </div>
       </section>
 
@@ -203,12 +229,12 @@ export function TeacherViewPage() {
             <article>
               <Phone aria-hidden="true" size={20} />
               <span>Số điện thoại</span>
-              <strong>{teacher.phone}</strong>
+              <strong>{teacher.phoneNumber}</strong>
             </article>
             <article>
               <CalendarDays aria-hidden="true" size={20} />
               <span>Ngày vào</span>
-              <strong>{formatLongDate(parseDateKey(String(teacher.joinedAt)))}</strong>
+              <strong>{teacher.hireDate ? formatLongDate(parseDateKey(teacher.hireDate)) : "Chưa cập nhật"}</strong>
             </article>
           </div>
         )}

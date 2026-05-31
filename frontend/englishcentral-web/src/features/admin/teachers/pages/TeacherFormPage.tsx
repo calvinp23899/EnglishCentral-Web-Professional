@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   BarChart3,
@@ -18,8 +18,23 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { toastSuccess } from "@/components/ui";
+import { toastDanger, toastSuccess } from "@/components/ui";
+import {
+  adminAccountsApi,
+  type AdminAccount,
+} from "@/features/admin/accounts/api/admin-accounts-api";
+import {
+  adminMetadataApi,
+  type MetadataOption,
+  type RoleMetadataOption,
+} from "@/features/admin/shared/api/admin-metadata-api";
 import { generatePassword } from "@/features/admin/shared/utils/password";
+import {
+  adminTeachersApi,
+  type AdminTeacher,
+  type TeacherFormPayload,
+} from "@/features/admin/teachers/api/admin-teachers-api";
+import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 import { teacherRecords } from "./teacherCrud.config";
 import styles from "@/features/admin/students/pages/StudentCreatePage.module.scss";
@@ -60,6 +75,7 @@ type AccountForm = {
   fullName: string;
   password: string;
   phoneNumber: string;
+  role: string;
 };
 
 type AccountMode = "existing" | "new";
@@ -155,39 +171,35 @@ const initialAccountForm: AccountForm = {
   fullName: "",
   password: "",
   phoneNumber: "",
+  role: "",
 };
 
-const accountRecords = teacherRecords.map((teacher) => ({
-  id: String(teacher.id),
-  email: String(teacher.email),
-  fullName: String(teacher.fullName),
-  phoneNumber: String(teacher.phone),
-  status: String(teacher.status),
-}));
-
-const statusValueByTeacherStatus: Record<string, number> = {
-  active: 1,
-  inactive: 2,
-  pending: 0,
-};
-
-const toTeacherInfoForm = (recordId?: string): TeacherInfoForm => {
-  const teacher = teacherRecords.find((record) => String(record.id) === recordId) ?? teacherRecords[0];
-
-  return {
-    ...initialTeacherInfo,
-    bio: String(teacher.bio ?? ""),
-    dateOfBirth: "1990-01-01",
-    degree: "Bachelor",
-    email: String(teacher.email),
-    fullName: String(teacher.fullName),
-    hireDate: String(teacher.joinedAt),
-    phoneNumber: String(teacher.phone),
-    specialization: String(teacher.specialty),
-    status: statusValueByTeacherStatus[String(teacher.status)] ?? 1,
-    yearsOfExperience: 4,
-  };
-};
+const toTeacherInfoForm = (teacher: AdminTeacher): TeacherInfoForm => ({
+  address: teacher.address ?? "",
+  bankAccountNumber: teacher.bankAccountNumber ?? "",
+  bankName: teacher.bankName ?? "",
+  baseSalary: teacher.baseSalary ?? 0,
+  bio: teacher.bio ?? "",
+  certifications: teacher.certifications?.join(", ") ?? "",
+  contractEndDate: teacher.contractEndDate ?? "",
+  contractType: teacher.contractType ?? 0,
+  dateOfBirth: teacher.dateOfBirth ?? "",
+  degree: teacher.degree ?? "",
+  email: teacher.email ?? "",
+  fullName: teacher.fullName,
+  gender: teacher.gender,
+  hireDate: teacher.hireDate ?? "",
+  hourlyRate: teacher.hourlyRate ?? null,
+  nationalId: teacher.nationalId ?? "",
+  nationalIdIssuedDate: teacher.nationalIdIssuedDate ?? "",
+  nationalIdIssuedPlace: teacher.nationalIdIssuedPlace ?? "",
+  phoneNumber: teacher.phoneNumber ?? "",
+  salaryType: teacher.salaryType,
+  specialization: teacher.specialization ?? "",
+  status: Number(teacher.status),
+  taxCode: teacher.taxCode ?? "",
+  yearsOfExperience: teacher.yearsOfExperience ?? 0,
+});
 
 const splitCertifications = (value: string) =>
   value
@@ -195,14 +207,34 @@ const splitCertifications = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const toPayload = (value: TeacherInfoForm): TeacherFormPayload => ({
+  ...value,
+  address: value.address.trim() || null,
+  bankAccountNumber: value.bankAccountNumber.trim() || null,
+  bankName: value.bankName.trim() || null,
+  bio: value.bio.trim() || null,
+  certifications: splitCertifications(value.certifications),
+  contractEndDate: value.contractEndDate || null,
+  dateOfBirth: value.dateOfBirth || null,
+  degree: value.degree.trim() || null,
+  email: value.email.trim() || null,
+  fullName: value.fullName.trim(),
+  hourlyRate: value.hourlyRate,
+  nationalId: value.nationalId.trim() || null,
+  nationalIdIssuedDate: value.nationalIdIssuedDate || null,
+  nationalIdIssuedPlace: value.nationalIdIssuedPlace.trim() || null,
+  phoneNumber: value.phoneNumber.trim() || null,
+  specialization: value.specialization.trim() || null,
+  taxCode: value.taxCode.trim() || null,
+});
+
 export function TeacherFormPage({ mode }: Props) {
   const navigate = useNavigate();
   const { recordId } = useParams();
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [teacherInfo, setTeacherInfo] = useState<TeacherInfoForm>(initialTeacherInfo);
-  const [editTeacherInfo, setEditTeacherInfo] = useState<TeacherInfoForm>(() =>
-    toTeacherInfoForm(recordId),
-  );
+  const [editTeacherInfo, setEditTeacherInfo] = useState<TeacherInfoForm>(initialTeacherInfo);
+  const [initialEditTeacherInfo, setInitialEditTeacherInfo] = useState<TeacherInfoForm>(initialTeacherInfo);
   const [performanceForm, setPerformanceForm] = useState<PerformanceForm>(
     () => performanceByTeacherId[String(recordId ?? teacherRecords[0].id)] ?? performanceByTeacherId["1"],
   );
@@ -212,6 +244,59 @@ export function TeacherFormPage({ mode }: Props) {
   const [selectedAccountId, setSelectedAccountId] = useState("");
   const [accountForm, setAccountForm] = useState<AccountForm>(initialAccountForm);
   const [showAccountPassword, setShowAccountPassword] = useState(false);
+  const [accountRecords, setAccountRecords] = useState<AdminAccount[]>([]);
+  const [statusOptions, setStatusOptions] = useState<MetadataOption[]>([]);
+  const [genderOptions, setGenderOptions] = useState<MetadataOption[]>([]);
+  const [roleOptions, setRoleOptions] = useState<RoleMetadataOption[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      adminMetadataApi.getTeacherStatusOptions(),
+      adminMetadataApi.getGenderOptions(),
+      adminMetadataApi.getRoleOptions(),
+    ])
+      .then(([statuses, genders, roles]) => {
+        setStatusOptions(statuses);
+        setGenderOptions(genders);
+        setRoleOptions(roles);
+        setAccountForm((current) => ({
+          ...current,
+          role: current.role || roles.find((role) => role.roleName === "Teacher")?.roleName || roles[0]?.roleName || "",
+        }));
+      })
+      .catch((error) => toastDanger(getAuthErrorMessage(error)));
+  }, []);
+
+  useEffect(() => {
+    if (mode !== "edit" || !recordId) {
+      return;
+    }
+
+    adminTeachersApi
+      .getById(recordId)
+      .then((teacher) => {
+        const value = toTeacherInfoForm(teacher);
+        setEditTeacherInfo(value);
+        setInitialEditTeacherInfo(value);
+      })
+      .catch((error) => toastDanger(getAuthErrorMessage(error)));
+  }, [mode, recordId]);
+
+  useEffect(() => {
+    if (mode !== "create" || accountMode !== "existing") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      adminAccountsApi
+        .getAccounts(accountSearch)
+        .then(setAccountRecords)
+        .catch((error) => toastDanger(getAuthErrorMessage(error)));
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [accountMode, accountSearch, mode]);
 
   const matchedAccounts = useMemo(() => {
     const searchTerm = accountSearch.trim().toLowerCase();
@@ -223,7 +308,7 @@ export function TeacherFormPage({ mode }: Props) {
     return accountRecords.filter((account) =>
       [account.email, account.phoneNumber].join(" ").toLowerCase().includes(searchTerm),
     );
-  }, [accountSearch]);
+  }, [accountRecords, accountSearch]);
 
   const updateTeacherInfo = <Key extends keyof TeacherInfoForm>(
     field: Key,
@@ -270,10 +355,24 @@ export function TeacherFormPage({ mode }: Props) {
     setShowAccountPassword(true);
   };
 
-  const handleEditSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleEditSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    toastSuccess("Lưu thay đổi giáo viên thành công.");
-    navigate("/admin/teachers");
+
+    if (!recordId || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await adminTeachersApi.update(recordId, toPayload(editTeacherInfo));
+      toastSuccess("Lưu thay đổi giáo viên thành công.");
+      navigate("/admin/teachers");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handlePerformanceSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -356,9 +455,9 @@ export function TeacherFormPage({ mode }: Props) {
                     value={editTeacherInfo.gender}
                     onChange={(event) => updateEditTeacherInfo("gender", Number(event.target.value))}
                   >
-                    <option value={0}>Nữ</option>
-                    <option value={1}>Nam</option>
-                    <option value={2}>Khác</option>
+                    {genderOptions.map((option) => (
+                      <option key={option.code} value={option.code}>{option.label}</option>
+                    ))}
                   </select>
                 </label>
                 <label className={styles.field}>
@@ -470,9 +569,9 @@ export function TeacherFormPage({ mode }: Props) {
                     value={editTeacherInfo.status}
                     onChange={(event) => updateEditTeacherInfo("status", Number(event.target.value))}
                   >
-                    <option value={0}>Đang chờ</option>
-                    <option value={1}>Hoạt động</option>
-                    <option value={2}>Không hoạt động</option>
+                    {statusOptions.map((option) => (
+                      <option key={option.code} value={option.code}>{option.label}</option>
+                    ))}
                   </select>
                 </label>
                 <label className={styles.field}>
@@ -541,7 +640,7 @@ export function TeacherFormPage({ mode }: Props) {
                 <button
                   className={styles.secondaryButton}
                   type="button"
-                  onClick={() => setEditTeacherInfo(toTeacherInfoForm(recordId))}
+                  onClick={() => setEditTeacherInfo(initialEditTeacherInfo)}
                 >
                   Hủy
                 </button>
@@ -697,7 +796,7 @@ export function TeacherFormPage({ mode }: Props) {
     );
   }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (currentStep === 1) {
@@ -705,31 +804,41 @@ export function TeacherFormPage({ mode }: Props) {
       return;
     }
 
-    const selectedAccount = accountRecords.find((account) => account.id === selectedAccountId);
+    if (isSubmitting) {
+      return;
+    }
+
+    const selectedAccount = accountRecords.find((account) => String(account.id) === selectedAccountId);
     const payload = {
-      ...teacherInfo,
-      certifications: splitCertifications(teacherInfo.certifications),
+      ...toPayload(teacherInfo),
       isAccountExists: accountMode === "existing",
       account:
         accountMode === "existing"
           ? {
               userId: selectedAccount?.id ?? null,
-              email: selectedAccount?.email ?? "",
-              phoneNumber: selectedAccount?.phoneNumber ?? "",
-              fullName: selectedAccount?.fullName ?? "",
+              role: accountForm.role,
             }
           : {
               userId: null,
-              email: accountForm.email,
-              phoneNumber: accountForm.phoneNumber,
-              fullName: accountForm.fullName,
-              password: accountForm.password,
+              email: accountForm.email.trim(),
+              phoneNumber: accountForm.phoneNumber.trim() || null,
+              fullName: accountForm.fullName.trim(),
+              role: accountForm.role,
+              password: accountForm.password.trim(),
             },
     };
 
-    console.info("Mock create teacher payload", payload);
-    toastSuccess("Tạo giáo viên thành công.");
-    navigate("/admin/teachers");
+    setIsSubmitting(true);
+
+    try {
+      await adminTeachersApi.create(payload);
+      toastSuccess("Tạo giáo viên thành công.");
+      navigate("/admin/teachers");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -762,7 +871,7 @@ export function TeacherFormPage({ mode }: Props) {
             <div className={styles.panelHeader}>
               <div>
                 <h2>Thông tin giáo viên</h2>
-                <p>Mock form theo payload tạo teacher, chưa gọi API.</p>
+                <p>Nhập thông tin hồ sơ giáo viên.</p>
               </div>
             </div>
 
@@ -802,9 +911,9 @@ export function TeacherFormPage({ mode }: Props) {
                   value={teacherInfo.gender}
                   onChange={(event) => updateTeacherInfo("gender", Number(event.target.value))}
                 >
-                  <option value={0}>Nữ</option>
-                  <option value={1}>Nam</option>
-                  <option value={2}>Khác</option>
+                  {genderOptions.map((option) => (
+                    <option key={option.code} value={option.code}>{option.label}</option>
+                  ))}
                 </select>
               </label>
               <label className={styles.field}>
@@ -920,9 +1029,9 @@ export function TeacherFormPage({ mode }: Props) {
                   value={teacherInfo.status}
                   onChange={(event) => updateTeacherInfo("status", Number(event.target.value))}
                 >
-                  <option value={0}>Đang chờ</option>
-                  <option value={1}>Hoạt động</option>
-                  <option value={2}>Không hoạt động</option>
+                  {statusOptions.map((option) => (
+                    <option key={option.code} value={option.code}>{option.label}</option>
+                  ))}
                 </select>
               </label>
               <label className={styles.field}>
@@ -997,6 +1106,18 @@ export function TeacherFormPage({ mode }: Props) {
             </div>
 
             <div className={styles.accountStep}>
+              <label className={styles.field}>
+                <span>Role</span>
+                <select
+                  value={accountForm.role}
+                  onChange={(event) => updateAccountForm("role", event.target.value)}
+                >
+                  {roleOptions.map((role) => (
+                    <option key={role.roleId} value={role.roleName}>{role.roleName}</option>
+                  ))}
+                </select>
+              </label>
+
               <div className={styles.optionGrid}>
                 <button
                   className={accountMode === "existing" ? styles.selectedOption : ""}
@@ -1033,11 +1154,11 @@ export function TeacherFormPage({ mode }: Props) {
                     {matchedAccounts.map((account) => (
                       <button
                         className={
-                          selectedAccountId === account.id ? styles.selectedAccount : ""
+                          selectedAccountId === String(account.id) ? styles.selectedAccount : ""
                         }
                         key={account.id}
                         type="button"
-                        onClick={() => setSelectedAccountId(account.id)}
+                        onClick={() => setSelectedAccountId(String(account.id))}
                       >
                         <span className={styles.avatar}>{account.fullName.slice(0, 1)}</span>
                         <span>
@@ -1051,7 +1172,6 @@ export function TeacherFormPage({ mode }: Props) {
                             {account.phoneNumber}
                           </em>
                         </span>
-                        <small>{account.status}</small>
                       </button>
                     ))}
                   </div>
@@ -1087,6 +1207,8 @@ export function TeacherFormPage({ mode }: Props) {
                       <LockKeyhole aria-hidden="true" className={styles.passwordIcon} size={16} />
                       <input
                         type={showAccountPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        name="teacher-account-password"
                         value={accountForm.password}
                         onChange={(event) =>
                           updateAccountForm("password", event.target.value)
@@ -1127,13 +1249,14 @@ export function TeacherFormPage({ mode }: Props) {
             <button
               className={styles.secondaryButton}
               type="button"
+              disabled={isSubmitting}
               onClick={() => setCurrentStep(1)}
             >
               Quay lại
             </button>
           )}
-          <button type="submit">
-            {currentStep === 1 ? "Tiếp tục" : "Tạo giáo viên"}
+          <button type="submit" disabled={isSubmitting}>
+            {currentStep === 1 ? "Tiếp tục" : isSubmitting ? "Đang tạo..." : "Tạo giáo viên"}
             <ChevronRight aria-hidden="true" size={17} />
           </button>
         </div>

@@ -1,5 +1,7 @@
 using EnglishCentral.Application.Features.Identity.DTOs;
 using EnglishCentral.Application.Interfaces.Identity;
+using EnglishCentral.Domain.Entities.Authentication;
+using EnglishCentral.Shared.Constants;
 using EnglishCentral.Shared.Results;
 using MediatR;
 
@@ -32,7 +34,7 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Login
 
             user.LastLoginAt = DateTimeOffset.UtcNow;
 
-            var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(user);
+            var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(user, IsCheckAdminPage(user));
             var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user, ct);
 
             return Result<AuthTokenResult>.Success(new AuthTokenResult(
@@ -43,6 +45,16 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Login
                 refreshToken,
                 expiresAt
             ));
+        }
+        private bool IsCheckAdminPage(User user)
+        {
+            bool isAdminPage = false;
+
+            if (!user.UserRoles.Any(x => x.Role.Name == SystemRoles.Student))
+            {
+                isAdminPage = true;
+            }
+            return isAdminPage;
         }
     }
 }

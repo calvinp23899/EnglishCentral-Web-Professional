@@ -7,6 +7,11 @@ export type MetadataOption = {
   code: number;
 };
 
+export type RoleMetadataOption = {
+  roleId: number;
+  roleName: string;
+};
+
 export const adminMetadataApi = {
   async getStatusOptions() {
     const response = await api.get<MetadataOption[]>(
@@ -19,6 +24,22 @@ export const adminMetadataApi = {
   async getGenderOptions() {
     const response = await api.get<MetadataOption[]>(
       ENDPOINTS.ADMIN_METADATA.GENDER
+    );
+
+    return response.data;
+  },
+
+  async getTeacherStatusOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.TEACHER_STATUS
+    );
+
+    return response.data;
+  },
+
+  async getRoleOptions() {
+    const response = await api.get<RoleMetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.ROLE
     );
 
     return response.data;

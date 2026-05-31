@@ -20,13 +20,15 @@ namespace EnglishCentral.Application.Features.Academic.Students.DTOs
                 student.EnrollmentDate,
                 student.Status,
                 student.Notes,
-                student.Id,
-                new StudentAccount
-                (
-                    student.Id,
-                    student.User?.Email,
-                    student.IsDeleted
-                )
+                student.UserId,
+                student.User is null
+                    ? null
+                    : new StudentAccount
+                    (
+                        student.User.Id,
+                        student.User.Email,
+                        student.User.IsDeleted
+                    )
             );
         }
     }

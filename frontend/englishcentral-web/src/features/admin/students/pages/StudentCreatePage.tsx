@@ -667,6 +667,8 @@ export function StudentCreatePage() {
                   disabled={isSubmitting}
                   onClick={() => {
                     setAccountMode("new");
+                    setAccountForm(initialAccountForm);
+                    setShowAccountPassword(false);
                     setErrors({});
                   }}
                 >
@@ -777,6 +779,8 @@ export function StudentCreatePage() {
                             : undefined
                         }
                         aria-invalid={Boolean(errors.accountPassword)}
+                        autoComplete="new-password"
+                        name="student-create-account-password"
                         type={showAccountPassword ? "text" : "password"}
                         value={accountForm.password}
                         disabled={isSubmitting}

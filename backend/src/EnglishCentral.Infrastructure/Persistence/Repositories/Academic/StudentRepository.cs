@@ -25,12 +25,17 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic
                 .ToListAsync(ct);
         }
 
-        public async Task<Student?> GetByStudentIdIncludedAccountAsync(long studentId, CancellationToken ct = default)
+        public async Task<Student?> GetByStudentIdIncludedAccountAsync(long studentId, bool IsNoTracking = false, CancellationToken ct = default)
         {
-            return await _dbContenxt.Students
-                .AsNoTracking()
-                .Include(x => x.User)
-                .FirstOrDefaultAsync(x => x.Id == studentId && !x.IsDeleted, ct);
+            var query = _dbContenxt.Students
+                            .Where(x => x.Id == studentId && !x.IsDeleted)
+                            .Include(x => x.User)
+                            .AsQueryable();
+            if (IsNoTracking)
+            {
+                return await query.AsNoTracking().FirstOrDefaultAsync(ct);
+            }
+            return await query.FirstOrDefaultAsync(ct);
         }
 
         public async Task<Student?> GetByStudentCodeAsync(string studentCode, CancellationToken ct = default)

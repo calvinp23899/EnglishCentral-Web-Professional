@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 
-namespace EnglishCentral.API.Controllers.Admin
+namespace EnglishCentral.API.Controllers.Admin.Identity
 {
     public class AuthController : AdminBaseController
     {

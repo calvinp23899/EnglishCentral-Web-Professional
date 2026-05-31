@@ -79,6 +79,7 @@ export type UpdateAdminStudentPayload = {
   enrollmentDate: string;
   status: string;
   notes?: string | null;
+  newPassword?: string | null;
 };
 
 type PagedResult<T> = {

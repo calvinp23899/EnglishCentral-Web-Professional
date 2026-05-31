@@ -5,7 +5,7 @@ namespace EnglishCentral.Application.Interfaces.Academic
 {
     public interface IStudentRepository : IGenericRepository<Student>
     {
-        Task<Student?> GetByStudentIdIncludedAccountAsync(long userId, CancellationToken ct = default);
+        Task<Student?> GetByStudentIdIncludedAccountAsync(long userId, bool IsNoTracking = false, CancellationToken ct = default);
         Task<Student?> GetByStudentCodeAsync(string studentCode, CancellationToken ct = default);
         Task<List<Student>> GetAllAsync(CancellationToken ct = default);
         Task<Student?> GetMeProfileByUserPublicIdAsync(Guid userPublicId, CancellationToken ct = default);

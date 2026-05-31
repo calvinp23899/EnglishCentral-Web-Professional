@@ -9,7 +9,7 @@ using EnglishCentral.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EnglishCentral.API.Controllers.Admin
+namespace EnglishCentral.API.Controllers.Admin.Academic
 {
     [Route("api/admin/academic/teachers")]
     [ApiController]
@@ -82,6 +82,7 @@ namespace EnglishCentral.API.Controllers.Admin
                     request.Account.Email,
                     request.Account.PhoneNumber,
                     request.Account.FullName,
+                    request.Account.Role,
                     request.Account.Password));
             var result = await _mediator.Send(command, ct);
             return StatusCode(result.StatusCode, result);

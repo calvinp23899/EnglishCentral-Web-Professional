@@ -87,6 +87,40 @@
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
 }
 
+.tabs {
+  min-height: 58px;
+  padding: 0 16px;
+  border-bottom: 1px solid #e5edf6;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+
+  button {
+    height: 34px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+  }
+}
+
+.activeTab {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
 .formHeader {
   min-height: 70px;
   padding: 18px 20px;
@@ -106,6 +140,13 @@
     font-size: 13px;
     line-height: 1.5;
   }
+}
+
+.accountGrid {
+  max-width: 760px;
+  padding: 20px;
+  display: grid;
+  gap: 16px;
 }
 
 .formGrid {
@@ -149,6 +190,12 @@
       background: #ffffff;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
+
+    &:read-only {
+      background: #f1f5f9;
+      color: #64748b;
+      cursor: default;
+    }
   }
 
   input,
@@ -179,6 +226,60 @@
   text-align: center;
   font-size: 14px;
   font-weight: 800;
+}
+
+.passwordInput {
+  position: relative;
+  display: block;
+
+  .passwordIcon {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    color: #64748b;
+    transform: translateY(-50%);
+  }
+
+  input {
+    padding-left: 38px;
+    padding-right: 78px;
+  }
+}
+
+.passwordActions {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transform: translateY(-50%);
+
+  button {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #64748b;
+    display: inline-grid;
+    place-items: center;
+    cursor: pointer;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease;
+
+    &:hover {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #93c5fd;
+      outline-offset: 1px;
+    }
+  }
 }
 
 .formActions {

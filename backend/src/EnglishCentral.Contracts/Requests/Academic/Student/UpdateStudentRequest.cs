@@ -13,6 +13,7 @@ namespace EnglishCentral.Contracts.Requests.Academic.Student
         string? ParentPhoneNumber,
         DateOnly EnrollmentDate,
         EStatus Status,
-        string? Notes
+        string? Notes,
+        string? NewPassword
     );
 }
