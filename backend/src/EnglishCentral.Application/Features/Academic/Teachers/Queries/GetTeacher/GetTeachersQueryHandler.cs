@@ -7,10 +7,7 @@ using MediatR;
 
 namespace EnglishCentral.Application.Features.Academic.Teachers.Queries.GetTeacher
 {
-    public class GetTeachersQueryHandler
-: IRequestHandler<
-    GetTeachersQuery,
-    Result<PagedResult<TeacherResponse>>>
+    public class GetTeachersQueryHandler : IRequestHandler<GetTeachersQuery, Result<PagedResult<TeacherResponse>>>
     {
         private readonly ITeacherRepository _teacherRepository;
 
@@ -26,12 +23,10 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Queries.GetTeach
                     request.PageSize,
                     request.Keyword,
                     request.SortBy,
-                    request.IsDescending,
+                    request.OrderSort,
                     request.Status,
                     request.Date,
                     request.Role,
-                    request.HireDateFrom,
-                    request.HireDateTo,
                     ct);
             var items = result.Items
                     .Select(x => x.ToResponse())

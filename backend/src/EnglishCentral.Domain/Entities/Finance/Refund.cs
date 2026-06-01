@@ -1,6 +1,6 @@
 using EnglishCentral.Domain.Common;
 using EnglishCentral.Domain.Entities.Academic;
-using EnglishCentral.Domain.Enums.Academic;
+using EnglishCentral.Domain.Enums.Finance;
 
 namespace EnglishCentral.Domain.Entities.Finance
 {

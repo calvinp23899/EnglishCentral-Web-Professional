@@ -32,6 +32,8 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.DTOs
         string? TaxCode,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt,
+        DateTimeOffset? deletedAt,
+        List<string> RolesName,
         TeacherAccount? Account
     );
 

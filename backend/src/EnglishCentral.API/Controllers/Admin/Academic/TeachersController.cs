@@ -31,12 +31,10 @@ namespace EnglishCentral.API.Controllers.Admin.Academic
                 PageSize = request.PageSize,
                 Keyword = request.Keyword,
                 SortBy = request.SortBy,
-                IsDescending = request.IsDescending,
+                OrderSort = request.OrderSort,
                 Status = request.Status,
                 Date = request.HireDate,
                 Role = request.Role,
-                HireDateFrom = request.HireDateFrom,
-                HireDateTo = request.HireDateTo,
             };
             var result = await _mediator.Send(query, ct);
             return StatusCode(result.StatusCode, result);

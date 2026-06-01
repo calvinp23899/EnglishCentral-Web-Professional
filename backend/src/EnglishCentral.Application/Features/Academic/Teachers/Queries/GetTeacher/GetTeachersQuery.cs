@@ -14,14 +14,11 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.Queries.GetTeach
 
         public string? Keyword { get; init; }
 
-        public string? SortBy { get; init; }
-
-        public bool IsDescending { get; init; }
+        public EColumnSortGetTeacher? SortBy { get; init; }
+        public EOrderSort OrderSort { get; init; } = EOrderSort.Descending;
 
         public ETeacherStatus? Status { get; init; }
         public DateOnly? Date { get; init; }
         public string? Role { get; init; }
-        public DateOnly? HireDateFrom { get; init; }
-        public DateOnly? HireDateTo { get; init; }
     }
 }

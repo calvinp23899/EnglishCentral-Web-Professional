@@ -1,5 +1,5 @@
 using EnglishCentral.Domain.Entities.Finance;
-using EnglishCentral.Domain.Enums.Academic;
+using EnglishCentral.Domain.Enums.Finance;
 using EnglishCentral.Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

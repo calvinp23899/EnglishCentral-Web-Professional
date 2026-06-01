@@ -2,9 +2,9 @@
 
 namespace EnglishCentral.Application.Features.Academic.CourseCategories.Commands.CreateCourseCategory
 {
-    public class CourseCategoryCommandValidator : AbstractValidator<CreateCourseCategoryCommand>
+    public class CreateCourseCategoryCommandValidator : AbstractValidator<CreateCourseCategoryCommand>
     {
-        public CourseCategoryCommandValidator()
+        public CreateCourseCategoryCommandValidator()
         {
             RuleFor(x => x.Name).NotEmpty().MaximumLength(20);
             RuleFor(x => x.Description).MaximumLength(250);

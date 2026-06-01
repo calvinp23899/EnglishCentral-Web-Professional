@@ -1,5 +1,5 @@
 using EnglishCentral.Application.Features.Finance.Payments.DTOs;
-using EnglishCentral.Domain.Enums.Academic;
+using EnglishCentral.Domain.Enums.Finance;
 using EnglishCentral.Shared.Results;
 using FluentValidation;
 using MediatR;

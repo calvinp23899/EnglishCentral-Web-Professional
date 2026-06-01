@@ -36,6 +36,10 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.DTOs
                 teacher.TaxCode,
                 teacher.CreatedAt,
                 teacher.UpdatedAt,
+                teacher.DeletedAt,
+                teacher.User.UserRoles
+                    .Select(x => x.Role.Name)
+                    .ToList(),
                 teacher.User is null
                     ? null
                     : new TeacherAccount(
