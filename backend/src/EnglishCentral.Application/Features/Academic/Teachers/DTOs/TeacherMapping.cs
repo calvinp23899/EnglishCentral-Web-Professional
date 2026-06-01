@@ -14,7 +14,7 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.DTOs
                 teacher.Email,
                 teacher.PhoneNumber,
                 teacher.DateOfBirth,
-                (int)teacher.Gender,
+                teacher.Gender,
                 teacher.Address,
                 teacher.NationalId,
                 teacher.NationalIdIssuedDate,
@@ -27,8 +27,8 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.DTOs
                 teacher.HireDate,
                 teacher.ContractType,
                 teacher.ContractEndDate,
-                (int)teacher.Status,
-                (int)teacher.SalaryType,
+                teacher.Status,
+                teacher.SalaryType,
                 teacher.BaseSalary,
                 teacher.HourlyRate,
                 teacher.BankAccountNumber,
@@ -36,6 +36,10 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.DTOs
                 teacher.TaxCode,
                 teacher.CreatedAt,
                 teacher.UpdatedAt,
+                teacher.DeletedAt,
+                teacher.User.UserRoles
+                    .Select(x => x.Role.Name)
+                    .ToList(),
                 teacher.User is null
                     ? null
                     : new TeacherAccount(

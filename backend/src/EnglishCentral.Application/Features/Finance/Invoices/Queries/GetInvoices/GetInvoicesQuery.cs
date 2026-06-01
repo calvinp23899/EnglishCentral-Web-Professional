@@ -1,5 +1,5 @@
 using EnglishCentral.Application.Features.Finance.Invoices.DTOs;
-using EnglishCentral.Domain.Enums.Academic;
+using EnglishCentral.Domain.Enums.Finance;
 using EnglishCentral.Shared.Common.PaginationHelpers;
 using EnglishCentral.Shared.Results;
 using FluentValidation;

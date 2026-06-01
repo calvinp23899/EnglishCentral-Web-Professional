@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { toastDanger, toastSuccess } from "@/components/ui";
+import { ErrorMessage, toastDanger, toastSuccess } from "@/components/ui";
 import {
   adminAccountsApi,
   type AdminAccount,
@@ -51,34 +51,35 @@ type TeacherInfoForm = {
   bio: string;
   certifications: string;
   contractEndDate: string;
-  contractType: number;
+  contractType: string;
   dateOfBirth: string;
   degree: string;
   email: string;
   fullName: string;
-  gender: number;
+  gender: string;
   hireDate: string;
   hourlyRate: number | null;
   nationalId: string;
   nationalIdIssuedDate: string;
   nationalIdIssuedPlace: string;
   phoneNumber: string;
-  salaryType: number;
+  role: string;
+  salaryType: string;
   specialization: string;
-  status: number;
+  status: string;
   taxCode: string;
   yearsOfExperience: number;
 };
 
 type AccountForm = {
-  email: string;
-  fullName: string;
   password: string;
-  phoneNumber: string;
-  role: string;
 };
 
 type AccountMode = "existing" | "new";
+type TeacherCreateErrors = Partial<
+  Record<keyof TeacherInfoForm | "accountPassword" | "selectedAccountId", string>
+>;
+type TeacherInfoErrors = Partial<Record<keyof TeacherInfoForm, string>>;
 type EditTabKey = "info" | "performance";
 type PerformanceForm = {
   averageRating: number;
@@ -139,6 +140,106 @@ const performanceByTeacherId: Record<string, PerformanceForm> = {
   },
 };
 
+function getToday() {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${today.getFullYear()}-${month}-${day}`;
+}
+
+const formatAmount = (value: number | null) =>
+  value === null
+    ? ""
+    : new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 2,
+      }).format(value);
+
+const parseAmount = (value: string) => {
+  const normalizedValue = value.replace(/,/g, "").trim();
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  const amount = Number(normalizedValue);
+
+  return Number.isNaN(amount) ? null : amount;
+};
+
+type TeacherValidationOptions = {
+  contractTypes: MetadataOption[];
+  genders: MetadataOption[];
+  includeRole?: boolean;
+  salaryTypes: MetadataOption[];
+  statuses: MetadataOption[];
+};
+
+const validateTeacherFields = (
+  value: TeacherInfoForm,
+  options: TeacherValidationOptions,
+) => {
+  const nextErrors: TeacherInfoErrors = {};
+  const today = getToday();
+  const certifications = splitCertifications(value.certifications);
+
+  if (!value.fullName.trim()) nextErrors.fullName = "Vui lòng nhập họ tên.";
+  else if (value.fullName.trim().length > 20) nextErrors.fullName = "Họ tên không được quá 20 ký tự.";
+
+  if (!value.email.trim()) nextErrors.email = "Vui lòng nhập email.";
+  else if (!isValidEmail(value.email.trim())) nextErrors.email = "Email không đúng định dạng.";
+  else if (value.email.trim().length > 20) nextErrors.email = "Email không được quá 20 ký tự.";
+
+  if (!value.phoneNumber.trim()) nextErrors.phoneNumber = "Vui lòng nhập số điện thoại.";
+  else if (!isValidPhoneNumber(value.phoneNumber.trim())) nextErrors.phoneNumber = "Số điện thoại không đúng định dạng.";
+  else if (value.phoneNumber.trim().length > 20) nextErrors.phoneNumber = "Số điện thoại không được quá 20 ký tự.";
+
+  if (!value.dateOfBirth) nextErrors.dateOfBirth = "Vui lòng chọn ngày sinh.";
+  else if (value.dateOfBirth >= today) nextErrors.dateOfBirth = "Ngày sinh phải nhỏ hơn ngày hiện tại.";
+
+  if (options.genders.length > 0 && !options.genders.some((option) => option.value === value.gender)) {
+    nextErrors.gender = "Giới tính không hợp lệ.";
+  }
+
+  if (value.address.length > 500) nextErrors.address = "Địa chỉ không được quá 500 ký tự.";
+
+  if (!value.nationalId.trim()) nextErrors.nationalId = "Vui lòng nhập CMND/CCCD.";
+  else if (value.nationalId.trim().length > 50) nextErrors.nationalId = "CMND/CCCD không được quá 50 ký tự.";
+
+  if (!value.nationalIdIssuedDate) nextErrors.nationalIdIssuedDate = "Vui lòng chọn ngày cấp CMND/CCCD.";
+  else if (value.nationalIdIssuedDate > today) nextErrors.nationalIdIssuedDate = "Ngày cấp CMND/CCCD không được lớn hơn ngày hiện tại.";
+
+  if (!value.nationalIdIssuedPlace.trim()) nextErrors.nationalIdIssuedPlace = "Vui lòng nhập nơi cấp CMND/CCCD.";
+  else if (value.nationalIdIssuedPlace.trim().length > 255) nextErrors.nationalIdIssuedPlace = "Nơi cấp CMND/CCCD không được quá 255 ký tự.";
+
+  if (value.specialization.length > 255) nextErrors.specialization = "Chuyên môn không được quá 255 ký tự.";
+  if (value.degree.length > 255) nextErrors.degree = "Bằng cấp không được quá 255 ký tự.";
+  if (value.bio.length > 500) nextErrors.bio = "Mô tả bản thân không được quá 500 ký tự.";
+  if (value.yearsOfExperience < 0 || value.yearsOfExperience > 60) nextErrors.yearsOfExperience = "Số năm kinh nghiệm phải từ 0 đến 60.";
+  if (certifications.some((certification) => certification.length > 255)) nextErrors.certifications = "Mỗi chứng chỉ không được quá 255 ký tự.";
+
+  if (!value.hireDate) nextErrors.hireDate = "Vui lòng chọn ngày tuyển dụng.";
+  if (options.contractTypes.length > 0 && !options.contractTypes.some((option) => option.value === value.contractType)) nextErrors.contractType = "Loại hợp đồng không hợp lệ.";
+  if (value.contractEndDate && value.hireDate && value.contractEndDate <= value.hireDate) nextErrors.contractEndDate = "Ngày kết thúc hợp đồng phải lớn hơn ngày tuyển dụng.";
+  if (options.statuses.length > 0 && !options.statuses.some((option) => option.value === value.status)) nextErrors.status = "Trạng thái không hợp lệ.";
+  if (options.salaryTypes.length > 0 && !options.salaryTypes.some((option) => option.value === value.salaryType)) nextErrors.salaryType = "Loại lương không hợp lệ.";
+  if (value.baseSalary < 0) nextErrors.baseSalary = "Lương cơ bản phải lớn hơn hoặc bằng 0.";
+  if (value.hourlyRate !== null && value.hourlyRate < 0) nextErrors.hourlyRate = "Rate theo giờ phải lớn hơn hoặc bằng 0.";
+
+  if (!value.bankAccountNumber.trim()) nextErrors.bankAccountNumber = "Vui lòng nhập số tài khoản ngân hàng.";
+  else if (value.bankAccountNumber.trim().length > 50) nextErrors.bankAccountNumber = "Số tài khoản ngân hàng không được quá 50 ký tự.";
+
+  if (!value.bankName.trim()) nextErrors.bankName = "Vui lòng nhập tên ngân hàng.";
+  else if (value.bankName.trim().length > 50) nextErrors.bankName = "Tên ngân hàng không được quá 50 ký tự.";
+
+  if (!value.taxCode.trim()) nextErrors.taxCode = "Vui lòng nhập mã số thuế.";
+  else if (value.taxCode.trim().length > 50) nextErrors.taxCode = "Mã số thuế không được quá 50 ký tự.";
+
+  if (options.includeRole && !value.role) nextErrors.role = "Vui lòng chọn role.";
+
+  return nextErrors;
+};
+
 const initialTeacherInfo: TeacherInfoForm = {
   address: "",
   bankAccountNumber: "",
@@ -147,31 +248,28 @@ const initialTeacherInfo: TeacherInfoForm = {
   bio: "",
   certifications: "",
   contractEndDate: "",
-  contractType: 0,
+  contractType: "FullTime",
   dateOfBirth: "",
   degree: "",
   email: "",
   fullName: "",
-  gender: 1,
-  hireDate: "2026-05-25",
+  gender: "Male",
+  hireDate: getToday(),
   hourlyRate: null,
   nationalId: "",
   nationalIdIssuedDate: "",
   nationalIdIssuedPlace: "",
   phoneNumber: "",
-  salaryType: 0,
+  role: "",
+  salaryType: "Fixed",
   specialization: "",
-  status: 1,
+  status: "Active",
   taxCode: "",
   yearsOfExperience: 0,
 };
 
 const initialAccountForm: AccountForm = {
-  email: "",
-  fullName: "",
   password: "",
-  phoneNumber: "",
-  role: "",
 };
 
 const toTeacherInfoForm = (teacher: AdminTeacher): TeacherInfoForm => ({
@@ -182,21 +280,22 @@ const toTeacherInfoForm = (teacher: AdminTeacher): TeacherInfoForm => ({
   bio: teacher.bio ?? "",
   certifications: teacher.certifications?.join(", ") ?? "",
   contractEndDate: teacher.contractEndDate ?? "",
-  contractType: teacher.contractType ?? 0,
+  contractType: String(teacher.contractType ?? "FullTime"),
   dateOfBirth: teacher.dateOfBirth ?? "",
   degree: teacher.degree ?? "",
   email: teacher.email ?? "",
   fullName: teacher.fullName,
-  gender: teacher.gender,
+  gender: String(teacher.gender),
   hireDate: teacher.hireDate ?? "",
   hourlyRate: teacher.hourlyRate ?? null,
   nationalId: teacher.nationalId ?? "",
   nationalIdIssuedDate: teacher.nationalIdIssuedDate ?? "",
   nationalIdIssuedPlace: teacher.nationalIdIssuedPlace ?? "",
   phoneNumber: teacher.phoneNumber ?? "",
-  salaryType: teacher.salaryType,
+  role: "",
+  salaryType: String(teacher.salaryType),
   specialization: teacher.specialization ?? "",
-  status: Number(teacher.status),
+  status: String(teacher.status),
   taxCode: teacher.taxCode ?? "",
   yearsOfExperience: teacher.yearsOfExperience ?? 0,
 });
@@ -206,6 +305,9 @@ const splitCertifications = (value: string) =>
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+
+const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isValidPhoneNumber = (value: string) => /^\+?[0-9\s\-()]+$/.test(value);
 
 const toPayload = (value: TeacherInfoForm): TeacherFormPayload => ({
   ...value,
@@ -247,20 +349,28 @@ export function TeacherFormPage({ mode }: Props) {
   const [accountRecords, setAccountRecords] = useState<AdminAccount[]>([]);
   const [statusOptions, setStatusOptions] = useState<MetadataOption[]>([]);
   const [genderOptions, setGenderOptions] = useState<MetadataOption[]>([]);
+  const [contractTypeOptions, setContractTypeOptions] = useState<MetadataOption[]>([]);
+  const [salaryTypeOptions, setSalaryTypeOptions] = useState<MetadataOption[]>([]);
   const [roleOptions, setRoleOptions] = useState<RoleMetadataOption[]>([]);
+  const [errors, setErrors] = useState<TeacherCreateErrors>({});
+  const [editErrors, setEditErrors] = useState<TeacherInfoErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     Promise.all([
       adminMetadataApi.getTeacherStatusOptions(),
       adminMetadataApi.getGenderOptions(),
+      adminMetadataApi.getContractTypeOptions(),
+      adminMetadataApi.getSalaryTypeOptions(),
       adminMetadataApi.getRoleOptions(),
     ])
-      .then(([statuses, genders, roles]) => {
+      .then(([statuses, genders, contractTypes, salaryTypes, roles]) => {
         setStatusOptions(statuses);
         setGenderOptions(genders);
+        setContractTypeOptions(contractTypes);
+        setSalaryTypeOptions(salaryTypes);
         setRoleOptions(roles);
-        setAccountForm((current) => ({
+        setTeacherInfo((current) => ({
           ...current,
           role: current.role || roles.find((role) => role.roleName === "Teacher")?.roleName || roles[0]?.roleName || "",
         }));
@@ -290,7 +400,7 @@ export function TeacherFormPage({ mode }: Props) {
 
     const timeoutId = window.setTimeout(() => {
       adminAccountsApi
-        .getAccounts(accountSearch)
+        .getTeacherAccounts(accountSearch)
         .then(setAccountRecords)
         .catch((error) => toastDanger(getAuthErrorMessage(error)));
     }, 300);
@@ -318,6 +428,7 @@ export function TeacherFormPage({ mode }: Props) {
       ...currentValue,
       [field]: value,
     }));
+    setErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
   };
 
   const updateEditTeacherInfo = <Key extends keyof TeacherInfoForm>(
@@ -328,6 +439,7 @@ export function TeacherFormPage({ mode }: Props) {
       ...currentValue,
       [field]: value,
     }));
+    setEditErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
   };
 
   const updatePerformanceForm = <Key extends keyof PerformanceForm>(
@@ -348,6 +460,10 @@ export function TeacherFormPage({ mode }: Props) {
       ...currentValue,
       [field]: value,
     }));
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      accountPassword: field === "password" ? undefined : currentErrors.accountPassword,
+    }));
   };
 
   const handleGeneratePassword = () => {
@@ -359,6 +475,18 @@ export function TeacherFormPage({ mode }: Props) {
     event.preventDefault();
 
     if (!recordId || isSubmitting) {
+      return;
+    }
+
+    const nextErrors = validateTeacherFields(editTeacherInfo, {
+      contractTypes: contractTypeOptions,
+      genders: genderOptions,
+      salaryTypes: salaryTypeOptions,
+      statuses: statusOptions,
+    });
+    setEditErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
@@ -420,45 +548,50 @@ export function TeacherFormPage({ mode }: Props) {
 
               <div className={styles.formGrid}>
                 <label className={styles.field}>
-                  <span>Họ Tên</span>
+                  <span>Họ Tên <em className={styles.requiredMark}>*</em></span>
                   <input
                     value={editTeacherInfo.fullName}
                     onChange={(event) => updateEditTeacherInfo("fullName", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.fullName} />
                 </label>
                 <label className={styles.field}>
-                  <span>Email</span>
+                  <span>Email <em className={styles.requiredMark}>*</em></span>
                   <input
                     type="email"
                     value={editTeacherInfo.email}
                     onChange={(event) => updateEditTeacherInfo("email", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.email} />
                 </label>
                 <label className={styles.field}>
-                  <span>Số Điện Thoại</span>
+                  <span>Số Điện Thoại <em className={styles.requiredMark}>*</em></span>
                   <input
                     value={editTeacherInfo.phoneNumber}
                     onChange={(event) => updateEditTeacherInfo("phoneNumber", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.phoneNumber} />
                 </label>
                 <label className={styles.field}>
-                  <span>Ngày Sinh</span>
+                  <span>Ngày Sinh <em className={styles.requiredMark}>*</em></span>
                   <input
                     type="date"
                     value={editTeacherInfo.dateOfBirth}
                     onChange={(event) => updateEditTeacherInfo("dateOfBirth", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.dateOfBirth} />
                 </label>
                 <label className={styles.field}>
-                  <span>Giới Tính</span>
+                  <span>Giới Tính <em className={styles.requiredMark}>*</em></span>
                   <select
                     value={editTeacherInfo.gender}
-                    onChange={(event) => updateEditTeacherInfo("gender", Number(event.target.value))}
+                    onChange={(event) => updateEditTeacherInfo("gender", event.target.value)}
                   >
                     {genderOptions.map((option) => (
-                      <option key={option.code} value={option.code}>{option.label}</option>
+                      <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
+                  <ErrorMessage message={editErrors.gender} />
                 </label>
                 <label className={styles.field}>
                   <span>Địa Chỉ</span>
@@ -466,16 +599,18 @@ export function TeacherFormPage({ mode }: Props) {
                     value={editTeacherInfo.address}
                     onChange={(event) => updateEditTeacherInfo("address", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.address} />
                 </label>
                 <label className={styles.field}>
-                  <span>CMND/CCCD</span>
+                  <span>CMND/CCCD <em className={styles.requiredMark}>*</em></span>
                   <input
                     value={editTeacherInfo.nationalId}
                     onChange={(event) => updateEditTeacherInfo("nationalId", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.nationalId} />
                 </label>
                 <label className={styles.field}>
-                  <span>Ngày cấp CMND/CCCD</span>
+                  <span>Ngày cấp CMND/CCCD <em className={styles.requiredMark}>*</em></span>
                   <input
                     type="date"
                     value={editTeacherInfo.nationalIdIssuedDate}
@@ -483,15 +618,17 @@ export function TeacherFormPage({ mode }: Props) {
                       updateEditTeacherInfo("nationalIdIssuedDate", event.target.value)
                     }
                   />
+                  <ErrorMessage message={editErrors.nationalIdIssuedDate} />
                 </label>
                 <label className={styles.field}>
-                  <span>Địa điểm cấp CMND/CCCD</span>
+                  <span>Địa điểm cấp CMND/CCCD <em className={styles.requiredMark}>*</em></span>
                   <input
                     value={editTeacherInfo.nationalIdIssuedPlace}
                     onChange={(event) =>
                       updateEditTeacherInfo("nationalIdIssuedPlace", event.target.value)
                     }
                   />
+                  <ErrorMessage message={editErrors.nationalIdIssuedPlace} />
                 </label>
                 <label className={styles.field}>
                   <span>Chuyên môn</span>
@@ -499,6 +636,7 @@ export function TeacherFormPage({ mode }: Props) {
                     value={editTeacherInfo.specialization}
                     onChange={(event) => updateEditTeacherInfo("specialization", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.specialization} />
                 </label>
                 <label className={styles.field}>
                   <span>Bằng cấp</span>
@@ -506,6 +644,7 @@ export function TeacherFormPage({ mode }: Props) {
                     value={editTeacherInfo.degree}
                     onChange={(event) => updateEditTeacherInfo("degree", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.degree} />
                 </label>
                 <label className={styles.field}>
                   <span>Số Năm Kinh Nghiệm</span>
@@ -517,6 +656,7 @@ export function TeacherFormPage({ mode }: Props) {
                       updateEditTeacherInfo("yearsOfExperience", Number(event.target.value))
                     }
                   />
+                  <ErrorMessage message={editErrors.yearsOfExperience} />
                 </label>
                 <label className={`${styles.field} ${styles.notesField}`}>
                   <span>Chứng Chỉ</span>
@@ -525,6 +665,7 @@ export function TeacherFormPage({ mode }: Props) {
                     value={editTeacherInfo.certifications}
                     onChange={(event) => updateEditTeacherInfo("certifications", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.certifications} />
                 </label>
                 <label className={`${styles.field} ${styles.notesField}`}>
                   <span>Mô Tả Bản Thân</span>
@@ -533,27 +674,30 @@ export function TeacherFormPage({ mode }: Props) {
                     value={editTeacherInfo.bio}
                     onChange={(event) => updateEditTeacherInfo("bio", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.bio} />
                 </label>
                 <label className={styles.field}>
-                  <span>Ngày Tuyển Dụng</span>
+                  <span>Ngày Tuyển Dụng <em className={styles.requiredMark}>*</em></span>
                   <input
                     type="date"
                     value={editTeacherInfo.hireDate}
                     onChange={(event) => updateEditTeacherInfo("hireDate", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.hireDate} />
                 </label>
                 <label className={styles.field}>
                   <span>Loại Hợp Đồng</span>
                   <select
                     value={editTeacherInfo.contractType}
                     onChange={(event) =>
-                      updateEditTeacherInfo("contractType", Number(event.target.value))
+                      updateEditTeacherInfo("contractType", event.target.value)
                     }
                   >
-                    <option value={0}>Full-time</option>
-                    <option value={1}>Part-time</option>
-                    <option value={2}>Contract</option>
+                    {contractTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
+                  <ErrorMessage message={editErrors.contractType} />
                 </label>
                 <label className={styles.field}>
                   <span>Ngày Kết Thúc Hợp Đồng</span>
@@ -562,77 +706,83 @@ export function TeacherFormPage({ mode }: Props) {
                     value={editTeacherInfo.contractEndDate}
                     onChange={(event) => updateEditTeacherInfo("contractEndDate", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.contractEndDate} />
                 </label>
                 <label className={styles.field}>
-                  <span>Trạng Thái</span>
+                  <span>Trạng Thái <em className={styles.requiredMark}>*</em></span>
                   <select
                     value={editTeacherInfo.status}
-                    onChange={(event) => updateEditTeacherInfo("status", Number(event.target.value))}
+                    onChange={(event) => updateEditTeacherInfo("status", event.target.value)}
                   >
                     {statusOptions.map((option) => (
-                      <option key={option.code} value={option.code}>{option.label}</option>
+                      <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
+                  <ErrorMessage message={editErrors.status} />
                 </label>
                 <label className={styles.field}>
-                  <span>Loại Lương</span>
+                  <span>Loại Lương <em className={styles.requiredMark}>*</em></span>
                   <select
                     value={editTeacherInfo.salaryType}
                     onChange={(event) =>
-                      updateEditTeacherInfo("salaryType", Number(event.target.value))
+                      updateEditTeacherInfo("salaryType", event.target.value)
                     }
                   >
-                    <option value={0}>Lương cơ bản</option>
-                    <option value={1}>Theo giờ</option>
+                    {salaryTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
+                  <ErrorMessage message={editErrors.salaryType} />
                 </label>
                 <label className={styles.field}>
                   <span>Lương cơ bản</span>
                   <input
-                    min={0}
-                    type="number"
-                    value={editTeacherInfo.baseSalary}
-                    onChange={(event) =>
-                      updateEditTeacherInfo("baseSalary", Number(event.target.value))
-                    }
+                    inputMode="decimal"
+                    value={formatAmount(editTeacherInfo.baseSalary)}
+                    onChange={(event) => {
+                      const amount = parseAmount(event.target.value);
+
+                      updateEditTeacherInfo("baseSalary", amount ?? 0);
+                    }}
                   />
+                  <ErrorMessage message={editErrors.baseSalary} />
                 </label>
                 <label className={styles.field}>
                   <span>Rate theo giờ</span>
                   <input
-                    min={0}
-                    type="number"
-                    value={editTeacherInfo.hourlyRate ?? ""}
+                    inputMode="decimal"
+                    value={formatAmount(editTeacherInfo.hourlyRate)}
                     onChange={(event) =>
-                      updateEditTeacherInfo(
-                        "hourlyRate",
-                        event.target.value ? Number(event.target.value) : null,
-                      )
+                      updateEditTeacherInfo("hourlyRate", parseAmount(event.target.value))
                     }
                   />
+                  <ErrorMessage message={editErrors.hourlyRate} />
                 </label>
                 <label className={styles.field}>
-                  <span>Số tài khoản ngân hàng</span>
+                  <span>Số tài khoản ngân hàng <em className={styles.requiredMark}>*</em></span>
                   <input
                     value={editTeacherInfo.bankAccountNumber}
                     onChange={(event) =>
                       updateEditTeacherInfo("bankAccountNumber", event.target.value)
                     }
                   />
+                  <ErrorMessage message={editErrors.bankAccountNumber} />
                 </label>
                 <label className={styles.field}>
-                  <span>Tên ngân hàng</span>
+                  <span>Tên ngân hàng <em className={styles.requiredMark}>*</em></span>
                   <input
                     value={editTeacherInfo.bankName}
                     onChange={(event) => updateEditTeacherInfo("bankName", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.bankName} />
                 </label>
                 <label className={styles.field}>
-                  <span>Mã số thuế</span>
+                  <span>Mã số thuế <em className={styles.requiredMark}>*</em></span>
                   <input
                     value={editTeacherInfo.taxCode}
                     onChange={(event) => updateEditTeacherInfo("taxCode", event.target.value)}
                   />
+                  <ErrorMessage message={editErrors.taxCode} />
                 </label>
               </div>
 
@@ -640,7 +790,10 @@ export function TeacherFormPage({ mode }: Props) {
                 <button
                   className={styles.secondaryButton}
                   type="button"
-                  onClick={() => setEditTeacherInfo(initialEditTeacherInfo)}
+                  onClick={() => {
+                    setEditTeacherInfo(initialEditTeacherInfo);
+                    setEditErrors({});
+                  }}
                 >
                   Hủy
                 </button>
@@ -796,15 +949,204 @@ export function TeacherFormPage({ mode }: Props) {
     );
   }
 
+  const validateTeacherInfo = () => {
+    const nextErrors: TeacherCreateErrors = {};
+    const today = getToday();
+    const certifications = splitCertifications(teacherInfo.certifications);
+
+    if (!teacherInfo.fullName.trim()) {
+      nextErrors.fullName = "Vui lòng nhập họ tên.";
+    } else if (teacherInfo.fullName.trim().length > 20) {
+      nextErrors.fullName = "Họ tên không được quá 20 ký tự.";
+    }
+
+    if (!teacherInfo.email.trim()) {
+      nextErrors.email = "Vui lòng nhập email.";
+    } else if (!isValidEmail(teacherInfo.email.trim())) {
+      nextErrors.email = "Email không đúng định dạng.";
+    } else if (teacherInfo.email.trim().length > 20) {
+      nextErrors.email = "Email không được quá 20 ký tự.";
+    }
+
+    if (!teacherInfo.phoneNumber.trim()) {
+      nextErrors.phoneNumber = "Vui lòng nhập số điện thoại.";
+    } else if (!isValidPhoneNumber(teacherInfo.phoneNumber.trim())) {
+      nextErrors.phoneNumber = "Số điện thoại không đúng định dạng.";
+    } else if (teacherInfo.phoneNumber.trim().length > 20) {
+      nextErrors.phoneNumber = "Số điện thoại không được quá 20 ký tự.";
+    }
+
+    if (!teacherInfo.dateOfBirth) {
+      nextErrors.dateOfBirth = "Vui lòng chọn ngày sinh.";
+    } else if (teacherInfo.dateOfBirth >= today) {
+      nextErrors.dateOfBirth = "Ngày sinh phải nhỏ hơn ngày hiện tại.";
+    }
+
+    if (
+      genderOptions.length > 0
+      && !genderOptions.some((option) => option.value === teacherInfo.gender)
+    ) {
+      nextErrors.gender = "Giới tính không hợp lệ.";
+    }
+
+    if (teacherInfo.address.length > 500) {
+      nextErrors.address = "Địa chỉ không được quá 500 ký tự.";
+    }
+
+    if (!teacherInfo.nationalId.trim()) {
+      nextErrors.nationalId = "Vui lòng nhập CMND/CCCD.";
+    } else if (teacherInfo.nationalId.trim().length > 50) {
+      nextErrors.nationalId = "CMND/CCCD không được quá 50 ký tự.";
+    }
+
+    if (!teacherInfo.nationalIdIssuedDate) {
+      nextErrors.nationalIdIssuedDate = "Vui lòng chọn ngày cấp CMND/CCCD.";
+    } else if (teacherInfo.nationalIdIssuedDate > today) {
+      nextErrors.nationalIdIssuedDate = "Ngày cấp CMND/CCCD không được lớn hơn ngày hiện tại.";
+    }
+
+    if (!teacherInfo.nationalIdIssuedPlace.trim()) {
+      nextErrors.nationalIdIssuedPlace = "Vui lòng nhập nơi cấp CMND/CCCD.";
+    } else if (teacherInfo.nationalIdIssuedPlace.trim().length > 255) {
+      nextErrors.nationalIdIssuedPlace = "Nơi cấp CMND/CCCD không được quá 255 ký tự.";
+    }
+
+    if (teacherInfo.specialization.length > 255) {
+      nextErrors.specialization = "Chuyên môn không được quá 255 ký tự.";
+    }
+
+    if (teacherInfo.degree.length > 255) {
+      nextErrors.degree = "Bằng cấp không được quá 255 ký tự.";
+    }
+
+    if (teacherInfo.bio.length > 500) {
+      nextErrors.bio = "Mô tả bản thân không được quá 500 ký tự.";
+    }
+
+    if (teacherInfo.yearsOfExperience < 0 || teacherInfo.yearsOfExperience > 60) {
+      nextErrors.yearsOfExperience = "Số năm kinh nghiệm phải từ 0 đến 60.";
+    }
+
+    if (certifications.some((certification) => certification.length > 255)) {
+      nextErrors.certifications = "Mỗi chứng chỉ không được quá 255 ký tự.";
+    }
+
+    if (!teacherInfo.hireDate) {
+      nextErrors.hireDate = "Vui lòng chọn ngày tuyển dụng.";
+    }
+
+    if (
+      contractTypeOptions.length > 0
+      && !contractTypeOptions.some((option) => option.value === teacherInfo.contractType)
+    ) {
+      nextErrors.contractType = "Loại hợp đồng không hợp lệ.";
+    }
+
+    if (
+      teacherInfo.contractEndDate
+      && teacherInfo.hireDate
+      && teacherInfo.contractEndDate <= teacherInfo.hireDate
+    ) {
+      nextErrors.contractEndDate = "Ngày kết thúc hợp đồng phải lớn hơn ngày tuyển dụng.";
+    }
+
+    if (
+      statusOptions.length > 0
+      && !statusOptions.some((option) => option.value === teacherInfo.status)
+    ) {
+      nextErrors.status = "Trạng thái không hợp lệ.";
+    }
+
+    if (
+      salaryTypeOptions.length > 0
+      && !salaryTypeOptions.some((option) => option.value === teacherInfo.salaryType)
+    ) {
+      nextErrors.salaryType = "Loại lương không hợp lệ.";
+    }
+
+    if (teacherInfo.baseSalary < 0) {
+      nextErrors.baseSalary = "Lương cơ bản phải lớn hơn hoặc bằng 0.";
+    }
+
+    if (teacherInfo.hourlyRate !== null && teacherInfo.hourlyRate < 0) {
+      nextErrors.hourlyRate = "Rate theo giờ phải lớn hơn hoặc bằng 0.";
+    }
+
+    if (!teacherInfo.bankAccountNumber.trim()) {
+      nextErrors.bankAccountNumber = "Vui lòng nhập số tài khoản ngân hàng.";
+    } else if (teacherInfo.bankAccountNumber.trim().length > 50) {
+      nextErrors.bankAccountNumber = "Số tài khoản ngân hàng không được quá 50 ký tự.";
+    }
+
+    if (!teacherInfo.bankName.trim()) {
+      nextErrors.bankName = "Vui lòng nhập tên ngân hàng.";
+    } else if (teacherInfo.bankName.trim().length > 50) {
+      nextErrors.bankName = "Tên ngân hàng không được quá 50 ký tự.";
+    }
+
+    if (!teacherInfo.taxCode.trim()) {
+      nextErrors.taxCode = "Vui lòng nhập mã số thuế.";
+    } else if (teacherInfo.taxCode.trim().length > 50) {
+      nextErrors.taxCode = "Mã số thuế không được quá 50 ký tự.";
+    }
+
+    if (!teacherInfo.role) {
+      nextErrors.role = "Vui lòng chọn role.";
+    }
+
+    return nextErrors;
+  };
+
+  const validateAccountInfo = () => {
+    const nextErrors: TeacherCreateErrors = {};
+
+    if (accountMode === "existing" && !selectedAccountId) {
+      nextErrors.selectedAccountId = "Vui lòng chọn tài khoản có sẵn.";
+    }
+
+    if (accountMode === "new") {
+      if (!teacherInfo.email.trim()) {
+        nextErrors.email = "Vui lòng nhập email để tạo tài khoản.";
+      } else if (!isValidEmail(teacherInfo.email.trim())) {
+        nextErrors.email = "Email không đúng định dạng.";
+      }
+
+      if (accountForm.password.trim().length < 6) {
+        nextErrors.accountPassword = "Mật khẩu cần tối thiểu 6 ký tự.";
+      }
+    }
+
+    return nextErrors;
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (currentStep === 1) {
+      const nextErrors = validateTeacherInfo();
+      setErrors(nextErrors);
+
+      if (Object.keys(nextErrors).length > 0) {
+        return;
+      }
+
       setCurrentStep(2);
       return;
     }
 
     if (isSubmitting) {
+      return;
+    }
+
+    const nextErrors = validateAccountInfo();
+    setErrors(nextErrors);
+
+    if (nextErrors.email) {
+      setCurrentStep(1);
+      return;
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
@@ -816,14 +1158,14 @@ export function TeacherFormPage({ mode }: Props) {
         accountMode === "existing"
           ? {
               userId: selectedAccount?.id ?? null,
-              role: accountForm.role,
+              role: teacherInfo.role,
             }
           : {
               userId: null,
-              email: accountForm.email.trim(),
-              phoneNumber: accountForm.phoneNumber.trim() || null,
-              fullName: accountForm.fullName.trim(),
-              role: accountForm.role,
+              email: teacherInfo.email.trim(),
+              phoneNumber: teacherInfo.phoneNumber.trim() || null,
+              fullName: teacherInfo.fullName.trim(),
+              role: teacherInfo.role,
               password: accountForm.password.trim(),
             },
     };
@@ -877,44 +1219,61 @@ export function TeacherFormPage({ mode }: Props) {
 
             <div className={styles.formGrid}>
               <label className={styles.field}>
-                <span>Họ Tên</span>
+                <span>Họ Tên <em className={styles.requiredMark}>*</em></span>
                 <input
                   value={teacherInfo.fullName}
                   onChange={(event) => updateTeacherInfo("fullName", event.target.value)}
                 />
+                <ErrorMessage message={errors.fullName} />
               </label>
               <label className={styles.field}>
-                <span>Email</span>
+                <span>Email <em className={styles.requiredMark}>*</em></span>
                 <input
                   value={teacherInfo.email}
                   onChange={(event) => updateTeacherInfo("email", event.target.value)}
                 />
+                <ErrorMessage message={errors.email} />
               </label>
               <label className={styles.field}>
-                <span>Số Điện Thoại</span>
+                <span>Role <em className={styles.requiredMark}>*</em></span>
+                <select
+                  value={teacherInfo.role}
+                  onChange={(event) => updateTeacherInfo("role", event.target.value)}
+                >
+                  {roleOptions.map((role) => (
+                    <option key={role.roleId} value={role.roleName}>{role.roleName}</option>
+                  ))}
+                </select>
+                <ErrorMessage message={errors.role} />
+              </label>
+              <label className={styles.field}>
+                <span>Số Điện Thoại <em className={styles.requiredMark}>*</em></span>
                 <input
                   value={teacherInfo.phoneNumber}
                   onChange={(event) => updateTeacherInfo("phoneNumber", event.target.value)}
                 />
+                <ErrorMessage message={errors.phoneNumber} />
               </label>
               <label className={styles.field}>
-                <span>Ngày Sinh</span>
+                <span>Ngày Sinh <em className={styles.requiredMark}>*</em></span>
                 <input
                   type="date"
                   value={teacherInfo.dateOfBirth}
                   onChange={(event) => updateTeacherInfo("dateOfBirth", event.target.value)}
                 />
+                <ErrorMessage message={errors.dateOfBirth} />
               </label>
               <label className={styles.field}>
-                <span>Giới Tính</span>
+                <span>Giới Tính <em className={styles.requiredMark}>*</em></span>
                 <select
                   value={teacherInfo.gender}
-                  onChange={(event) => updateTeacherInfo("gender", Number(event.target.value))}
+                  onChange={(event) => updateTeacherInfo("gender", event.target.value)}
                 >
                   {genderOptions.map((option) => (
-                    <option key={option.code} value={option.code}>{option.label}</option>
+                    <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
+                <ErrorMessage message={errors.gender} />
               </label>
               <label className={styles.field}>
                 <span>Địa Chỉ</span>
@@ -922,16 +1281,18 @@ export function TeacherFormPage({ mode }: Props) {
                   value={teacherInfo.address}
                   onChange={(event) => updateTeacherInfo("address", event.target.value)}
                 />
+                <ErrorMessage message={errors.address} />
               </label>
               <label className={styles.field}>
-                <span>CMND/CCCD</span>
+                <span>CMND/CCCD <em className={styles.requiredMark}>*</em></span>
                 <input
                   value={teacherInfo.nationalId}
                   onChange={(event) => updateTeacherInfo("nationalId", event.target.value)}
                 />
+                <ErrorMessage message={errors.nationalId} />
               </label>
               <label className={styles.field}>
-                <span>Ngày cấp CMND/CCCD</span>
+                <span>Ngày cấp CMND/CCCD <em className={styles.requiredMark}>*</em></span>
                 <input
                   type="date"
                   value={teacherInfo.nationalIdIssuedDate}
@@ -939,15 +1300,17 @@ export function TeacherFormPage({ mode }: Props) {
                     updateTeacherInfo("nationalIdIssuedDate", event.target.value)
                   }
                 />
+                <ErrorMessage message={errors.nationalIdIssuedDate} />
               </label>
               <label className={styles.field}>
-                <span>Địa điểm cấp CMND/CCCD</span>
+                <span>Địa điểm cấp CMND/CCCD <em className={styles.requiredMark}>*</em></span>
                 <input
                   value={teacherInfo.nationalIdIssuedPlace}
                   onChange={(event) =>
                     updateTeacherInfo("nationalIdIssuedPlace", event.target.value)
                   }
                 />
+                <ErrorMessage message={errors.nationalIdIssuedPlace} />
               </label>
               <label className={styles.field}>
                 <span>Chuyên môn</span>
@@ -957,6 +1320,7 @@ export function TeacherFormPage({ mode }: Props) {
                     updateTeacherInfo("specialization", event.target.value)
                   }
                 />
+                <ErrorMessage message={errors.specialization} />
               </label>
               <label className={styles.field}>
                 <span>Bằng cấp</span>
@@ -964,6 +1328,7 @@ export function TeacherFormPage({ mode }: Props) {
                   value={teacherInfo.degree}
                   onChange={(event) => updateTeacherInfo("degree", event.target.value)}
                 />
+                <ErrorMessage message={errors.degree} />
               </label>
               <label className={styles.field}>
                 <span>Số Năm Kinh Nghiệm</span>
@@ -975,6 +1340,7 @@ export function TeacherFormPage({ mode }: Props) {
                     updateTeacherInfo("yearsOfExperience", Number(event.target.value))
                   }
                 />
+                <ErrorMessage message={errors.yearsOfExperience} />
               </label>
               <label className={`${styles.field} ${styles.notesField}`}>
                 <span>Chứng Chỉ</span>
@@ -983,6 +1349,7 @@ export function TeacherFormPage({ mode }: Props) {
                   value={teacherInfo.certifications}
                   onChange={(event) => updateTeacherInfo("certifications", event.target.value)}
                 />
+                <ErrorMessage message={errors.certifications} />
               </label>
               <label className={`${styles.field} ${styles.notesField}`}>
                 <span>Mô Tả Bản Thân</span>
@@ -991,27 +1358,30 @@ export function TeacherFormPage({ mode }: Props) {
                   value={teacherInfo.bio}
                   onChange={(event) => updateTeacherInfo("bio", event.target.value)}
                 />
+                <ErrorMessage message={errors.bio} />
               </label>
               <label className={styles.field}>
-                <span>Ngày Tuyển Dụng</span>
+                <span>Ngày Tuyển Dụng <em className={styles.requiredMark}>*</em></span>
                 <input
                   type="date"
                   value={teacherInfo.hireDate}
                   onChange={(event) => updateTeacherInfo("hireDate", event.target.value)}
                 />
+                <ErrorMessage message={errors.hireDate} />
               </label>
               <label className={styles.field}>
                 <span>Loại Hợp Đồng</span>
                 <select
                   value={teacherInfo.contractType}
                   onChange={(event) =>
-                    updateTeacherInfo("contractType", Number(event.target.value))
+                    updateTeacherInfo("contractType", event.target.value)
                   }
                 >
-                  <option value={0}>Full-time</option>
-                  <option value={1}>Part-time</option>
-                  <option value={2}>Contract</option>
+                  {contractTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
+                <ErrorMessage message={errors.contractType} />
               </label>
               <label className={styles.field}>
                 <span>Ngày Kết Thúc Hợp Đồng</span>
@@ -1022,77 +1392,83 @@ export function TeacherFormPage({ mode }: Props) {
                     updateTeacherInfo("contractEndDate", event.target.value)
                   }
                 />
+                <ErrorMessage message={errors.contractEndDate} />
               </label>
               <label className={styles.field}>
-                <span>Trạng Thái</span>
+                <span>Trạng Thái <em className={styles.requiredMark}>*</em></span>
                 <select
                   value={teacherInfo.status}
-                  onChange={(event) => updateTeacherInfo("status", Number(event.target.value))}
+                  onChange={(event) => updateTeacherInfo("status", event.target.value)}
                 >
                   {statusOptions.map((option) => (
-                    <option key={option.code} value={option.code}>{option.label}</option>
+                    <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
+                <ErrorMessage message={errors.status} />
               </label>
               <label className={styles.field}>
-                <span>Loại Lương</span>
+                <span>Loại Lương <em className={styles.requiredMark}>*</em></span>
                 <select
                   value={teacherInfo.salaryType}
                   onChange={(event) =>
-                    updateTeacherInfo("salaryType", Number(event.target.value))
+                    updateTeacherInfo("salaryType", event.target.value)
                   }
                 >
-                  <option value={0}>Lương cơ bản</option>
-                  <option value={1}>Theo giờ</option>
+                  {salaryTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
+                <ErrorMessage message={errors.salaryType} />
               </label>
               <label className={styles.field}>
                 <span>Lương cơ bản</span>
                 <input
-                  min={0}
-                  type="number"
-                  value={teacherInfo.baseSalary}
-                  onChange={(event) =>
-                    updateTeacherInfo("baseSalary", Number(event.target.value))
-                  }
+                  inputMode="decimal"
+                  value={formatAmount(teacherInfo.baseSalary)}
+                  onChange={(event) => {
+                    const amount = parseAmount(event.target.value);
+
+                    updateTeacherInfo("baseSalary", amount ?? 0);
+                  }}
                 />
+                <ErrorMessage message={errors.baseSalary} />
               </label>
               <label className={styles.field}>
                 <span>Rate theo giờ</span>
                 <input
-                  min={0}
-                  type="number"
-                  value={teacherInfo.hourlyRate ?? ""}
+                  inputMode="decimal"
+                  value={formatAmount(teacherInfo.hourlyRate)}
                   onChange={(event) =>
-                    updateTeacherInfo(
-                      "hourlyRate",
-                      event.target.value ? Number(event.target.value) : null,
-                    )
+                    updateTeacherInfo("hourlyRate", parseAmount(event.target.value))
                   }
                 />
+                <ErrorMessage message={errors.hourlyRate} />
               </label>
               <label className={styles.field}>
-                <span>Số tài khoản ngân hàng</span>
+                <span>Số tài khoản ngân hàng <em className={styles.requiredMark}>*</em></span>
                 <input
                   value={teacherInfo.bankAccountNumber}
                   onChange={(event) =>
                     updateTeacherInfo("bankAccountNumber", event.target.value)
                   }
                 />
+                <ErrorMessage message={errors.bankAccountNumber} />
               </label>
               <label className={styles.field}>
-                <span>Tên ngân hàng</span>
+                <span>Tên ngân hàng <em className={styles.requiredMark}>*</em></span>
                 <input
                   value={teacherInfo.bankName}
                   onChange={(event) => updateTeacherInfo("bankName", event.target.value)}
                 />
+                <ErrorMessage message={errors.bankName} />
               </label>
               <label className={styles.field}>
-                <span>Mã số thuế</span>
+                <span>Mã số thuế <em className={styles.requiredMark}>*</em></span>
                 <input
                   value={teacherInfo.taxCode}
                   onChange={(event) => updateTeacherInfo("taxCode", event.target.value)}
                 />
+                <ErrorMessage message={errors.taxCode} />
               </label>
             </div>
           </>
@@ -1106,23 +1482,17 @@ export function TeacherFormPage({ mode }: Props) {
             </div>
 
             <div className={styles.accountStep}>
-              <label className={styles.field}>
-                <span>Role</span>
-                <select
-                  value={accountForm.role}
-                  onChange={(event) => updateAccountForm("role", event.target.value)}
-                >
-                  {roleOptions.map((role) => (
-                    <option key={role.roleId} value={role.roleName}>{role.roleName}</option>
-                  ))}
-                </select>
-              </label>
-
               <div className={styles.optionGrid}>
                 <button
                   className={accountMode === "existing" ? styles.selectedOption : ""}
                   type="button"
-                  onClick={() => setAccountMode("existing")}
+                  onClick={() => {
+                    setAccountMode("existing");
+                    setErrors((currentErrors) => ({
+                      ...currentErrors,
+                      accountPassword: undefined,
+                    }));
+                  }}
                 >
                   <UserRoundCheck aria-hidden="true" size={22} />
                   <strong>Đã có tài khoản</strong>
@@ -1131,7 +1501,15 @@ export function TeacherFormPage({ mode }: Props) {
                 <button
                   className={accountMode === "new" ? styles.selectedOption : ""}
                   type="button"
-                  onClick={() => setAccountMode("new")}
+                  onClick={() => {
+                    setAccountMode("new");
+                    setAccountForm(initialAccountForm);
+                    setShowAccountPassword(false);
+                    setErrors((currentErrors) => ({
+                      ...currentErrors,
+                      selectedAccountId: undefined,
+                    }));
+                  }}
                 >
                   <UserPlus aria-hidden="true" size={22} />
                   <strong>Chưa có tài khoản</strong>
@@ -1149,6 +1527,9 @@ export function TeacherFormPage({ mode }: Props) {
                       onChange={(event) => setAccountSearch(event.target.value)}
                     />
                   </label>
+                  <span className={styles.requiredHint}>
+                    Chọn tài khoản có sẵn <em className={styles.requiredMark}>*</em>
+                  </span>
 
                   <div className={styles.resultList}>
                     {matchedAccounts.map((account) => (
@@ -1158,7 +1539,13 @@ export function TeacherFormPage({ mode }: Props) {
                         }
                         key={account.id}
                         type="button"
-                        onClick={() => setSelectedAccountId(String(account.id))}
+                        onClick={() => {
+                          setSelectedAccountId(String(account.id));
+                          setErrors((currentErrors) => ({
+                            ...currentErrors,
+                            selectedAccountId: undefined,
+                          }));
+                        }}
                       >
                         <span className={styles.avatar}>{account.fullName.slice(0, 1)}</span>
                         <span>
@@ -1175,34 +1562,12 @@ export function TeacherFormPage({ mode }: Props) {
                       </button>
                     ))}
                   </div>
+                  <ErrorMessage message={errors.selectedAccountId} />
                 </div>
               ) : (
                 <div className={styles.accountFormGrid}>
                   <label className={styles.field}>
-                    <span>Email</span>
-                    <input
-                      value={accountForm.email}
-                      onChange={(event) => updateAccountForm("email", event.target.value)}
-                    />
-                  </label>
-                  <label className={styles.field}>
-                    <span>Phone number</span>
-                    <input
-                      value={accountForm.phoneNumber}
-                      onChange={(event) =>
-                        updateAccountForm("phoneNumber", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label className={styles.field}>
-                    <span>Full name</span>
-                    <input
-                      value={accountForm.fullName}
-                      onChange={(event) => updateAccountForm("fullName", event.target.value)}
-                    />
-                  </label>
-                  <label className={styles.field}>
-                    <span>Password</span>
+                    <span>Mật khẩu <em className={styles.requiredMark}>*</em></span>
                     <span className={styles.passwordInput}>
                       <LockKeyhole aria-hidden="true" className={styles.passwordIcon} size={16} />
                       <input
@@ -1237,6 +1602,7 @@ export function TeacherFormPage({ mode }: Props) {
                         </button>
                       </span>
                     </span>
+                    <ErrorMessage message={errors.accountPassword} />
                   </label>
                 </div>
               )}

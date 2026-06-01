@@ -22,7 +22,8 @@ namespace EnglishCentral.API.Controllers.Admin.Identity
             //TODO: Update Get Role for Role screen management
             var query = new GetAccountQuery
             {
-                Search = search
+                Search = search,
+                RoleName = SystemRoles.Admin
             };
             var result = await _mediator.Send(query, ct);
             return StatusCode(result.StatusCode, result.Data);

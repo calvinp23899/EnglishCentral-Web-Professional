@@ -6,7 +6,7 @@ export type RawStudentStatus = string | number;
 
 export type AdminStudent = {
   publicId: string;
-  id?: string;
+  id: number;
   studentCode: string;
   fullName: string;
   dateOfBirth?: string;
@@ -59,9 +59,8 @@ export type CreateAdminStudentPayload = {
 
 type RawAdminStudent = Omit<
   AdminStudent,
-  "id" | "registeredAt" | "enrollmentDate" | "status"
+  "registeredAt" | "enrollmentDate" | "status"
 > & {
-  id?: string;
   enrollmentDate?: string;
   registeredAt?: string;
   status: RawStudentStatus;
@@ -103,7 +102,6 @@ const normalizeStudent = (student: RawAdminStudent): AdminStudent => {
 
   return {
     ...student,
-    id: student.id ?? String(student.userId ?? student.publicId),
     enrollmentDate,
     registeredAt: enrollmentDate,
     status,

@@ -44,14 +44,17 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic.Teache
             int page,
             int pageSize,
             string? keyword,
-            string? sortBy,
-            bool isDescending,
+            EColumnSortGetTeacher? sortBy,
+            EOrderSort orderSort,
             ETeacherStatus? status,
             DateOnly? hireDate,
+            string? role,
             CancellationToken ct = default)
         {
             var query = _dbContenxt.Teachers
                 .Include(x => x.User)
+                    .ThenInclude(x => x.UserRoles)
+                        .ThenInclude(x => x.Role)
                 .AsNoTracking()
                 .Where(x => !x.IsDeleted)
                 .AsQueryable();
@@ -78,14 +81,42 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic.Teache
                 query = query.Where(x => x.HireDate == hireDate.Value);
             }
 
-            query = sortBy?.Trim().ToLower() switch
+            if (!string.IsNullOrWhiteSpace(role))
             {
-                "teachercode" => isDescending ? query.OrderByDescending(x => x.TeacherCode) : query.OrderBy(x => x.TeacherCode),
-                "fullname" => isDescending ? query.OrderByDescending(x => x.FullName) : query.OrderBy(x => x.FullName),
-                "hiredate" => isDescending ? query.OrderByDescending(x => x.HireDate) : query.OrderBy(x => x.HireDate),
-                "status" => isDescending ? query.OrderByDescending(x => x.Status) : query.OrderBy(x => x.Status),
-                "specialization" => isDescending ? query.OrderByDescending(x => x.Specialization) : query.OrderBy(x => x.Specialization),
-                _ => isDescending ? query.OrderByDescending(x => x.CreatedAt) : query.OrderBy(x => x.CreatedAt)
+                query = query.Where(x => x.User.UserRoles.Any(userRole => userRole.Role.Name == role));
+            }
+
+            var isDescending = orderSort == EOrderSort.Descending;
+
+            query = sortBy switch
+            {
+                EColumnSortGetTeacher.TeacherCode => isDescending
+                    ? query.OrderByDescending(x => x.TeacherCode)
+                    : query.OrderBy(x => x.TeacherCode),
+
+                EColumnSortGetTeacher.FullName => isDescending
+                    ? query.OrderByDescending(x => x.FullName)
+                    : query.OrderBy(x => x.FullName),
+
+                EColumnSortGetTeacher.HireDate => isDescending
+                    ? query.OrderByDescending(x => x.HireDate)
+                    : query.OrderBy(x => x.HireDate),
+
+                EColumnSortGetTeacher.Status => isDescending
+                    ? query.OrderByDescending(x => x.Status)
+                    : query.OrderBy(x => x.Status),
+
+                EColumnSortGetTeacher.Role => isDescending
+                    ? query.OrderByDescending(x => x.User.UserRoles
+                        .Select(ur => ur.Role.Name)
+                        .FirstOrDefault())
+                    : query.OrderBy(x => x.User.UserRoles
+                        .Select(ur => ur.Role.Name)
+                        .FirstOrDefault()),
+
+                _ => isDescending
+                    ? query.OrderByDescending(x => x.CreatedAt)
+                    : query.OrderBy(x => x.CreatedAt)
             };
 
             var totalItems = await query.CountAsync(ct);

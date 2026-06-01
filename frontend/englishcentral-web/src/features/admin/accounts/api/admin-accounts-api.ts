@@ -25,10 +25,19 @@ const normalizeAccount = (account: RawAdminAccount): AdminAccount => ({
 });
 
 export const adminAccountsApi = {
-  async getAccounts(search: string) {
+  async getStudentAccounts(search: string) {
+    return getAccounts(ENDPOINTS.ADMIN_ACCOUNT.GET_STUDENT_ACCOUNT, search);
+  },
+
+  async getTeacherAccounts(search: string) {
+    return getAccounts(ENDPOINTS.ADMIN_ACCOUNT.GET_TEACHER_ACCOUNT, search);
+  },
+};
+
+const getAccounts = async (endpoint: string, search: string) => {
     try {
       const response = await api.get<RawAdminAccount[]>(
-        ENDPOINTS.ADMIN_ACCOUNT.GET_ACCOUNT,
+        endpoint,
         {
           params: {
             search: search.trim(),
@@ -44,5 +53,4 @@ export const adminAccountsApi = {
 
       throw error;
     }
-  },
 };

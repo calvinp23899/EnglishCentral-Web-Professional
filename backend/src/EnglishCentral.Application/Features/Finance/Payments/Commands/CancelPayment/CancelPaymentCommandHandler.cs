@@ -2,7 +2,7 @@ using EnglishCentral.Application.Interfaces.Academic;
 using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Domain.Entities.Academic;
 using EnglishCentral.Domain.Entities.Finance;
-using EnglishCentral.Domain.Enums.Academic;
+using EnglishCentral.Domain.Enums.Finance;
 using EnglishCentral.Shared.Results;
 using MediatR;
 

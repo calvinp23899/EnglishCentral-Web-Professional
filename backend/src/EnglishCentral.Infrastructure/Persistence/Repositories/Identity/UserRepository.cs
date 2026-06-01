@@ -44,11 +44,14 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Identity
                     ct);
         }
 
-        public async Task<List<User>> GetUserAccountBySearch(string search, CancellationToken ct = default)
+        public async Task<List<User>> GetUserAccountBySearch(string? search, string roleName, CancellationToken ct = default)
         {
             var query = _dbContenxt.Users
                 .AsNoTracking()
-                .Where(x => !x.IsDeleted && x.IsActive)
+                .Where(x =>
+                    !x.IsDeleted
+                    && x.IsActive
+                    && x.UserRoles.Any(userRole => userRole.Role.Name == roleName))
                 .AsQueryable();
             if (!string.IsNullOrWhiteSpace(search))
             {

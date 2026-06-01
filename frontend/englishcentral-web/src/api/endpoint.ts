@@ -32,13 +32,16 @@ export const ENDPOINTS = {
   },
 
   ADMIN_ACCOUNT: {
-    GET_ACCOUNT: "/admin/account/get-account",
+    GET_STUDENT_ACCOUNT: "/admin/account/get-student-account",
+    GET_TEACHER_ACCOUNT: "/admin/account/get-teacher-account",
   },
 
   ADMIN_METADATA: {
     STATUS: "/admin/metadata/status",
     GENDER: "/admin/metadata/gender-status",
-    TEACHER_STATUS: "/admin/metadata/teacher-status",
+    TEACHER_STATUS: "/admin/metadata/get-teacher-status",
+    CONTRACT_TYPE: "/admin/metadata/get-contract-type",
+    SALARY_TYPE: "/admin/metadata/get-salary-type",
     ROLE: "/admin/metadata/role-dropdown",
   },
 };

@@ -17,13 +17,27 @@ namespace EnglishCentral.API.Controllers.Admin.Identity
             _mediator = mediator;
         }
 
-        [HttpGet("get-account")]
+        [HttpGet("get-student-account")]
         [HasPermission(SystemPermissions.StudentRead)]
-        public async Task<IActionResult> GetAccountByFilter([FromQuery] string? search, CancellationToken ct)
+        public async Task<IActionResult> GetStudentAccountByFilter([FromQuery] string? search, CancellationToken ct)
         {
             var query = new GetAccountQuery
             {
-                Search = search
+                Search = search,
+                RoleName = SystemRoles.Student
+            };
+            var result = await _mediator.Send(query, ct);
+            return StatusCode(result.StatusCode, result.Data);
+        }
+
+        [HttpGet("get-teacher-account")]
+        [HasPermission(SystemPermissions.TeacherRead)]
+        public async Task<IActionResult> GetTeacherAccountByFilter([FromQuery] string? search, CancellationToken ct)
+        {
+            var query = new GetAccountQuery
+            {
+                Search = search,
+                RoleName = SystemRoles.Teacher
             };
             var result = await _mediator.Send(query, ct);
             return StatusCode(result.StatusCode, result.Data);

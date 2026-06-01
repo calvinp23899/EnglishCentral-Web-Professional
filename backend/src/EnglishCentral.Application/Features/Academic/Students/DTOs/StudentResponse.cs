@@ -4,6 +4,7 @@ namespace EnglishCentral.Application.Features.Academic.Students.DTOs
 {
     public record StudentResponse(
         Guid PublicId,
+        long Id,
         string StudentCode,
         string FullName,
         DateOnly? DateOfBirth,

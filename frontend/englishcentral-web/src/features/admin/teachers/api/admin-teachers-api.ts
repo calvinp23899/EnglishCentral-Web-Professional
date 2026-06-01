@@ -9,7 +9,7 @@ export type AdminTeacher = {
   email?: string | null;
   phoneNumber?: string | null;
   dateOfBirth?: string | null;
-  gender: number;
+  gender: string | number;
   address?: string | null;
   nationalId?: string | null;
   nationalIdIssuedDate?: string | null;
@@ -20,10 +20,10 @@ export type AdminTeacher = {
   yearsOfExperience?: number | null;
   certifications?: string[] | null;
   hireDate?: string | null;
-  contractType?: number | null;
+  contractType?: string | number | null;
   contractEndDate?: string | null;
   status: number | string;
-  salaryType: number;
+  salaryType: string | number;
   baseSalary?: number | null;
   hourlyRate?: number | null;
   bankAccountNumber?: string | null;
@@ -43,7 +43,7 @@ export type TeacherFormPayload = {
   email?: string | null;
   phoneNumber?: string | null;
   dateOfBirth?: string | null;
-  gender: number;
+  gender: string;
   address?: string | null;
   nationalId?: string | null;
   nationalIdIssuedDate?: string | null;
@@ -54,10 +54,10 @@ export type TeacherFormPayload = {
   yearsOfExperience?: number | null;
   certifications?: string[] | null;
   hireDate: string;
-  contractType?: number | null;
+  contractType?: string | null;
   contractEndDate?: string | null;
-  status: number;
-  salaryType: number;
+  status: string;
+  salaryType: string;
   baseSalary?: number | null;
   hourlyRate?: number | null;
   bankAccountNumber?: string | null;
@@ -107,7 +107,9 @@ export const adminTeachersApi = {
     sortBy?: string;
     isDescending?: boolean;
     status?: string;
-    hireDate?: string;
+    role?: string;
+    hireDateFrom?: string;
+    hireDateTo?: string;
   }) {
     const response = await api.get<ApiResult<PagedResult<AdminTeacher>>>(
       ENDPOINTS.ADMIN_TEACHERS.GET_LIST,
@@ -119,7 +121,9 @@ export const adminTeachersApi = {
           SortBy: params.sortBy,
           IsDescending: params.isDescending,
           Status: params.status || undefined,
-          HireDate: params.hireDate || undefined,
+          Role: params.role || undefined,
+          HireDateFrom: params.hireDateFrom || undefined,
+          HireDateTo: params.hireDateTo || undefined,
         },
       }
     );

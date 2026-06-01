@@ -10,7 +10,7 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.DTOs
         string? Email,
         string? PhoneNumber,
         DateOnly? DateOfBirth,
-        int Gender,
+        EGender Gender,
         string? Address,
         string? NationalId,
         DateOnly? NationalIdIssuedDate,
@@ -23,8 +23,8 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.DTOs
         DateOnly? HireDate,
         EContractType? ContractType,
         DateOnly? ContractEndDate,
-        int Status,
-        int SalaryType,
+        ETeacherStatus Status,
+        ESalaryType SalaryType,
         decimal? BaseSalary,
         decimal? HourlyRate,
         string? BankAccountNumber,
@@ -32,6 +32,8 @@ namespace EnglishCentral.Application.Features.Academic.Teachers.DTOs
         string? TaxCode,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt,
+        DateTimeOffset? deletedAt,
+        List<string> RolesName,
         TeacherAccount? Account
     );
 

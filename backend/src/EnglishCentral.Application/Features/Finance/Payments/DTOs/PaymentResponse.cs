@@ -1,5 +1,5 @@
 using EnglishCentral.Domain.Entities.Finance;
-using EnglishCentral.Domain.Enums.Academic;
+using EnglishCentral.Domain.Enums.Finance;
 
 namespace EnglishCentral.Application.Features.Finance.Payments.DTOs
 {

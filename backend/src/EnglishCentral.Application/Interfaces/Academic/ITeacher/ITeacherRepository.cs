@@ -18,10 +18,11 @@ namespace EnglishCentral.Application.Interfaces.Academic.ITeacher
             int page,
             int pageSize,
             string? keyword,
-            string? sortBy,
-            bool isDescending,
+            EColumnSortGetTeacher? sortBy,
+            EOrderSort orderSort,
             ETeacherStatus? status,
             DateOnly? hireDate,
+            string? role,
             CancellationToken ct = default);
     }
 }

@@ -9,6 +9,6 @@ namespace EnglishCentral.Application.Interfaces.Identity
         Task<bool> IsPhoneNumberExistsAsync(string phoneNumber, CancellationToken ct = default);
         Task<User?> GetByPublicIdAsync(Guid publicId, CancellationToken ct = default);
         Task<User?> GetByIdWithRolesAsync(long id, CancellationToken ct = default);
-        Task<List<User>> GetUserAccountBySearch(string search, CancellationToken ct = default);
+        Task<List<User>> GetUserAccountBySearch(string? search, string roleName, CancellationToken ct = default);
     }
 }
