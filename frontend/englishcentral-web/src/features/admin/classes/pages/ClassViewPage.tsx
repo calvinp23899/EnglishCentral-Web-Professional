@@ -1,219 +1,283 @@
-import { useState } from "react";
-import {
-  ArrowLeft,
-  BookOpen,
-  CalendarDays,
-  Clock,
-  GraduationCap,
-  MapPin,
-  UsersRound,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Plus, Search, UserRoundPlus } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
-import { students } from "@/features/admin/students/data/mockStudents";
+import { SidePanel, toastDanger, toastSuccess } from "@/components/ui";
+import { adminClassesApi, type AdminClass, type ClassStudent } from "@/features/admin/classes/api/admin-classes-api";
+import { adminEnrollmentsApi, type EnrollmentStudentOption } from "@/features/admin/classes/api/admin-enrollments-api";
+import { adminRoomsApi, type AdminRoom } from "@/features/admin/classes/api/admin-rooms-api";
+import { adminCoursesApi, type AdminCourse } from "@/features/admin/courses/api/admin-courses-api";
+import listStyles from "@/features/admin/students/pages/StudentListPage.module.scss";
+import formStyles from "@/features/admin/students/pages/StudentCreatePage.module.scss";
+import { adminTeachersApi, type AdminTeacher } from "@/features/admin/teachers/api/admin-teachers-api";
+import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
-import { classRecords } from "./classCrud.config";
 import styles from "./ClassViewPage.module.scss";
 
-type TabKey = "info" | "sessions" | "students";
-
-type SessionRecord = {
-  date: string;
-  duration: string;
-  lesson: string;
-  room: string;
-  status: string;
-  teacher: string;
-  time: string;
-};
+type TabKey = "info" | "students" | "schedule" | "attendance" | "tuition";
 
 const tabs: Array<{ key: TabKey; label: string }> = [
-  { key: "info", label: "Thông tin" },
-  { key: "sessions", label: "Buổi Học" },
-  { key: "students", label: "Học Viên" },
+  { key: "info", label: "Thông tin lớp" },
+  { key: "students", label: "Danh sách học viên" },
+  { key: "schedule", label: "Lịch học" },
+  { key: "attendance", label: "Điểm danh" },
+  { key: "tuition", label: "Học phí" },
 ];
 
-const statusLabel: Record<string, string> = {
-  active: "Đang học",
-  inactive: "Tạm dừng",
-  pending: "Chờ mở",
+const statusLabels: Record<string, string> = {
+  "1": "Nháp",
+  "2": "Mở đăng ký",
+  "3": "Đang học",
+  "4": "Hoàn thành",
+  "5": "Đã hủy",
+  Draft: "Nháp",
+  Open: "Mở đăng ký",
+  Ongoing: "Đang học",
+  Completed: "Hoàn thành",
+  Cancelled: "Đã hủy",
 };
 
-const sessionRecords: Record<string, SessionRecord[]> = {
-  "1": [
-    { date: "2026-05-18", duration: "120 phút", lesson: "Placement review", room: "A204", status: "Đã học", teacher: "Ms. Linh", time: "08:00" },
-    { date: "2026-05-20", duration: "120 phút", lesson: "Reading strategies", room: "A204", status: "Đã học", teacher: "Ms. Linh", time: "08:00" },
-    { date: "2026-05-25", duration: "120 phút", lesson: "Listening foundation", room: "A204", status: "Sắp học", teacher: "Ms. Linh", time: "08:00" },
-  ],
-  "2": [
-    { date: "2026-05-20", duration: "120 phút", lesson: "TOEIC Part 1-2", room: "B102", status: "Đã học", teacher: "Mr. David", time: "10:00" },
-    { date: "2026-05-22", duration: "120 phút", lesson: "TOEIC Part 3", room: "B102", status: "Sắp học", teacher: "Mr. David", time: "10:00" },
-  ],
-  "3": [
-    { date: "2026-04-28", duration: "90 phút", lesson: "Speaking warm-up", room: "Online", status: "Đã học", teacher: "Ms. An", time: "14:00" },
-  ],
-  "4": [
-    { date: "2026-04-12", duration: "150 phút", lesson: "Kids starters intro", room: "A101", status: "Đã học", teacher: "Ms. Mai", time: "09:00" },
-  ],
+const studentStatusLabels: Record<string, string> = {
+  "1": "Đang học",
+  "2": "Chờ tư vấn",
+  "3": "Tạm dừng",
 };
 
-const studentIdsByClassId: Record<string, string[]> = {
-  "1": ["1", "3", "5", "9", "11"],
-  "2": ["2", "6", "10"],
-  "3": ["4", "7"],
-  "4": ["8", "12"],
+const studentStatusTone: Record<string, "active" | "pending" | "inactive"> = {
+  "1": "active",
+  "2": "pending",
+  "3": "inactive",
 };
 
-const formatDate = (value: string | number) =>
-  new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(String(value)));
+const formatDate = (value?: string | null) =>
+  value ? new Intl.DateTimeFormat("vi-VN").format(new Date(value)) : "Chưa cập nhật";
+
+const truncateText = (value: string, maxLength = 10) =>
+  value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
 
 export function ClassViewPage() {
   const { recordId } = useParams();
-  const classRecord =
-    classRecords.find((record) => String(record.id) === recordId) ?? classRecords[0];
+  const [record, setRecord] = useState<AdminClass | null>(null);
+  const [courses, setCourses] = useState<AdminCourse[]>([]);
+  const [teachers, setTeachers] = useState<AdminTeacher[]>([]);
+  const [rooms, setRooms] = useState<AdminRoom[]>([]);
+  const [isLoading, setIsLoading] = useState(Boolean(recordId));
   const [activeTab, setActiveTab] = useState<TabKey>("info");
-  const sessions = sessionRecords[String(classRecord.id)] ?? [];
-  const classStudents = (studentIdsByClassId[String(classRecord.id)] ?? [])
-    .map((studentId) => students.find((student) => student.id === studentId))
-    .filter(Boolean);
+  const [isStudentPanelOpen, setIsStudentPanelOpen] = useState(false);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState<EnrollmentStudentOption | null>(null);
+  const [studentOptions, setStudentOptions] = useState<EnrollmentStudentOption[]>([]);
+  const [classStudents, setClassStudents] = useState<ClassStudent[]>([]);
+  const [isSearchingStudents, setIsSearchingStudents] = useState(false);
+  const [isRegisteringStudent, setIsRegisteringStudent] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      adminCoursesApi.getList({ page: 1, pageSize: 1000 }),
+      adminTeachersApi.getList({ page: 1, pageSize: 1000 }),
+      adminRoomsApi.getList(),
+    ])
+      .then(([courseResult, teacherResult, roomResult]) => {
+        setCourses(courseResult.items);
+        setTeachers(teacherResult.items);
+        setRooms(roomResult);
+      })
+      .catch((error) => toastDanger(getAuthErrorMessage(error)));
+  }, []);
+
+  useEffect(() => {
+    if (!recordId) return;
+    let isMounted = true;
+    adminClassesApi
+      .getById(recordId)
+      .then((result) => {
+        if (isMounted) setRecord(result);
+      })
+      .catch((error) => toastDanger(getAuthErrorMessage(error)))
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [recordId]);
+
+  const loadClassStudents = async (classId: string | number) => {
+    try {
+      setClassStudents(await adminClassesApi.getStudents(classId));
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    }
+  };
+
+  useEffect(() => {
+    if (!recordId) return;
+    let isMounted = true;
+    adminClassesApi
+      .getStudents(recordId)
+      .then((students) => {
+        if (isMounted) setClassStudents(students);
+      })
+      .catch((error) => toastDanger(getAuthErrorMessage(error)));
+    return () => {
+      isMounted = false;
+    };
+  }, [recordId]);
+
+  useEffect(() => {
+    if (!isStudentPanelOpen) return;
+    const timeoutId = window.setTimeout(async () => {
+      setIsSearchingStudents(true);
+      try {
+        setStudentOptions(await adminEnrollmentsApi.searchStudents(studentSearch.trim()));
+      } catch (error) {
+        toastDanger(getAuthErrorMessage(error));
+        setStudentOptions([]);
+      } finally {
+        setIsSearchingStudents(false);
+      }
+    }, 250);
+    return () => window.clearTimeout(timeoutId);
+  }, [isStudentPanelOpen, studentSearch]);
+
+  const availableStudents = useMemo(
+    () => studentOptions.filter((student) => !classStudents.some((item) => item.studentCode === student.studentCode)),
+    [classStudents, studentOptions],
+  );
+
+  const field = (label: string, value: string | number) => (
+    <label className={formStyles.field}>
+      <span>{label}</span>
+      <input readOnly value={value} />
+    </label>
+  );
+
+  const registerStudent = async () => {
+    if (!selectedStudent || !record || isRegisteringStudent) return;
+    setIsRegisteringStudent(true);
+    try {
+      await adminEnrollmentsApi.create(selectedStudent.studentId, record.id);
+      await loadClassStudents(record.id);
+      setSelectedStudent(null);
+      setStudentSearch("");
+      setIsStudentPanelOpen(false);
+      toastSuccess("Đăng ký học viên vào lớp thành công.");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsRegisteringStudent(false);
+    }
+  };
+
+  const courseName = courses.find((item) => item.id === record?.courseId)?.name;
+  const teacherName = teachers.find((item) => item.id === record?.teacherId)?.fullName;
+  const roomName = rooms.find((item) => item.id === record?.roomId)?.name;
 
   return (
-    <div className={styles.page}>
-      <section className={styles.header}>
-        <div>
-          <Link className={styles.backLink} to="/admin/classes">
-            <ArrowLeft aria-hidden="true" size={16} />
-            Quay lại danh sách
-          </Link>
-          <h1>{classRecord.name}</h1>
-          <p>
-            {classRecord.code} · {classRecord.course} · {statusLabel[String(classRecord.status)]}
-          </p>
-        </div>
-      </section>
+    <>
+      <div className={formStyles.page}>
+        <section className={formStyles.header}>
+          <div>
+            <Link className={formStyles.backLink} to="/admin/classes">
+              <ArrowLeft size={16} /> Quay lại danh sách
+            </Link>
+            <h1>Chi tiết lớp học</h1>
+          </div>
+        </section>
 
-      <section className={styles.panel}>
-        <div className={styles.tabs} role="tablist" aria-label="Class detail tabs">
-          {tabs.map((tab) => (
-            <button
-              className={activeTab === tab.key ? styles.activeTab : ""}
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.key}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.label}
+        <section className={formStyles.panel}>
+          <div className={styles.tabs} role="tablist" aria-label="Chi tiết lớp học">
+            {tabs.map((tab) => (
+              <button
+                className={activeTab === tab.key ? styles.activeTab : ""}
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.key}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {isLoading ? (
+            <p className={formStyles.accountState}>Đang tải thông tin lớp học...</p>
+          ) : !record ? (
+            <p className={formStyles.accountState}>Không tìm thấy lớp học.</p>
+          ) : activeTab === "info" ? (
+            <>
+              <div className={formStyles.panelHeader}>
+                <div><h2>Thông tin lớp học</h2><p>Xem cấu hình lớp học đang lưu trong hệ thống.</p></div>
+              </div>
+              <div className={formStyles.formGrid}>
+                {field("Khóa học", courseName ?? `#${record.courseId}`)}
+                {field("Nhân viên", teacherName ?? `#${record.teacherId}`)}
+                {field("Phòng học", roomName ?? "Chưa chọn phòng")}
+                {field("Mã lớp", record.code)}
+                {field("Tên lớp", record.name)}
+                {field("Ngày bắt đầu", formatDate(record.startDate))}
+                {field("Ngày kết thúc", formatDate(record.endDate))}
+                {field("Sĩ số", record.capacity)}
+                {field("Học phí lớp", `${new Intl.NumberFormat("en-US").format(record.tuitionFeeSnapshot)} đ`)}
+                {field("Tổng số buổi", record.totalSessions)}
+                {field("Số buổi đã hoàn thành", record.completedSessions)}
+                {field("Trạng thái", statusLabels[String(record.status)] ?? String(record.status))}
+                {field("Ngày mở lớp", formatDate(record.openedAt))}
+                {field("Ngày đóng lớp", formatDate(record.closedAt))}
+                <label className={`${formStyles.field} ${formStyles.notesField}`}>
+                  <span>Ghi chú</span>
+                  <textarea readOnly rows={5} value={record.notes ?? "Chưa cập nhật"} />
+                </label>
+              </div>
+            </>
+          ) : activeTab === "students" ? (
+            <div className={styles.tabContent}>
+              <div className={styles.tabHeader}>
+                <div><h2>Danh sách học viên</h2><p>Danh sách học viên đã đăng ký vào lớp.</p></div>
+                <button type="button" onClick={() => setIsStudentPanelOpen(true)}>
+                  <Plus size={17} /> Thêm học viên
+                </button>
+              </div>
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead><tr><th>Mã học viên</th><th>Tên học viên</th><th>Điện thoại</th><th>Email</th><th>Tình trạng</th></tr></thead>
+                  <tbody>
+                    {classStudents.length === 0 ? (
+                      <tr><td colSpan={5}><div className={styles.emptyState}>Chưa có học viên trong lớp.</div></td></tr>
+                    ) : classStudents.map((student) => <tr key={student.studentCode}><td><strong>{student.studentCode}</strong></td><td>{student.fullName}</td><td>{student.phoneNumber ?? "Chưa cập nhật"}</td><td>{student.email ?? "Chưa cập nhật"}</td><td><span className={`${listStyles.statusBadge} ${listStyles[studentStatusTone[String(student.status)] ?? "pending"]}`}>{studentStatusLabels[String(student.status)] ?? String(student.status)}</span></td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.emptyState}>Nội dung tab {tabs.find((tab) => tab.key === activeTab)?.label} sẽ được tích hợp sau.</div>
+          )}
+        </section>
+      </div>
+
+      <SidePanel
+        description="Tìm theo email, số điện thoại hoặc mã học viên, sau đó chọn học viên cần đăng ký."
+        footer={<div className={styles.panelActions}><button type="button" onClick={() => setIsStudentPanelOpen(false)}>Hủy</button><button disabled={!selectedStudent || isRegisteringStudent} type="button" onClick={registerStudent}>{isRegisteringStudent ? "Đang đăng ký..." : "Đăng ký vào lớp"}</button></div>}
+        isOpen={isStudentPanelOpen}
+        title="Thêm học viên"
+        width="lg"
+        onClose={() => setIsStudentPanelOpen(false)}
+      >
+        <label className={styles.studentSearch}>
+          <Search size={18} />
+          <input placeholder="Email, SĐT hoặc mã học viên" value={studentSearch} onChange={(event) => setStudentSearch(event.target.value)} />
+        </label>
+        <div className={styles.studentResults}>
+          {availableStudents.map((student) => (
+            <button className={selectedStudent?.studentId === student.studentId ? styles.selectedStudent : ""} key={student.studentId} type="button" onClick={() => setSelectedStudent(student)}>
+              <UserRoundPlus size={18} />
+              <span><strong>{student.fullName}</strong><small><span title={student.studentCode}>{truncateText(student.studentCode)}</span> · {student.email} · {student.phoneNumber}</small></span>
             </button>
           ))}
+          {!isSearchingStudents && availableStudents.length === 0 && <div className={styles.emptyState}>Không tìm thấy học viên phù hợp.</div>}
         </div>
-
-        {activeTab === "info" && (
-          <div className={styles.infoGrid}>
-            <article className={styles.heroCard}>
-              <BookOpen aria-hidden="true" size={24} />
-              <div>
-                <span>Lớp học</span>
-                <strong>{classRecord.name}</strong>
-                <p>{classRecord.note}</p>
-              </div>
-            </article>
-            <article>
-              <GraduationCap aria-hidden="true" size={20} />
-              <span>Giáo viên</span>
-              <strong>{classRecord.teacher}</strong>
-            </article>
-            <article>
-              <CalendarDays aria-hidden="true" size={20} />
-              <span>Ngày bắt đầu</span>
-              <strong>{formatDate(classRecord.startDate)}</strong>
-            </article>
-            <article>
-              <Clock aria-hidden="true" size={20} />
-              <span>Lịch học</span>
-              <strong>{classRecord.schedule}</strong>
-            </article>
-            <article>
-              <MapPin aria-hidden="true" size={20} />
-              <span>Phòng học</span>
-              <strong>{classRecord.note}</strong>
-            </article>
-            <article>
-              <UsersRound aria-hidden="true" size={20} />
-              <span>Sĩ số</span>
-              <strong>{classStudents.length} học viên</strong>
-            </article>
-          </div>
-        )}
-
-        {activeTab === "sessions" && (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Ngày</th>
-                  <th>Giờ</th>
-                  <th>Bài học</th>
-                  <th>Giáo viên</th>
-                  <th>Phòng</th>
-                  <th>Thời lượng</th>
-                  <th>Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.map((session) => (
-                  <tr key={`${session.date}-${session.lesson}`}>
-                    <td>{formatDate(session.date)}</td>
-                    <td>{session.time}</td>
-                    <td>
-                      <strong>{session.lesson}</strong>
-                    </td>
-                    <td>{session.teacher}</td>
-                    <td>{session.room}</td>
-                    <td>{session.duration}</td>
-                    <td>
-                      <span className={styles.statusBadge}>{session.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {activeTab === "students" && (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Mã học viên</th>
-                  <th>Họ tên</th>
-                  <th>Email</th>
-                  <th>SĐT</th>
-                  <th>Ngày đăng ký</th>
-                </tr>
-              </thead>
-              <tbody>
-                {classStudents.map((student) => (
-                  <tr key={student?.id}>
-                    <td>
-                      <strong>{student?.studentCode}</strong>
-                    </td>
-                    <td>{student?.fullName}</td>
-                    <td>{student?.email}</td>
-                    <td>{student?.phoneNumber}</td>
-                    <td>{student ? formatDate(student.registeredAt) : ""}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-    </div>
+      </SidePanel>
+    </>
   );
 }

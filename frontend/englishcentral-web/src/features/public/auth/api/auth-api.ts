@@ -39,6 +39,7 @@ const ACCESS_TOKEN_STORAGE_KEY = "englishcentral-access-token";
 const ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY =
   "englishcentral-access-token-expires-at";
 export const AUTH_CHANGE_EVENT = "englishcentral-auth-change";
+const AUTH_SYNC_CHANNEL = "englishcentral-auth-sync";
 
 const getStorage = (rememberLogin: boolean) =>
   rememberLogin ? window.localStorage : window.sessionStorage;
@@ -351,6 +352,59 @@ export const hasAdminPortalAccess = (session = getStoredAuthSession()) => {
     permissions.length > 0
   );
 };
+
+type AuthSyncMessage =
+  | { type: "request"; requestId: string }
+  | { type: "response"; requestId: string; session: AuthSession };
+
+const authSyncChannel =
+  typeof window !== "undefined" && "BroadcastChannel" in window
+    ? new BroadcastChannel(AUTH_SYNC_CHANNEL)
+    : null;
+
+authSyncChannel?.addEventListener("message", (event: MessageEvent<AuthSyncMessage>) => {
+  if (event.data.type !== "request") {
+    return;
+  }
+
+  const session = getStoredAuthSession();
+
+  if (session) {
+    authSyncChannel.postMessage({
+      type: "response",
+      requestId: event.data.requestId,
+      session,
+    } satisfies AuthSyncMessage);
+  }
+});
+
+export const syncAuthSessionFromOpenTab = () =>
+  new Promise<boolean>((resolve) => {
+    if (!authSyncChannel || getStoredAuthSession()) {
+      resolve(Boolean(getStoredAuthSession()));
+      return;
+    }
+
+    const requestId = window.crypto.randomUUID();
+    const timeoutId = window.setTimeout(() => {
+      authSyncChannel.removeEventListener("message", handleMessage);
+      resolve(false);
+    }, 400);
+
+    const handleMessage = (event: MessageEvent<AuthSyncMessage>) => {
+      if (event.data.type !== "response" || event.data.requestId !== requestId) {
+        return;
+      }
+
+      window.clearTimeout(timeoutId);
+      authSyncChannel.removeEventListener("message", handleMessage);
+      saveAuthSession(event.data.session, false);
+      resolve(true);
+    };
+
+    authSyncChannel.addEventListener("message", handleMessage);
+    authSyncChannel.postMessage({ type: "request", requestId } satisfies AuthSyncMessage);
+  });
 
 export const authApi = {
   async login(payload: LoginPayload) {

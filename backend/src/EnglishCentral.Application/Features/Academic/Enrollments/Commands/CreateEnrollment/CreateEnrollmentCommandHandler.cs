@@ -1,4 +1,5 @@
 using EnglishCentral.Application.Features.Academic.Enrollments.DTOs;
+using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Academic;
 using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Domain.Entities.Academic;
@@ -17,19 +18,22 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
         private readonly IAcademicRepository<AcademicClass> _classRepository;
         private readonly IFinanceRepository<BillingPolicy> _billingPolicyRepository;
         private readonly IFinanceRepository<Discount> _discountRepository;
+        private readonly ICodeGenerator _codeGenerator;
 
         public CreateEnrollmentCommandHandler(
             IAcademicRepository<Enrollment> repository,
             IAcademicRepository<Student> studentRepository,
             IAcademicRepository<AcademicClass> classRepository,
             IFinanceRepository<BillingPolicy> billingPolicyRepository,
-            IFinanceRepository<Discount> discountRepository)
+            IFinanceRepository<Discount> discountRepository,
+            ICodeGenerator codeGenerator)
         {
             _repository = repository;
             _studentRepository = studentRepository;
             _classRepository = classRepository;
             _billingPolicyRepository = billingPolicyRepository;
             _discountRepository = discountRepository;
+            _codeGenerator = codeGenerator;
         }
 
         public async Task<Result<EnrollmentResponse>> Handle(CreateEnrollmentCommand request, CancellationToken ct)
@@ -44,9 +48,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             if (await _repository.ExistsAsync(x => x.StudentId == request.StudentId && x.ClassId == request.ClassId, ct))
                 return Result<EnrollmentResponse>.Failure("Student is already enrolled in this class.", 409);
 
-            var enrollmentCode = string.IsNullOrWhiteSpace(request.EnrollmentCode)
-                ? $"ENR-{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}"
-                : request.EnrollmentCode.Trim();
+            var enrollmentCode = $"ENR-{_codeGenerator.GenerateCode()}";
 
             if (await _repository.ExistsAsync(x => x.EnrollmentCode == enrollmentCode, ct))
                 return Result<EnrollmentResponse>.Failure("Enrollment code already exists.", 409);

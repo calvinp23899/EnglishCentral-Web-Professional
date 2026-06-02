@@ -52,6 +52,39 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic
                     && x.User.PublicId == userPublicId
                     && !x.IsDeleted, ct);
         }
+
+        public async Task<List<Student>> GetActiveStudentsForEnrollmentAsync(string? search, CancellationToken ct = default)
+        {
+            var query = _dbContenxt.Students
+                .AsNoTracking()
+                .Where(x => !x.IsDeleted && x.Status == EStatus.Active);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var keyword = search.Trim().ToLower();
+
+                query = query.Where(x =>
+                    x.StudentCode.ToLower().Contains(keyword)
+                    || x.FullName.ToLower().Contains(keyword)
+                    || (x.PhoneNumber != null && x.PhoneNumber.Contains(keyword))
+                    || (x.Email != null && x.Email.ToLower().Contains(keyword)));
+            }
+
+            return await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(5)
+                .ToListAsync(ct);
+        }
+
+        public async Task<List<Student>> GetStudentsByClassIdAsync(long classId, CancellationToken ct = default)
+        {
+            return await _dbContenxt.Students
+                .AsNoTracking()
+                .Where(student => student.Enrollments.Any(enrollment => enrollment.ClassId == classId))
+                .OrderBy(student => student.FullName)
+                .ToListAsync(ct);
+        }
+
         public async Task<(List<Student> Items, int TotalItems)> GetPagedAsync(int page, int pageSize, string? keyword, string? sortBy, bool isDescending, EStatus? status, DateOnly? enrollmentDate, CancellationToken ct = default)
         {
             var query = _dbContenxt.Students

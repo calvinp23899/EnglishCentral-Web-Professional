@@ -13,10 +13,10 @@ namespace EnglishCentral.Application.Interfaces.Finance
 
         Task AddAsync(T entity, CancellationToken ct = default);
 
-        Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
+        Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default, bool includeDeleted = false);
 
         Task<int> CountAsync(Func<IQueryable<T>, IQueryable<T>> configure, CancellationToken ct = default);
 
-        Task<List<T>> ListAsync(Func<IQueryable<T>, IQueryable<T>> configure, CancellationToken ct = default);
+        Task<List<T>> ListAsync(Func<IQueryable<T>, IQueryable<T>> configure, CancellationToken ct = default, bool asNoTracking = true);
     }
 }

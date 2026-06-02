@@ -2,6 +2,7 @@ using EnglishCentral.Application.Features.Academic.Classes.Commands.CreateClass;
 using EnglishCentral.Application.Features.Academic.Classes.Commands.DeleteClass;
 using EnglishCentral.Application.Features.Academic.Classes.Commands.UpdateClass;
 using EnglishCentral.Application.Features.Academic.Classes.Queries.GetClassById;
+using EnglishCentral.Application.Features.Academic.Classes.Queries.GetClassStudents;
 using EnglishCentral.Application.Features.Academic.Classes.Queries.GetClasses;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Shared.Constants;
@@ -22,6 +23,14 @@ namespace EnglishCentral.API.Controllers.Admin.Academic
         public async Task<IActionResult> GetList([FromQuery] GetClassesQuery query, CancellationToken ct)
         {
             var result = await _mediator.Send(query, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpGet("get-class-students")]
+        [HasPermission(SystemPermissions.ClassRead)]
+        public async Task<IActionResult> GetClassStudents([FromQuery] long classId, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetClassStudentsQuery(classId), ct);
             return StatusCode(result.StatusCode, result);
         }
 

@@ -9,6 +9,7 @@ namespace EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPa
 {
     public record GetPaymentPlansQuery(
         long? EnrollmentId = null,
+        EPaymentPlanType? Type = null,
         EPaymentPlanStatus? Status = null,
         int Page = 1,
         int PageSize = 20,
@@ -19,6 +20,7 @@ namespace EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPa
         public GetPaymentPlansQueryValidator()
         {
             RuleFor(x => x.EnrollmentId).GreaterThan(0).When(x => x.EnrollmentId.HasValue);
+            RuleFor(x => x.Type).IsInEnum().When(x => x.Type.HasValue);
             RuleFor(x => x.Status).IsInEnum().When(x => x.Status.HasValue);
             RuleFor(x => x.Page).GreaterThan(0);
             RuleFor(x => x.PageSize).InclusiveBetween(1, 200);

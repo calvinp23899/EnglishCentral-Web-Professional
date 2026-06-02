@@ -36,9 +36,13 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Finance
             await _db.Set<T>().AddAsync(entity, ct);
         }
 
-        public async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
+        public async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default, bool includeDeleted = false)
         {
-            return await _db.Set<T>().AnyAsync(predicate, ct);
+            var query = _db.Set<T>().AsQueryable();
+            if (includeDeleted)
+                query = query.IgnoreQueryFilters();
+
+            return await query.AnyAsync(predicate, ct);
         }
 
         public async Task<int> CountAsync(Func<IQueryable<T>, IQueryable<T>> configure, CancellationToken ct = default)
@@ -46,9 +50,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Finance
             return await configure(Query()).CountAsync(ct);
         }
 
-        public async Task<List<T>> ListAsync(Func<IQueryable<T>, IQueryable<T>> configure, CancellationToken ct = default)
+        public async Task<List<T>> ListAsync(Func<IQueryable<T>, IQueryable<T>> configure, CancellationToken ct = default, bool asNoTracking = true)
         {
-            return await configure(Query()).ToListAsync(ct);
+            return await configure(Query(asNoTracking)).ToListAsync(ct);
         }
     }
 }

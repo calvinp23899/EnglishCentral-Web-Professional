@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
-  BarChart3,
   Check,
   ChevronRight,
-  Clock,
   Eye,
   EyeOff,
   LockKeyhole,
@@ -36,7 +34,6 @@ import {
 } from "@/features/admin/teachers/api/admin-teachers-api";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
-import { teacherRecords } from "./teacherCrud.config";
 import styles from "@/features/admin/students/pages/StudentCreatePage.module.scss";
 
 type Props = {
@@ -80,66 +77,6 @@ type TeacherCreateErrors = Partial<
   Record<keyof TeacherInfoForm | "accountPassword" | "selectedAccountId", string>
 >;
 type TeacherInfoErrors = Partial<Record<keyof TeacherInfoForm, string>>;
-type EditTabKey = "info" | "performance";
-type PerformanceForm = {
-  averageRating: number;
-  completionRate: number;
-  completedClasses: number;
-  feedbackScore: number;
-  monthlyRevenue: number;
-  note: string;
-  teachingHours: number;
-  totalClasses: number;
-};
-
-const editTabs: Array<{ key: EditTabKey; label: string }> = [
-  { key: "info", label: "Thông tin" },
-  { key: "performance", label: "Hiệu Suất" },
-];
-
-const performanceByTeacherId: Record<string, PerformanceForm> = {
-  "1": {
-    averageRating: 4.9,
-    completionRate: 97,
-    completedClasses: 30,
-    feedbackScore: 96,
-    monthlyRevenue: 68000000,
-    note: "Giữ chất lượng phản hồi writing ổn định, ưu tiên thêm lớp Speaking Clinic.",
-    teachingHours: 64,
-    totalClasses: 32,
-  },
-  "2": {
-    averageRating: 4.7,
-    completionRate: 94,
-    completedClasses: 24,
-    feedbackScore: 92,
-    monthlyRevenue: 52000000,
-    note: "Tăng bài luyện listening theo format mới.",
-    teachingHours: 52,
-    totalClasses: 26,
-  },
-  "3": {
-    averageRating: 4.6,
-    completionRate: 90,
-    completedClasses: 14,
-    feedbackScore: 89,
-    monthlyRevenue: 30000000,
-    note: "Cần theo dõi thêm sau giai đoạn onboarding.",
-    teachingHours: 28,
-    totalClasses: 16,
-  },
-  "4": {
-    averageRating: 4.8,
-    completionRate: 96,
-    completedClasses: 18,
-    feedbackScore: 95,
-    monthlyRevenue: 41000000,
-    note: "Writing reviewer ổn định, có thể phân thêm lớp band cao.",
-    teachingHours: 40,
-    totalClasses: 19,
-  },
-};
-
 function getToday() {
   const today = new Date();
   const month = String(today.getMonth() + 1).padStart(2, "0");
@@ -337,10 +274,6 @@ export function TeacherFormPage({ mode }: Props) {
   const [teacherInfo, setTeacherInfo] = useState<TeacherInfoForm>(initialTeacherInfo);
   const [editTeacherInfo, setEditTeacherInfo] = useState<TeacherInfoForm>(initialTeacherInfo);
   const [initialEditTeacherInfo, setInitialEditTeacherInfo] = useState<TeacherInfoForm>(initialTeacherInfo);
-  const [performanceForm, setPerformanceForm] = useState<PerformanceForm>(
-    () => performanceByTeacherId[String(recordId ?? teacherRecords[0].id)] ?? performanceByTeacherId["1"],
-  );
-  const [editActiveTab, setEditActiveTab] = useState<EditTabKey>("info");
   const [accountMode, setAccountMode] = useState<AccountMode>("existing");
   const [accountSearch, setAccountSearch] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState("");
@@ -442,16 +375,6 @@ export function TeacherFormPage({ mode }: Props) {
     setEditErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
   };
 
-  const updatePerformanceForm = <Key extends keyof PerformanceForm>(
-    field: Key,
-    value: PerformanceForm[Key],
-  ) => {
-    setPerformanceForm((currentValue) => ({
-      ...currentValue,
-      [field]: value,
-    }));
-  };
-
   const updateAccountForm = <Key extends keyof AccountForm>(
     field: Key,
     value: AccountForm[Key],
@@ -503,11 +426,6 @@ export function TeacherFormPage({ mode }: Props) {
     }
   };
 
-  const handlePerformanceSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    toastSuccess("Lưu hiệu suất giáo viên thành công.");
-  };
-
   if (mode === "edit") {
     return (
       <div className={styles.page}>
@@ -522,23 +440,7 @@ export function TeacherFormPage({ mode }: Props) {
         </section>
 
         <section className={styles.panel}>
-          <div className={styles.editTabs} role="tablist" aria-label="Teacher edit tabs">
-            {editTabs.map((tab) => (
-              <button
-                className={editActiveTab === tab.key ? styles.activeEditTab : ""}
-                key={tab.key}
-                type="button"
-                role="tab"
-                aria-selected={editActiveTab === tab.key}
-                onClick={() => setEditActiveTab(tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {editActiveTab === "info" && (
-            <form onSubmit={handleEditSubmit}>
+          <form onSubmit={handleEditSubmit}>
               <div className={styles.panelHeader}>
                 <div>
                   <h2>Thông tin giáo viên</h2>
@@ -802,148 +704,7 @@ export function TeacherFormPage({ mode }: Props) {
                   Lưu thay đổi
                 </button>
               </div>
-            </form>
-          )}
-
-          {editActiveTab === "performance" && (
-            <form onSubmit={handlePerformanceSubmit}>
-              <div className={styles.panelHeader}>
-                <div>
-                  <h2>Hiệu Suất</h2>
-                  <p>Mock các chỉ số hiệu suất, có thể cập nhật trực tiếp.</p>
-                </div>
-              </div>
-
-              <div className={styles.performanceFormGrid}>
-                <label className={styles.field}>
-                  <span>Tổng lớp phụ trách</span>
-                  <input
-                    min={0}
-                    type="number"
-                    value={performanceForm.totalClasses}
-                    onChange={(event) =>
-                      updatePerformanceForm("totalClasses", Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>Lớp đã hoàn thành</span>
-                  <input
-                    min={0}
-                    type="number"
-                    value={performanceForm.completedClasses}
-                    onChange={(event) =>
-                      updatePerformanceForm("completedClasses", Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>Tổng giờ dạy</span>
-                  <input
-                    min={0}
-                    type="number"
-                    value={performanceForm.teachingHours}
-                    onChange={(event) =>
-                      updatePerformanceForm("teachingHours", Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>Tỷ lệ hoàn thành (%)</span>
-                  <input
-                    max={100}
-                    min={0}
-                    type="number"
-                    value={performanceForm.completionRate}
-                    onChange={(event) =>
-                      updatePerformanceForm("completionRate", Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>Đánh giá trung bình</span>
-                  <input
-                    max={5}
-                    min={0}
-                    step="0.1"
-                    type="number"
-                    value={performanceForm.averageRating}
-                    onChange={(event) =>
-                      updatePerformanceForm("averageRating", Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>Điểm phản hồi (%)</span>
-                  <input
-                    max={100}
-                    min={0}
-                    type="number"
-                    value={performanceForm.feedbackScore}
-                    onChange={(event) =>
-                      updatePerformanceForm("feedbackScore", Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>Doanh thu tháng</span>
-                  <input
-                    min={0}
-                    type="number"
-                    value={performanceForm.monthlyRevenue}
-                    onChange={(event) =>
-                      updatePerformanceForm("monthlyRevenue", Number(event.target.value))
-                    }
-                  />
-                </label>
-                <label className={`${styles.field} ${styles.notesField}`}>
-                  <span>Ghi chú hiệu suất</span>
-                  <textarea
-                    rows={4}
-                    value={performanceForm.note}
-                    onChange={(event) => updatePerformanceForm("note", event.target.value)}
-                  />
-                </label>
-              </div>
-
-              <div className={styles.performanceSummary}>
-                <article>
-                  <BarChart3 aria-hidden="true" size={20} />
-                  <span>Tỷ lệ hoàn thành</span>
-                  <strong>{performanceForm.completionRate}%</strong>
-                </article>
-                <article>
-                  <Clock aria-hidden="true" size={20} />
-                  <span>Tổng giờ dạy</span>
-                  <strong>{performanceForm.teachingHours}h</strong>
-                </article>
-                <article>
-                  <UserRoundCheck aria-hidden="true" size={20} />
-                  <span>Đánh giá</span>
-                  <strong>{performanceForm.averageRating}/5</strong>
-                </article>
-              </div>
-
-              <div className={styles.formActions}>
-                <button
-                  className={styles.secondaryButton}
-                  type="button"
-                  onClick={() =>
-                    setPerformanceForm(
-                      performanceByTeacherId[String(recordId ?? teacherRecords[0].id)] ??
-                        performanceByTeacherId["1"],
-                    )
-                  }
-                >
-                  Hủy
-                </button>
-                <button type="submit">
-                  <Save aria-hidden="true" size={17} />
-                  Lưu hiệu suất
-                </button>
-              </div>
-            </form>
-          )}
+          </form>
         </section>
       </div>
     );

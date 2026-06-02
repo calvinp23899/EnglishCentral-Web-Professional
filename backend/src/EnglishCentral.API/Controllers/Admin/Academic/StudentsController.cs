@@ -2,6 +2,7 @@
 using EnglishCentral.Application.Features.Academic.Students.Commands.DeleteStudent;
 using EnglishCentral.Application.Features.Academic.Students.Commands.UpdateStudent;
 using EnglishCentral.Application.Features.Academic.Students.Queries.GetStudentById;
+using EnglishCentral.Application.Features.Academic.Students.Queries.GetStudentListEnrollment;
 using EnglishCentral.Application.Features.Academic.Students.Queries.GetStudents;
 using EnglishCentral.Contracts.Requests.Academic.Student;
 using EnglishCentral.Infrastructure.Authorization;
@@ -39,6 +40,14 @@ namespace EnglishCentral.API.Controllers.Admin.Academic
                 Date = request.EnrollmentDate
             };
             var result = await _mediator.Send(query, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpGet("get-student-list-enrollment")]
+        [HasPermission(SystemPermissions.StudentRead)]
+        public async Task<IActionResult> GetStudentListEnrollment([FromQuery] string? search, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetStudentListEnrollmentQuery(search), ct);
             return StatusCode(result.StatusCode, result);
         }
 

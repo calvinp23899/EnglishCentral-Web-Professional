@@ -34,6 +34,9 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.UpdateCl
             RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
             RuleFor(x => x.Name).NotEmpty().MaximumLength(255);
             RuleFor(x => x.Capacity).GreaterThan(0);
+            RuleFor(x => x.TuitionFeeSnapshot).GreaterThanOrEqualTo(0).When(x => x.TuitionFeeSnapshot.HasValue);
+            RuleFor(x => x.TotalSessions).GreaterThanOrEqualTo(0).When(x => x.TotalSessions.HasValue);
+            RuleFor(x => x.CompletedSessions).GreaterThanOrEqualTo(0);
             RuleFor(x => x.Status).IsInEnum();
             RuleFor(x => x.Notes).MaximumLength(2000);
             RuleFor(x => x.EndDate).GreaterThanOrEqualTo(x => x.StartDate);

@@ -19,6 +19,11 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Queries.Ge
         public async Task<Result<PagedResult<BillingPolicyResponse>>> Handle(GetBillingPoliciesQuery request, CancellationToken ct)
         {
             var query = _repository.Query();
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var keyword = request.Keyword.Trim().ToLower();
+                query = query.Where(x => x.Name.ToLower().Contains(keyword));
+            }
             if (request.Type.HasValue)
                 query = query.Where(x => x.Type == request.Type.Value);
             if (request.IsActive.HasValue)
