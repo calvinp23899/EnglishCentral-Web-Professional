@@ -256,17 +256,18 @@ export function AdminCrudListPage({
                     <td>
                       <div className={styles.actions}>
                         {viewPath && (
-                          <Link to={viewPath(record)} aria-label="Xem">
+                          <Link to={viewPath(record)} aria-label="Xem" title="Xem chi tiết">
                             <Eye aria-hidden="true" size={16} />
                           </Link>
                         )}
-                        <Link to={editPath(record)} aria-label="Sửa">
+                        <Link to={editPath(record)} aria-label="Sửa" title="Chỉnh sửa">
                           <Edit3 aria-hidden="true" size={16} />
                         </Link>
                         <button
                           className={styles.deleteAction}
                           type="button"
                           aria-label="Xóa"
+                          title="Xóa"
                           onClick={() => setDeletingRecord(record)}
                         >
                           <Trash2 aria-hidden="true" size={16} />

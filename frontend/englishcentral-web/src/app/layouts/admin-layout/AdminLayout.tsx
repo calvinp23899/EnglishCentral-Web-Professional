@@ -51,6 +51,7 @@ const navigationItems: NavigationItem[] = [
       { label: "Học viên", path: "/admin/students" },
       { label: "Nhân Viên", path: "/admin/teachers" },
       { label: "Lịch học", path: "/admin/schedule" },
+      { label: "Danh Mục Khóa Học", path: "/admin/course-categories" },
       { label: "Khóa học", path: "/admin/courses" },
       { label: "Lớp học", path: "/admin/classes" },
     ],
@@ -114,6 +115,7 @@ const navigationItems: NavigationItem[] = [
 ];
 
 const breadcrumbLabels: Record<string, string> = {
+  "course-categories": "Danh Mục Khóa Học",
   admin: "Dashboard",
   classes: "Lớp học",
   components: "Components",

@@ -352,9 +352,9 @@ export function TeacherListPage() {
                     </td>}
                     {visibleColumns.actions && <td>
                       <div className={styles.actions}>
-                        <Link to={`/admin/teachers/${teacher.id}/view`} aria-label="Xem"><Eye size={16} /></Link>
-                        <Link to={`/admin/teachers/${teacher.id}/edit`} aria-label="Sửa"><Edit3 size={16} /></Link>
-                        <button className={styles.deleteAction} type="button" aria-label="Xóa" onClick={() => setDeletingTeacher(teacher)}>
+                        <Link to={`/admin/teachers/${teacher.id}/view`} aria-label="Xem" title="Xem chi tiết"><Eye size={16} /></Link>
+                        <Link to={`/admin/teachers/${teacher.id}/edit`} aria-label="Sửa" title="Chỉnh sửa"><Edit3 size={16} /></Link>
+                        <button className={styles.deleteAction} type="button" aria-label="Xóa" title="Xóa" onClick={() => setDeletingTeacher(teacher)}>
                           <Trash2 size={16} />
                         </button>
                       </div>

@@ -950,6 +950,7 @@ export function IeltsReadingCreatePage() {
                             </label>
                             <button
                               aria-label="Remove paragraph"
+                              title="Remove paragraph"
                               className={styles.iconButton}
                               type="button"
                               onClick={() => removeParagraph(activePassage.id, paragraph.id)}
@@ -1079,6 +1080,7 @@ export function IeltsReadingCreatePage() {
                           </button>
                           <button
                             aria-label="Remove question group"
+                            title="Remove question group"
                             className={styles.iconButton}
                             type="button"
                             onClick={() => removeQuestionGroup(activeGroup.id)}
@@ -1170,6 +1172,7 @@ export function IeltsReadingCreatePage() {
                                 <strong>{question.correctAnswer || "No answer key"}</strong>
                                 <button
                                   aria-label="Remove question"
+                                  title="Remove question"
                                   className={styles.iconButton}
                                   type="button"
                                   onClick={() => removeQuestion(activeGroup.id, question.id)}
@@ -1286,6 +1289,7 @@ export function IeltsReadingCreatePage() {
                                             question.questionOptions.length > 2 && (
                                               <button
                                                 aria-label="Remove option"
+                                                title="Remove option"
                                                 className={styles.iconButton}
                                                 type="button"
                                                 onClick={() =>

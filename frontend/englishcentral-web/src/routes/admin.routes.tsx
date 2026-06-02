@@ -2,11 +2,18 @@ import { Navigate } from "react-router-dom";
 
 import { AdminLayout } from "@/app/layouts/admin-layout/AdminLayout";
 import { AdminLoginPage } from "@/features/admin/auth/pages/AdminLoginPage/AdminLoginPage";
+import { BillingPolicyFormPage } from "@/features/admin/billing-policies/pages/BillingPolicyFormPage";
+import { BillingPolicyListPage } from "@/features/admin/billing-policies/pages/BillingPolicyListPage";
+import { BillingPolicyViewPage } from "@/features/admin/billing-policies/pages/BillingPolicyViewPage";
 import { ClassFormPage } from "@/features/admin/classes/pages/ClassFormPage";
 import { ClassListPage } from "@/features/admin/classes/pages/ClassListPage";
 import { ClassViewPage } from "@/features/admin/classes/pages/ClassViewPage";
+import { CourseCategoryFormPage } from "@/features/admin/course-categories/pages/CourseCategoryFormPage";
+import { CourseCategoryListPage } from "@/features/admin/course-categories/pages/CourseCategoryListPage";
+import { CourseCategoryViewPage } from "@/features/admin/course-categories/pages/CourseCategoryViewPage";
 import { CourseFormPage } from "@/features/admin/courses/pages/CourseFormPage";
 import { CourseListPage } from "@/features/admin/courses/pages/CourseListPage";
+import { CourseViewPage } from "@/features/admin/courses/pages/CourseViewPage";
 import { AdminDashboardPage } from "@/features/admin/dashboard/pages/AdminDashboardPage";
 import { AdminChangePasswordPage } from "@/features/admin/profile/pages/AdminChangePasswordPage";
 import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePage";
@@ -14,6 +21,9 @@ import { IeltsHubPage } from "@/features/admin/practice-bank/ielts/pages/IeltsHu
 import { IeltsReadingCreatePage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingCreatePage";
 import { IeltsReadingListPage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingListPage";
 import { IeltsReadingViewPage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingViewPage";
+import { PaymentPlanFormPage } from "@/features/admin/payment-plans/pages/PaymentPlanFormPage";
+import { PaymentPlanListPage } from "@/features/admin/payment-plans/pages/PaymentPlanListPage";
+import { PaymentPlanViewPage } from "@/features/admin/payment-plans/pages/PaymentPlanViewPage";
 import { AdminSchedulePage } from "@/features/admin/schedule/pages/AdminSchedulePage";
 import { AdminSettingsPage } from "@/features/admin/settings/pages/AdminSettingsPage";
 import { AdminPlaceholderPage } from "@/features/admin/shared/pages/AdminPlaceholderPage";
@@ -291,7 +301,39 @@ export const adminRoutes = [
         path: "finance",
         element: <Navigate to="/admin/finance/overview" replace />,
       },
-      ...financeRoutes.map((route) => ({
+      {
+        path: "finance/tuition-policies",
+        element: <BillingPolicyListPage />,
+      },
+      {
+        path: "finance/tuition-policies/create",
+        element: <BillingPolicyFormPage mode="create" />,
+      },
+      {
+        path: "finance/tuition-policies/:recordId/view",
+        element: <BillingPolicyViewPage />,
+      },
+      {
+        path: "finance/tuition-policies/:recordId/edit",
+        element: <BillingPolicyFormPage mode="edit" />,
+      },
+      {
+        path: "finance/payment-plans",
+        element: <PaymentPlanListPage />,
+      },
+      {
+        path: "finance/payment-plans/create",
+        element: <PaymentPlanFormPage mode="create" />,
+      },
+      {
+        path: "finance/payment-plans/:recordId/view",
+        element: <PaymentPlanViewPage />,
+      },
+      {
+        path: "finance/payment-plans/:recordId/edit",
+        element: <PaymentPlanFormPage mode="edit" />,
+      },
+      ...financeRoutes.filter((route) => !["finance/tuition-policies", "finance/payment-plans"].includes(route.path)).map((route) => ({
         path: route.path,
         element: (
           <AdminPlaceholderPage
@@ -300,6 +342,22 @@ export const adminRoutes = [
           />
         ),
       })),
+      {
+        path: "course-categories",
+        element: <CourseCategoryListPage />,
+      },
+      {
+        path: "course-categories/create",
+        element: <CourseCategoryFormPage mode="create" />,
+      },
+      {
+        path: "course-categories/:recordId/view",
+        element: <CourseCategoryViewPage />,
+      },
+      {
+        path: "course-categories/:recordId/edit",
+        element: <CourseCategoryFormPage mode="edit" />,
+      },
       {
         path: "courses",
         element: <CourseListPage />,
@@ -311,6 +369,10 @@ export const adminRoutes = [
       {
         path: "courses/:recordId/edit",
         element: <CourseFormPage mode="edit" />,
+      },
+      {
+        path: "courses/:recordId/view",
+        element: <CourseViewPage />,
       },
       {
         path: "classes",

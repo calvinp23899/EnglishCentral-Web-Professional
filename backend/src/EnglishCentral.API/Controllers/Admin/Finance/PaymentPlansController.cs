@@ -1,3 +1,6 @@
+using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.CreatePaymentPlan;
+using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.DeletePaymentPlan;
+using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.UpdatePaymentPlan;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPaymentPlanById;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPaymentPlans;
 using EnglishCentral.Infrastructure.Authorization;
@@ -28,6 +31,30 @@ namespace EnglishCentral.API.Controllers.Admin.Finance
         public async Task<IActionResult> GetById(long id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetPaymentPlanByIdQuery(id), ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPost("insert")]
+        [HasPermission(SystemPermissions.BillingCreate)]
+        public async Task<IActionResult> Create(CreatePaymentPlanCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPut("{id:long}/update")]
+        [HasPermission(SystemPermissions.BillingUpdate)]
+        public async Task<IActionResult> Update(long id, UpdatePaymentPlanCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command with { Id = id }, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpDelete("{id:long}/delete")]
+        [HasPermission(SystemPermissions.BillingDelete)]
+        public async Task<IActionResult> Delete(long id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new DeletePaymentPlanCommand(id), ct);
             return StatusCode(result.StatusCode, result);
         }
     }

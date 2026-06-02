@@ -23,12 +23,18 @@ type AdminLoginErrors = {
   password?: string;
 };
 
+type AdminLoginForm = {
+  email: string;
+  password: string;
+};
+
 const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value);
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [errors, setErrors] = useState<AdminLoginErrors>({});
+  const [form, setForm] = useState<AdminLoginForm>({ email: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -137,18 +143,21 @@ export function AdminLoginPage() {
               <p>Please sign in to access the admin dashboard</p>
             </div>
 
-            <form className={styles.form} noValidate onSubmit={handleSubmit}>
+            <form autoComplete="off" className={styles.form} noValidate onSubmit={handleSubmit}>
               <div className={styles.field}>
                 <label htmlFor="admin-email">Email Address</label>
                 <Input
                   aria-describedby={errors.email ? "admin-email-error" : undefined}
                   aria-invalid={Boolean(errors.email)}
                   id="admin-email"
+                  autoComplete="off"
                   disabled={isSubmitting}
                   name="email"
-                  onChange={() =>
-                    setErrors((current) => ({ ...current, email: undefined }))
-                  }
+                  value={form.email}
+                  onChange={(event) => {
+                    setForm((current) => ({ ...current, email: event.target.value }));
+                    setErrors((current) => ({ ...current, email: undefined }));
+                  }}
                   placeholder="admin@englishcentral.com"
                   type="email"
                 />
@@ -163,11 +172,14 @@ export function AdminLoginPage() {
                   }
                   aria-invalid={Boolean(errors.password)}
                   id="admin-password"
+                  autoComplete="new-password"
                   disabled={isSubmitting}
                   name="password"
-                  onChange={() =>
-                    setErrors((current) => ({ ...current, password: undefined }))
-                  }
+                  value={form.password}
+                  onChange={(event) => {
+                    setForm((current) => ({ ...current, password: event.target.value }));
+                    setErrors((current) => ({ ...current, password: undefined }));
+                  }}
                   placeholder="Enter your password"
                   showPasswordToggle
                   type="password"

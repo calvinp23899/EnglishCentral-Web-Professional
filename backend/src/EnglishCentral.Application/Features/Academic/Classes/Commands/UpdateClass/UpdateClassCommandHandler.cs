@@ -10,10 +10,20 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.UpdateCl
     public class UpdateClassCommandHandler : IRequestHandler<UpdateClassCommand, Result<ClassResponse>>
     {
         private readonly IAcademicRepository<AcademicClass> _repository;
+        private readonly IAcademicRepository<Course> _courseRepository;
+        private readonly IAcademicRepository<Teacher> _teacherRepository;
+        private readonly IAcademicRepository<Room> _roomRepository;
 
-        public UpdateClassCommandHandler(IAcademicRepository<AcademicClass> repository)
+        public UpdateClassCommandHandler(
+            IAcademicRepository<AcademicClass> repository,
+            IAcademicRepository<Course> courseRepository,
+            IAcademicRepository<Teacher> teacherRepository,
+            IAcademicRepository<Room> roomRepository)
         {
             _repository = repository;
+            _courseRepository = courseRepository;
+            _teacherRepository = teacherRepository;
+            _roomRepository = roomRepository;
         }
 
         public async Task<Result<ClassResponse>> Handle(UpdateClassCommand request, CancellationToken ct)
@@ -25,6 +35,15 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.UpdateCl
             var code = request.Code.Trim();
             if (await _repository.ExistsAsync(x => x.Id != request.Id && x.Code == code, ct))
                 return Result<ClassResponse>.Failure("Class code already exists.", 409);
+
+            if (!await _courseRepository.ExistsAsync(x => x.Id == request.CourseId, ct))
+                return Result<ClassResponse>.Failure("Course is not found.", 404);
+
+            if (!await _teacherRepository.ExistsAsync(x => x.Id == request.TeacherId, ct))
+                return Result<ClassResponse>.Failure("Teacher is not found.", 404);
+
+            if (request.RoomId.HasValue && !await _roomRepository.ExistsAsync(x => x.Id == request.RoomId.Value, ct))
+                return Result<ClassResponse>.Failure("Room is not found.", 404);
 
             classroom.CourseId = request.CourseId;
             classroom.TeacherId = request.TeacherId;

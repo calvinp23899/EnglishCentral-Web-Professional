@@ -8,6 +8,7 @@ using MediatR;
 namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Queries.GetBillingPolicies
 {
     public record GetBillingPoliciesQuery(
+        string? Keyword = null,
         EBillingPolicyType? Type = null,
         bool? IsActive = null,
         int Page = 1,
@@ -18,6 +19,7 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Queries.Ge
     {
         public GetBillingPoliciesQueryValidator()
         {
+            RuleFor(x => x.Keyword).MaximumLength(255);
             RuleFor(x => x.Type).IsInEnum().When(x => x.Type.HasValue);
             RuleFor(x => x.Page).GreaterThan(0);
             RuleFor(x => x.PageSize).InclusiveBetween(1, 200);

@@ -58,8 +58,7 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.CreateCl
                 Status = request.Status,
                 OpenedAt = request.OpenedAt,
                 ClosedAt = request.ClosedAt,
-                Notes = request.Notes?.Trim(),
-                CreatedAt = DateTimeOffset.UtcNow
+                Notes = request.Notes?.Trim()
             };
 
             await _classRepository.AddAsync(classroom, ct);
