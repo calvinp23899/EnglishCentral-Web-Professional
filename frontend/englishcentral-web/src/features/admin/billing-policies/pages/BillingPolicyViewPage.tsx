@@ -8,7 +8,7 @@ import listStyles from "@/features/admin/students/pages/StudentListPage.module.s
 import styles from "@/features/admin/students/pages/StudentCreatePage.module.scss";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
-const typeLabels: Record<string, string> = { "1": "Thanh toán đủ", "2": "Theo tháng", "3": "Trả góp", "4": "Tùy chỉnh", FullPayment: "Thanh toán đủ", Monthly: "Theo tháng", Installment: "Trả góp", Custom: "Tùy chỉnh" };
+const typeLabels: Record<string, string> = { "1": "Thanh toán đủ", "2": "Theo tháng", "3": "Trả góp", FullPayment: "Thanh toán đủ", Monthly: "Theo tháng", Installment: "Trả góp" };
 
 export function BillingPolicyViewPage() {
   const { recordId } = useParams();

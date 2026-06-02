@@ -53,6 +53,22 @@ export const adminMetadataApi = {
     return response.data;
   },
 
+  async getBillingPolicyTypeOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.BILLING_POLICY_TYPE
+    );
+
+    return response.data;
+  },
+
+  async getPaymentMethodOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.PAYMENT_METHOD
+    );
+
+    return response.data;
+  },
+
   async getRoleOptions() {
     const response = await api.get<RoleMetadataOption[]>(
       ENDPOINTS.ADMIN_METADATA.ROLE

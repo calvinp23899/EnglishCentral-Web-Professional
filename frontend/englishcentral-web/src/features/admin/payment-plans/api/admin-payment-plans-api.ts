@@ -1,7 +1,7 @@
 import { api } from "@/api/axios";
 import { ENDPOINTS } from "@/api/endpoint";
 
-export type PaymentPlanType = "FullPayment" | "Monthly" | "Installment" | "Custom";
+export type PaymentPlanType = "FullPayment" | "Monthly" | "Installment";
 export type PaymentPlanStatus = "Draft" | "Active" | "Completed" | "Cancelled";
 export type PaymentPlanItemStatus = "Pending" | "Invoiced" | "Paid" | "Overdue" | "Cancelled";
 

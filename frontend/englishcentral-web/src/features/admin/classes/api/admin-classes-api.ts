@@ -9,6 +9,7 @@ export type AdminClass = {
   courseId: number;
   teacherId: number;
   roomId?: number | null;
+  billingPolicyId?: number | null;
   code: string;
   name: string;
   startDate: string;
@@ -27,6 +28,7 @@ export type ClassFormPayload = {
   courseId: number;
   teacherId: number;
   roomId?: number | null;
+  billingPolicyId?: number | null;
   code: string;
   name: string;
   startDate: string;

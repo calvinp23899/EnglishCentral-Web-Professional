@@ -7,6 +7,7 @@ import {
   adminCourseCategoriesApi,
   type AdminCourseCategory,
 } from "@/features/admin/course-categories/api/admin-course-categories-api";
+import { adminBillingPoliciesApi, type AdminBillingPolicy } from "@/features/admin/billing-policies/api/admin-billing-policies-api";
 import { adminCoursesApi, type CourseFormPayload } from "@/features/admin/courses/api/admin-courses-api";
 import styles from "@/features/admin/students/pages/StudentCreatePage.module.scss";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
@@ -14,6 +15,7 @@ import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 type Props = { mode: "create" | "edit" };
 type FormState = {
   courseCategoryId: string;
+  defaultBillingPolicyId: string;
   code: string;
   name: string;
   description: string;
@@ -31,6 +33,7 @@ type FormErrors = Partial<Record<keyof FormState, string>>;
 
 const initialForm: FormState = {
   courseCategoryId: "",
+  defaultBillingPolicyId: "",
   code: "",
   name: "",
   description: "",
@@ -53,15 +56,21 @@ export function CourseFormPage({ mode }: Props) {
   const { recordId } = useParams();
   const isEditMode = mode === "edit";
   const [categories, setCategories] = useState<AdminCourseCategory[]>([]);
+  const [billingPolicies, setBillingPolicies] = useState<AdminBillingPolicy[]>([]);
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    adminCourseCategoriesApi
-      .getList({ page: 1, pageSize: 1000, sortBy: "name", isDescending: false })
-      .then((result) => setCategories(result.items))
+    Promise.all([
+      adminCourseCategoriesApi.getList({ page: 1, pageSize: 1000, sortBy: "name", isDescending: false }),
+      adminBillingPoliciesApi.getList({ page: 1, pageSize: 20, isActive: true, isDescending: false }),
+    ])
+      .then(([categoryResult, policyResult]) => {
+        setCategories(categoryResult.items);
+        setBillingPolicies(policyResult.items);
+      })
       .catch((error) => toastDanger(getAuthErrorMessage(error)));
   }, []);
 
@@ -73,6 +82,7 @@ export function CourseFormPage({ mode }: Props) {
         if (!isMounted) return;
         setForm({
           courseCategoryId: String(record.courseCategoryId),
+          defaultBillingPolicyId: record.defaultBillingPolicyId ? String(record.defaultBillingPolicyId) : "",
           code: record.code,
           name: record.name,
           description: record.description ?? "",
@@ -120,6 +130,7 @@ export function CourseFormPage({ mode }: Props) {
     if (!validate() || isSubmitting) return;
     const payload: CourseFormPayload = {
       courseCategoryId: Number(form.courseCategoryId),
+      defaultBillingPolicyId: form.defaultBillingPolicyId ? Number(form.defaultBillingPolicyId) : null,
       code: form.code.trim(),
       name: form.name.trim(),
       description: form.description.trim() || null,
@@ -169,6 +180,7 @@ export function CourseFormPage({ mode }: Props) {
         {isLoading ? <p className={styles.accountState}>Đang tải thông tin khóa học...</p> : (
           <div className={styles.formGrid}>
             <label className={styles.field}><span>Danh mục <em className={styles.requiredMark}>*</em></span><select value={form.courseCategoryId} onChange={(event) => updateField("courseCategoryId", event.target.value)}><option value="">Chọn danh mục</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select><ErrorMessage message={errors.courseCategoryId} /></label>
+            <label className={styles.field}><span>Chính sách học phí mặc định</span><select value={form.defaultBillingPolicyId} onChange={(event) => updateField("defaultBillingPolicyId", event.target.value)}><option value="">Dùng chính sách mặc định toàn hệ thống</option>{billingPolicies.map((policy) => <option key={policy.id} value={policy.id}>{policy.name}</option>)}</select></label>
             <label className={styles.field}><span>Mã khóa học <em className={styles.requiredMark}>*</em></span><input value={form.code} onChange={(event) => updateField("code", event.target.value)} /><ErrorMessage message={errors.code} /></label>
             <label className={styles.field}><span>Tên khóa học <em className={styles.requiredMark}>*</em></span><input value={form.name} onChange={(event) => updateField("name", event.target.value)} /><ErrorMessage message={errors.name} /></label>
             <label className={styles.field}><span>Cấp độ</span><input value={form.level} onChange={(event) => updateField("level", event.target.value)} /><ErrorMessage message={errors.level} /></label>

@@ -16,24 +16,30 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
         private readonly IAcademicRepository<Enrollment> _repository;
         private readonly IAcademicRepository<Student> _studentRepository;
         private readonly IAcademicRepository<AcademicClass> _classRepository;
+        private readonly IAcademicRepository<Course> _courseRepository;
         private readonly IFinanceRepository<BillingPolicy> _billingPolicyRepository;
         private readonly IFinanceRepository<Discount> _discountRepository;
         private readonly ICodeGenerator _codeGenerator;
+        private readonly IUnitOfWork _unitOfWork;
 
         public CreateEnrollmentCommandHandler(
             IAcademicRepository<Enrollment> repository,
             IAcademicRepository<Student> studentRepository,
             IAcademicRepository<AcademicClass> classRepository,
+            IAcademicRepository<Course> courseRepository,
             IFinanceRepository<BillingPolicy> billingPolicyRepository,
             IFinanceRepository<Discount> discountRepository,
-            ICodeGenerator codeGenerator)
+            ICodeGenerator codeGenerator,
+            IUnitOfWork unitOfWork)
         {
             _repository = repository;
             _studentRepository = studentRepository;
             _classRepository = classRepository;
+            _courseRepository = courseRepository;
             _billingPolicyRepository = billingPolicyRepository;
             _discountRepository = discountRepository;
             _codeGenerator = codeGenerator;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result<EnrollmentResponse>> Handle(CreateEnrollmentCommand request, CancellationToken ct)
@@ -53,9 +59,9 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             if (await _repository.ExistsAsync(x => x.EnrollmentCode == enrollmentCode, ct))
                 return Result<EnrollmentResponse>.Failure("Enrollment code already exists.", 409);
 
-            if (request.PaymentPlan?.BillingPolicyId.HasValue == true &&
-                !await _billingPolicyRepository.ExistsAsync(x => x.Id == request.PaymentPlan.BillingPolicyId.Value, ct))
-                return Result<EnrollmentResponse>.Failure("Billing policy is not found.", 404);
+            var billingPolicyResult = await ResolveBillingPolicyAsync(request, classroom, ct);
+            if (!billingPolicyResult.IsSuccess)
+                return Result<EnrollmentResponse>.Failure(billingPolicyResult.Error!, billingPolicyResult.StatusCode);
 
             var tuitionFee = request.TuitionFee > 0 ? request.TuitionFee : classroom.TuitionFeeSnapshot;
             var discountResult = await BuildEnrollmentDiscountsAsync(request, tuitionFee, ct);
@@ -70,6 +76,8 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
 
             if (finalAmount < 0)
                 return Result<EnrollmentResponse>.Failure("Final amount cannot be negative.", 400);
+            if (paidAmount > 0)
+                return Result<EnrollmentResponse>.Failure("Initial payment must be recorded through the payment endpoint after invoice generation.", 400);
             if (paidAmount > finalAmount)
                 return Result<EnrollmentResponse>.Failure("Paid amount cannot be greater than final amount.", 400);
             if (outstandingAmount != finalAmount - paidAmount)
@@ -99,11 +107,12 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             foreach (var discount in enrollmentDiscounts)
                 enrollment.Discounts.Add(discount);
 
-            var paymentPlanResult = BuildPaymentPlan(request, enrollment, classroom, finalAmount);
+            var paymentPlanResult = BuildPaymentPlan(request, enrollment, classroom, finalAmount, billingPolicyResult.Data);
             if (!paymentPlanResult.IsSuccess)
                 return Result<EnrollmentResponse>.Failure(paymentPlanResult.Error!, paymentPlanResult.StatusCode);
 
             await _repository.AddAsync(enrollment, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
             return Result<EnrollmentResponse>.Success(enrollment.ToResponse(), 201);
         }
 
@@ -160,20 +169,25 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             CreateEnrollmentCommand request,
             Enrollment enrollment,
             AcademicClass classroom,
-            decimal finalAmount)
+            decimal finalAmount,
+            BillingPolicy? billingPolicy)
         {
             if (finalAmount == 0)
                 return Result<bool>.Success(true);
 
             var planRequest = request.PaymentPlan;
-            var items = planRequest?.Items?.ToList() ??
-            [
-                new CreateEnrollmentPaymentPlanItemRequest(
-                    1,
-                    "Full payment",
-                    request.StartDate ?? classroom.StartDate,
-                    finalAmount)
-            ];
+            List<CreateEnrollmentPaymentPlanItemRequest> items;
+            if (planRequest is not null)
+            {
+                items = planRequest.Items.ToList();
+            }
+            else
+            {
+                var defaultPlanResult = BuildDefaultPaymentPlanItems(request, classroom, finalAmount, billingPolicy);
+                if (!defaultPlanResult.IsSuccess)
+                    return Result<bool>.Failure(defaultPlanResult.Error!, defaultPlanResult.StatusCode);
+                items = defaultPlanResult.Data!;
+            }
 
             if (items.Count == 0)
                 return Result<bool>.Failure("Payment plan must have at least one item.", 400);
@@ -185,8 +199,9 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             if (itemsTotal != finalAmount)
                 return Result<bool>.Failure("Payment plan items total amount must equal enrollment final amount.", 400);
 
-            var planType = planRequest?.Type ?? EPaymentPlanType.FullPayment;
-            var numberOfInstallments = planRequest?.NumberOfInstallments;
+            var planType = planRequest?.Type ?? ToPaymentPlanType(billingPolicy?.Type);
+            var numberOfInstallments = planRequest?.NumberOfInstallments ??
+                (planType == EPaymentPlanType.Installment || planType == EPaymentPlanType.Monthly ? items.Count : null);
 
             if (planType == EPaymentPlanType.FullPayment && items.Count != 1)
                 return Result<bool>.Failure("Full payment plan must have exactly one item.", 400);
@@ -196,7 +211,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             var paymentPlan = new EnrollmentPaymentPlan
             {
                 Enrollment = enrollment,
-                BillingPolicyId = planRequest?.BillingPolicyId,
+                BillingPolicyId = planRequest?.BillingPolicyId ?? billingPolicy?.Id,
                 Type = planType,
                 NumberOfInstallments = numberOfInstallments,
                 TotalAmount = finalAmount,
@@ -223,6 +238,115 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
 
             enrollment.PaymentPlan = paymentPlan;
             return Result<bool>.Success(true);
+        }
+
+        private async Task<Result<BillingPolicy?>> ResolveBillingPolicyAsync(
+            CreateEnrollmentCommand request,
+            AcademicClass classroom,
+            CancellationToken ct)
+        {
+            if (request.PaymentPlan?.BillingPolicyId.HasValue == true)
+            {
+                var selectedPolicy = await _billingPolicyRepository.GetByIdAsync(request.PaymentPlan.BillingPolicyId.Value, ct);
+                if (selectedPolicy is null || !selectedPolicy.IsActive)
+                    return Result<BillingPolicy?>.Failure("Active billing policy is not found.", 404);
+                if (ToPaymentPlanType(selectedPolicy.Type) != request.PaymentPlan.Type)
+                    return Result<BillingPolicy?>.Failure("Payment plan type must match billing policy type.", 400);
+                if (selectedPolicy.Type == EBillingPolicyType.Installment &&
+                    selectedPolicy.NumberOfInstallments != request.PaymentPlan.NumberOfInstallments)
+                    return Result<BillingPolicy?>.Failure("Installment count must match billing policy.", 400);
+
+                return Result<BillingPolicy?>.Success(selectedPolicy);
+            }
+
+            // Explicit custom schedules without a policy are allowed per enrollment.
+            if (request.PaymentPlan is not null)
+                return Result<BillingPolicy?>.Success(null);
+
+            if (classroom.BillingPolicyId.HasValue)
+                return await GetConfiguredPolicyAsync(classroom.BillingPolicyId.Value, "Class", ct);
+
+            var course = await _courseRepository.GetByIdAsync(classroom.CourseId, ct);
+            if (course?.DefaultBillingPolicyId.HasValue == true)
+                return await GetConfiguredPolicyAsync(course.DefaultBillingPolicyId.Value, "Course", ct);
+
+            var defaultPolicy = await _billingPolicyRepository.FirstOrDefaultAsync(x => x.IsDefault && x.IsActive, ct);
+            return Result<BillingPolicy?>.Success(defaultPolicy);
+        }
+
+        private async Task<Result<BillingPolicy?>> GetConfiguredPolicyAsync(long id, string scope, CancellationToken ct)
+        {
+            var policy = await _billingPolicyRepository.GetByIdAsync(id, ct);
+            return policy is null || !policy.IsActive
+                ? Result<BillingPolicy?>.Failure($"{scope} billing policy is inactive or not found.", 409)
+                : Result<BillingPolicy?>.Success(policy);
+        }
+
+        private static Result<List<CreateEnrollmentPaymentPlanItemRequest>> BuildDefaultPaymentPlanItems(
+            CreateEnrollmentCommand request,
+            AcademicClass classroom,
+            decimal finalAmount,
+            BillingPolicy? policy)
+        {
+            var startDate = request.StartDate ?? classroom.StartDate;
+            var endDate = request.EndDate ?? classroom.EndDate;
+            var type = policy?.Type ?? EBillingPolicyType.FullPayment;
+
+            if (type == EBillingPolicyType.Installment && policy?.NumberOfInstallments is not > 1)
+                return Result<List<CreateEnrollmentPaymentPlanItemRequest>>.Failure(
+                    "Installment billing policy requires more than one installment.", 400);
+
+            var dueDates = type switch
+            {
+                EBillingPolicyType.Monthly => BuildMonthlyDueDates(startDate, endDate),
+                EBillingPolicyType.Installment => BuildInstallmentDueDates(startDate, endDate, policy!.NumberOfInstallments!.Value),
+                _ => [startDate]
+            };
+            var amounts = SplitAmount(finalAmount, dueDates.Count);
+            var items = dueDates
+                .Select((dueDate, index) => new CreateEnrollmentPaymentPlanItemRequest(
+                    index + 1,
+                    dueDates.Count == 1 ? "Full payment" : $"Installment {index + 1}",
+                    dueDate,
+                    amounts[index]))
+                .ToList();
+
+            return Result<List<CreateEnrollmentPaymentPlanItemRequest>>.Success(items);
+        }
+
+        private static List<DateOnly> BuildMonthlyDueDates(DateOnly startDate, DateOnly endDate)
+        {
+            var dueDates = new List<DateOnly>();
+            for (var month = 0; ; month++)
+            {
+                var dueDate = startDate.AddMonths(month);
+                if (dueDate > endDate)
+                    break;
+                dueDates.Add(dueDate);
+            }
+
+            return dueDates.Count > 0 ? dueDates : [startDate];
+        }
+
+        private static List<DateOnly> BuildInstallmentDueDates(DateOnly startDate, DateOnly endDate, int count)
+        {
+            var durationDays = Math.Max(0, endDate.DayNumber - startDate.DayNumber);
+            return Enumerable.Range(0, count)
+                .Select(index => startDate.AddDays(durationDays * index / count))
+                .ToList();
+        }
+
+        private static List<decimal> SplitAmount(decimal totalAmount, int count)
+        {
+            var regularAmount = Math.Round(totalAmount / count, 2);
+            var amounts = Enumerable.Repeat(regularAmount, count).ToList();
+            amounts[^1] = totalAmount - regularAmount * (count - 1);
+            return amounts;
+        }
+
+        private static EPaymentPlanType ToPaymentPlanType(EBillingPolicyType? type)
+        {
+            return type.HasValue ? (EPaymentPlanType)(int)type.Value : EPaymentPlanType.FullPayment;
         }
     }
 }

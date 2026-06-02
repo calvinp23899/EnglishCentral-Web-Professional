@@ -4,16 +4,19 @@
     {
         FullPayment = 1,
         Monthly = 2,
-        Installment = 3,
-        Custom = 4
+        Installment = 3
     }
 
+    /*
+     * FullPayment = Tra het
+     * Monthly =  Tra hang thang theo thoi gian cua class
+     * Installment = theo ky - 2,3,4... ky
+     */
     public enum EPaymentPlanType
     {
         FullPayment = 1,
         Monthly = 2,
-        Installment = 3,
-        Custom = 4
+        Installment = 3
     }
 
     public enum EPaymentPlanStatus

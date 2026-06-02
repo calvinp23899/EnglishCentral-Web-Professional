@@ -1,4 +1,5 @@
 using EnglishCentral.Application.Features.Finance.BillingPolicies.DTOs;
+using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Domain.Entities.Finance;
 using EnglishCentral.Shared.Results;
@@ -9,10 +10,12 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.C
     public class CreateBillingPolicyCommandHandler : IRequestHandler<CreateBillingPolicyCommand, Result<BillingPolicyResponse>>
     {
         private readonly IFinanceRepository<BillingPolicy> _repository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public CreateBillingPolicyCommandHandler(IFinanceRepository<BillingPolicy> repository)
+        public CreateBillingPolicyCommandHandler(IFinanceRepository<BillingPolicy> repository, IUnitOfWork unitOfWork)
         {
             _repository = repository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result<BillingPolicyResponse>> Handle(CreateBillingPolicyCommand request, CancellationToken ct)
@@ -20,6 +23,17 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.C
             var name = request.Name.Trim();
             if (await _repository.ExistsAsync(x => x.Name == name, ct))
                 return Result<BillingPolicyResponse>.Failure("Billing policy name already exists.", 409);
+
+            if (request.IsDefault)
+            {
+                var currentDefault = await _repository.FirstOrDefaultAsync(x => x.IsDefault, ct, false);
+                if (currentDefault is not null)
+                {
+                    currentDefault.IsDefault = false;
+                    currentDefault.UpdatedAt = DateTimeOffset.UtcNow;
+                    await _unitOfWork.SaveChangesAsync(ct);
+                }
+            }
 
             var policy = new BillingPolicy
             {
@@ -33,6 +47,7 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.C
             };
 
             await _repository.AddAsync(policy, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
             return Result<BillingPolicyResponse>.Success(policy.ToResponse(), 201);
         }
     }

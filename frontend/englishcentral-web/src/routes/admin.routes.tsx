@@ -15,6 +15,8 @@ import { CourseFormPage } from "@/features/admin/courses/pages/CourseFormPage";
 import { CourseListPage } from "@/features/admin/courses/pages/CourseListPage";
 import { CourseViewPage } from "@/features/admin/courses/pages/CourseViewPage";
 import { AdminDashboardPage } from "@/features/admin/dashboard/pages/AdminDashboardPage";
+import { EnrollmentDetailPage } from "@/features/admin/enrollments/pages/EnrollmentDetailPage";
+import { PaymentCreatePage } from "@/features/admin/enrollments/pages/PaymentCreatePage";
 import { AdminChangePasswordPage } from "@/features/admin/profile/pages/AdminChangePasswordPage";
 import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePage";
 import { IeltsHubPage } from "@/features/admin/practice-bank/ielts/pages/IeltsHubPage";
@@ -389,6 +391,14 @@ export const adminRoutes = [
       {
         path: "classes/:recordId/edit",
         element: <ClassFormPage mode="edit" />,
+      },
+      {
+        path: "enrollments/:recordId/view",
+        element: <EnrollmentDetailPage />,
+      },
+      {
+        path: "enrollments/:recordId/payments/create",
+        element: <PaymentCreatePage />,
       },
       {
         path: "teachers",

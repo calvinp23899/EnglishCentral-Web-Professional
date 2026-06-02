@@ -1,6 +1,7 @@
 using EnglishCentral.Application.Features.Finance.PaymentPlans.DTOs;
 using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Domain.Entities.Finance;
+using EnglishCentral.Domain.Enums.Finance;
 using EnglishCentral.Shared.Results;
 using MediatR;
 
@@ -32,9 +33,18 @@ namespace EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.Upda
                 return Result<PaymentPlanResponse>.Failure("Payment plan is not found.", 404);
             if (plan.EnrollmentId != request.EnrollmentId)
                 return Result<PaymentPlanResponse>.Failure("Enrollment cannot be changed after payment plan creation.", 400);
-            if (request.BillingPolicyId.HasValue &&
-                !await _policyRepository.ExistsAsync(x => x.Id == request.BillingPolicyId.Value, ct))
-                return Result<PaymentPlanResponse>.Failure("Billing policy is not found.", 404);
+            BillingPolicy? billingPolicy = null;
+            if (request.BillingPolicyId.HasValue)
+            {
+                billingPolicy = await _policyRepository.GetByIdAsync(request.BillingPolicyId.Value, ct);
+                if (billingPolicy is null || !billingPolicy.IsActive)
+                    return Result<PaymentPlanResponse>.Failure("Active billing policy is not found.", 404);
+                if ((int)billingPolicy.Type != (int)request.Type)
+                    return Result<PaymentPlanResponse>.Failure("Payment plan type must match billing policy type.", 400);
+                if (billingPolicy.Type == EBillingPolicyType.Installment &&
+                    billingPolicy.NumberOfInstallments != request.NumberOfInstallments)
+                    return Result<PaymentPlanResponse>.Failure("Installment count must match billing policy.", 400);
+            }
 
             var validation = PaymentPlanCommandValidator.Validate(
                 request.Type,

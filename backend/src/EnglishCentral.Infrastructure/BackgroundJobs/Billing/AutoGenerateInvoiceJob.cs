@@ -40,19 +40,6 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
 
             foreach (var item in items)
             {
-                var enrollment = await _db.Enrollments
-                    .Include(x => x.Discounts)
-                    .FirstAsync(x => x.Id == item.PaymentPlan.EnrollmentId, cancellationToken);
-
-                var planTotal = item.PaymentPlan.TotalAmount;
-                var enrollmentDiscountTotal = enrollment.Discounts.Sum(x => x.Amount);
-                var discountAmount = planTotal > 0 && enrollmentDiscountTotal > 0
-                    ? Math.Round(enrollmentDiscountTotal * item.Amount / planTotal, 2)
-                    : 0;
-                if (discountAmount > item.Amount)
-                    discountAmount = item.Amount;
-
-                var invoiceTotal = item.Amount - discountAmount;
                 var invoice = new Invoice
                 {
                     EnrollmentId = item.PaymentPlan.EnrollmentId,
@@ -61,11 +48,11 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
                     IssuedAt = now,
                     DueDate = item.DueDate,
                     SubtotalAmount = item.Amount,
-                    DiscountAmount = discountAmount,
+                    DiscountAmount = 0,
                     TaxAmount = 0,
-                    TotalAmount = invoiceTotal,
+                    TotalAmount = item.Amount,
                     PaidAmount = 0,
-                    OutstandingAmount = invoiceTotal,
+                    OutstandingAmount = item.Amount,
                     Status = EInvoiceStatus.Issued,
                     Notes = item.Name,
                     CreatedAt = now
@@ -78,36 +65,10 @@ namespace EnglishCentral.Infrastructure.BackgroundJobs.Billing
                     Description = item.Name,
                     Quantity = 1,
                     UnitPrice = item.Amount,
-                    DiscountAmount = discountAmount,
+                    DiscountAmount = 0,
                     LineTotal = item.Amount,
                     CreatedAt = now
                 });
-
-                if (discountAmount > 0)
-                {
-                    invoice.Lines.Add(new InvoiceLine
-                    {
-                        Invoice = invoice,
-                        ItemType = EBillingItemType.Discount,
-                        Description = "Allocated enrollment discount",
-                        Quantity = 1,
-                        UnitPrice = -discountAmount,
-                        DiscountAmount = 0,
-                        LineTotal = -discountAmount,
-                        CreatedAt = now
-                    });
-
-                    invoice.Discounts.Add(new InvoiceDiscount
-                    {
-                        Invoice = invoice,
-                        Name = "Allocated enrollment discount",
-                        Type = EDiscountType.FixedAmount,
-                        Value = discountAmount,
-                        Amount = discountAmount,
-                        Reason = "Auto allocated from enrollment discounts",
-                        CreatedAt = now
-                    });
-                }
 
                 item.Status = EPaymentPlanItemStatus.Invoiced;
                 item.UpdatedAt = now;

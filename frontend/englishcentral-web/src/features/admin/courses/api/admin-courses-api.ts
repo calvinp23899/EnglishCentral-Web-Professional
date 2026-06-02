@@ -5,6 +5,7 @@ export type AdminCourse = {
   publicId: string;
   id: number;
   courseCategoryId: number;
+  defaultBillingPolicyId?: number | null;
   code: string;
   name: string;
   description?: string | null;

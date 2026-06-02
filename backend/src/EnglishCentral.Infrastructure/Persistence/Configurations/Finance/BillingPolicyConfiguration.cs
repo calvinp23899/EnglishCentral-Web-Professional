@@ -15,6 +15,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Finance
             builder.HasIndex(x => x.Name).IsUnique();
             builder.HasIndex(x => x.Type);
             builder.HasIndex(x => x.IsActive);
+            builder.HasIndex(x => x.IsDefault)
+                .IsUnique()
+                .HasFilter("\"IsDefault\" = TRUE AND \"IsDeleted\" = FALSE");
             builder.Property(x => x.Name).HasMaxLength(255).IsRequired();
             builder.Property(x => x.Type).HasConversion<int>();
             builder.Property(x => x.Notes).HasMaxLength(2000);

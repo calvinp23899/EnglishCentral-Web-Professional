@@ -28,6 +28,8 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Queries.Ge
                 query = query.Where(x => x.Type == request.Type.Value);
             if (request.IsActive.HasValue)
                 query = query.Where(x => x.IsActive == request.IsActive.Value);
+            if (request.IsDefault.HasValue)
+                query = query.Where(x => x.IsDefault == request.IsDefault.Value);
 
             query = request.IsDescending ? query.OrderByDescending(x => x.CreatedAt) : query.OrderBy(x => x.CreatedAt);
             var totalItems = await _repository.CountAsync(_ => query, ct);

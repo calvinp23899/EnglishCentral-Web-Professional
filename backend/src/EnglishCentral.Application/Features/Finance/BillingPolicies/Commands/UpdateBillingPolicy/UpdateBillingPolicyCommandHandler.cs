@@ -1,4 +1,5 @@
 using EnglishCentral.Application.Features.Finance.BillingPolicies.DTOs;
+using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Domain.Entities.Finance;
 using EnglishCentral.Shared.Results;
@@ -9,10 +10,12 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.U
     public class UpdateBillingPolicyCommandHandler : IRequestHandler<UpdateBillingPolicyCommand, Result<BillingPolicyResponse>>
     {
         private readonly IFinanceRepository<BillingPolicy> _repository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public UpdateBillingPolicyCommandHandler(IFinanceRepository<BillingPolicy> repository)
+        public UpdateBillingPolicyCommandHandler(IFinanceRepository<BillingPolicy> repository, IUnitOfWork unitOfWork)
         {
             _repository = repository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result<BillingPolicyResponse>> Handle(UpdateBillingPolicyCommand request, CancellationToken ct)
@@ -24,6 +27,17 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.U
             var name = request.Name.Trim();
             if (await _repository.ExistsAsync(x => x.Id != request.Id && x.Name == name, ct))
                 return Result<BillingPolicyResponse>.Failure("Billing policy name already exists.", 409);
+
+            if (request.IsDefault)
+            {
+                var currentDefault = await _repository.FirstOrDefaultAsync(x => x.Id != request.Id && x.IsDefault, ct, false);
+                if (currentDefault is not null)
+                {
+                    currentDefault.IsDefault = false;
+                    currentDefault.UpdatedAt = DateTimeOffset.UtcNow;
+                    await _unitOfWork.SaveChangesAsync(ct);
+                }
+            }
 
             policy.Name = name;
             policy.Type = request.Type;

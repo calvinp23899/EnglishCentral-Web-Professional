@@ -36,7 +36,6 @@ const typeLabels: Record<string, string> = {
   FullPayment: "Thanh toán đủ",
   Monthly: "Theo tháng",
   Installment: "Trả góp",
-  Custom: "Tùy chỉnh",
 };
 const statusLabels: Record<string, string> = {
   "1": "Nháp",
@@ -48,7 +47,7 @@ const statusLabels: Record<string, string> = {
   Completed: "Hoàn thành",
   Cancelled: "Đã hủy",
 };
-const typeOptions: PaymentPlanType[] = ["FullPayment", "Monthly", "Installment", "Custom"];
+const typeOptions: PaymentPlanType[] = ["FullPayment", "Monthly", "Installment"];
 const statusOptions: PaymentPlanStatus[] = ["Draft", "Active", "Completed", "Cancelled"];
 const formatMoney = (value: number) => `${new Intl.NumberFormat("en-US").format(value)} đ`;
 const statusTone = (status: AdminPaymentPlan["status"]) =>

@@ -7,6 +7,7 @@ namespace EnglishCentral.Application.Features.Academic.Courses.Commands.CreateCo
         public CreateCourseCommandValidator()
         {
             RuleFor(x => x.CourseCategoryId).GreaterThan(0);
+            RuleFor(x => x.DefaultBillingPolicyId).GreaterThan(0).When(x => x.DefaultBillingPolicyId.HasValue);
             RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
             RuleFor(x => x.Name).NotEmpty().MaximumLength(50);
             RuleFor(x => x.Description).MaximumLength(500);
