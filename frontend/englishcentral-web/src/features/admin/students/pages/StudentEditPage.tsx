@@ -401,7 +401,7 @@ export function StudentEditPage() {
                   >
                     {genderOptions.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label}
+                        {option.value}
                       </option>
                     ))}
                   </select>
@@ -484,7 +484,7 @@ export function StudentEditPage() {
                   >
                     {statusOptions.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label}
+                        {option.value}
                       </option>
                     ))}
                   </select>

@@ -8,7 +8,7 @@ export type EnrollmentPaymentPlanPayload = {
   type: number;
   numberOfInstallments?: number | null;
   notes?: string | null;
-  items: Array<{
+  items?: Array<{
     sequenceNumber: number;
     name: string;
     dueDate: string;
@@ -26,6 +26,7 @@ export type EnrollmentStudentOption = {
 };
 
 type ApiResult<T> = { isSuccess: boolean; data?: T; error?: string };
+type PagedResult<T> = { items: T[]; page: number; pageSize: number; totalItems: number; totalPages: number };
 
 const unwrap = <T>(response: ApiResult<T>, message: string) => {
   if (!response.isSuccess || response.data === undefined) throw new Error(response.error ?? message);
@@ -33,6 +34,13 @@ const unwrap = <T>(response: ApiResult<T>, message: string) => {
 };
 
 export const adminEnrollmentsApi = {
+  async getByClass(classId: string | number) {
+    const response = await api.get<ApiResult<PagedResult<AdminEnrollment>>>(ENDPOINTS.ADMIN_ENROLLMENTS.GET_LIST, {
+      params: { Page: 1, PageSize: 100, ClassId: classId },
+    });
+    return unwrap(response.data, "Không thể tải danh sách đăng ký của lớp.");
+  },
+
   async searchStudents(search: string) {
     const response = await api.get<ApiResult<EnrollmentStudentOption[]>>(
       ENDPOINTS.ADMIN_STUDENTS.GET_LIST_ENROLLMENT,
@@ -70,5 +78,10 @@ export const adminEnrollmentsApi = {
     });
 
     return { enrollment, paymentPlan: plans.items[0] ?? null };
+  },
+
+  async delete(id: string | number) {
+    const response = await api.delete<ApiResult<boolean>>(ENDPOINTS.ADMIN_ENROLLMENTS.DELETE(id));
+    return unwrap(response.data, "Không thể hủy đăng ký học viên.");
   },
 };

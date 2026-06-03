@@ -15,9 +15,7 @@ namespace EnglishCentral.Application.Features.Academic.Students.Queries.GetStude
             _studentRepository = studentRepository;
         }
 
-        public async Task<Result<List<StudentEnrollmentOptionResponse>>> Handle(
-            GetStudentListEnrollmentQuery request,
-            CancellationToken ct)
+        public async Task<Result<List<StudentEnrollmentOptionResponse>>> Handle(GetStudentListEnrollmentQuery request, CancellationToken ct)
         {
             var students = await _studentRepository.GetActiveStudentsForEnrollmentAsync(request.Search, ct);
 

@@ -1,4 +1,5 @@
 ﻿using EnglishCentral.Application.Features.Identity.Queries.GetRoles;
+using EnglishCentral.Contracts.Responses.Metadata;
 using EnglishCentral.Domain.Enums.Academic;
 using EnglishCentral.Domain.Enums.Finance;
 using MediatR;
@@ -74,7 +75,17 @@ namespace EnglishCentral.API.Controllers.Admin.Metadata
         public IActionResult GetMetadataSortOrder() => Ok(GetEnumMetadata<EOrderSort>());
 
         [HttpGet("get-billing-policy-type")]
-        public IActionResult GetMetadataBillingPolicyType() => Ok(GetEnumMetadata<EBillingPolicyType>());
+        public IActionResult GetMetadataBillingPolicyType()
+        {
+            var result = Enum.GetValues<EBillingPolicyType>()
+               .Where(x => x != EBillingPolicyType.Monthly)
+               .Select(x => new MetadataOptionResponse(
+                   Label: x.ToString(),
+                   Value: x.ToString(),
+                   Code: (int)x))
+               .ToList();
+            return Ok(result);
+        }
 
         [HttpGet("get-payment-plan-type")]
         public IActionResult GetMetadataPaymentPlanType() => Ok(GetEnumMetadata<EPaymentPlanType>());

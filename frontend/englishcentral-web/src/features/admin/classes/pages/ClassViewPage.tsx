@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Plus, Search, UserRoundPlus } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
-import { SidePanel, toastDanger, toastSuccess } from "@/components/ui";
+import { ConfirmModal, SidePanel, toastDanger, toastSuccess } from "@/components/ui";
 import { adminClassesApi, type AdminClass, type ClassStudent } from "@/features/admin/classes/api/admin-classes-api";
 import { adminEnrollmentsApi, type EnrollmentPaymentPlanPayload, type EnrollmentStudentOption } from "@/features/admin/classes/api/admin-enrollments-api";
 import { adminRoomsApi, type AdminRoom } from "@/features/admin/classes/api/admin-rooms-api";
@@ -11,6 +11,7 @@ import { adminCoursesApi, type AdminCourse } from "@/features/admin/courses/api/
 import type { AdminEnrollment } from "@/features/admin/enrollments/api/admin-enrollment-finance-api";
 import type { AdminPaymentPlan } from "@/features/admin/payment-plans/api/admin-payment-plans-api";
 import { adminMetadataApi, type MetadataOption } from "@/features/admin/shared/api/admin-metadata-api";
+import { adminStudentsApi } from "@/features/admin/students/api/admin-students-api";
 import listStyles from "@/features/admin/students/pages/StudentListPage.module.scss";
 import formStyles from "@/features/admin/students/pages/StudentCreatePage.module.scss";
 import { adminTeachersApi, type AdminTeacher } from "@/features/admin/teachers/api/admin-teachers-api";
@@ -69,6 +70,25 @@ const newPlanItem = (sequenceNumber: number, amount = 0): PlanItemForm => ({
   dueDate: "",
   amount: moneyInput(amount),
 });
+const buildPlanItems = (count: number, totalAmount = 0) => {
+  const safeCount = Math.max(1, count);
+  const regularAmount = Math.floor(totalAmount / safeCount);
+  return Array.from({ length: safeCount }, (_, index) =>
+    newPlanItem(index + 1, index === safeCount - 1 ? totalAmount - regularAmount * (safeCount - 1) : regularAmount),
+  );
+};
+const installmentPlanTypeCode = "3";
+const billingPolicyTypeCodes: Record<string, string> = {
+  fullpayment: "1",
+  monthly: "2",
+  installment: "3",
+};
+const getPolicyTypeCode = (value: string | number | null | undefined, metadata: MetadataOption[]) => {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "number") return String(value);
+  const rawType = String(value);
+  return String(billingPolicyTypeCodes[rawType.toLowerCase()] ?? metadata.find((type) => type.value === rawType || String(type.code) === rawType)?.code ?? rawType);
+};
 
 export function ClassViewPage() {
   const { recordId } = useParams();
@@ -85,6 +105,8 @@ export function ClassViewPage() {
   const [classStudents, setClassStudents] = useState<ClassStudent[]>([]);
   const [isSearchingStudents, setIsSearchingStudents] = useState(false);
   const [isRegisteringStudent, setIsRegisteringStudent] = useState(false);
+  const [cancellingStudent, setCancellingStudent] = useState<ClassStudent | null>(null);
+  const [isCancellingEnrollment, setIsCancellingEnrollment] = useState(false);
   const [recentEnrollment, setRecentEnrollment] = useState<{ enrollment: AdminEnrollment; paymentPlan: AdminPaymentPlan | null } | null>(null);
   const [isCustomPaymentPlan, setIsCustomPaymentPlan] = useState(false);
   const [billingPolicies, setBillingPolicies] = useState<AdminBillingPolicy[]>([]);
@@ -94,6 +116,7 @@ export function ClassViewPage() {
   const [numberOfInstallments, setNumberOfInstallments] = useState("2");
   const [planNotes, setPlanNotes] = useState("");
   const [planItems, setPlanItems] = useState<PlanItemForm[]>([newPlanItem(1), newPlanItem(2)]);
+  const [inheritedPlanItems, setInheritedPlanItems] = useState<PlanItemForm[]>([]);
   const [paymentPlanError, setPaymentPlanError] = useState("");
 
   useEffect(() => {
@@ -119,9 +142,19 @@ export function ClassViewPage() {
       .then(([policyResult, typeResult]) => {
         setBillingPolicies(policyResult.items);
         setPlanTypes(typeResult);
+        const customPolicies = policyResult.items.filter((policy) => !policy.isDefault);
+        if (!billingPolicyId && customPolicies.length > 0) {
+          const policy = customPolicies[0];
+          setBillingPolicyId(String(policy.id));
+          const typeValue = getPolicyTypeCode(policy.type, typeResult);
+          setPlanType(typeValue);
+          const count = typeValue === "1" ? 1 : policy.numberOfInstallments ?? 2;
+          setNumberOfInstallments(String(count));
+          setPlanItems(buildPlanItems(count, record?.tuitionFeeSnapshot ?? 0));
+        }
       })
       .catch((error) => toastDanger(getAuthErrorMessage(error)));
-  }, [isStudentPanelOpen]);
+  }, [billingPolicyId, isStudentPanelOpen, record?.tuitionFeeSnapshot]);
 
   useEffect(() => {
     if (!recordId) return;
@@ -142,7 +175,21 @@ export function ClassViewPage() {
 
   const loadClassStudents = async (classId: string | number) => {
     try {
-      setClassStudents(await adminClassesApi.getStudents(classId));
+      const [students, enrollments] = await Promise.all([
+        adminClassesApi.getStudents(classId),
+        adminEnrollmentsApi.getByClass(classId),
+      ]);
+      const enrollmentPairs = await Promise.all(
+        enrollments.items.map(async (enrollment) => {
+          const student = await adminStudentsApi.getById(enrollment.studentId);
+          return [student.studentCode, enrollment] as const;
+        }),
+      );
+      const enrollmentByStudentCode = new Map(enrollmentPairs);
+      setClassStudents(students.map((student) => {
+        const enrollment = enrollmentByStudentCode.get(student.studentCode);
+        return { ...student, studentId: enrollment?.studentId, enrollmentId: enrollment?.id };
+      }));
     } catch (error) {
       toastDanger(getAuthErrorMessage(error));
     }
@@ -151,10 +198,24 @@ export function ClassViewPage() {
   useEffect(() => {
     if (!recordId) return;
     let isMounted = true;
-    adminClassesApi
-      .getStudents(recordId)
-      .then((students) => {
-        if (isMounted) setClassStudents(students);
+    Promise.all([
+      adminClassesApi.getStudents(recordId),
+      adminEnrollmentsApi.getByClass(recordId),
+    ])
+      .then(async ([students, enrollments]) => {
+        const enrollmentPairs = await Promise.all(
+          enrollments.items.map(async (enrollment) => {
+            const student = await adminStudentsApi.getById(enrollment.studentId);
+            return [student.studentCode, enrollment] as const;
+          }),
+        );
+        const enrollmentByStudentCode = new Map(enrollmentPairs);
+        if (isMounted) {
+          setClassStudents(students.map((student) => {
+            const enrollment = enrollmentByStudentCode.get(student.studentCode);
+            return { ...student, studentId: enrollment?.studentId, enrollmentId: enrollment?.id };
+          }));
+        }
       })
       .catch((error) => toastDanger(getAuthErrorMessage(error)));
     return () => {
@@ -196,17 +257,38 @@ export function ClassViewPage() {
     setNumberOfInstallments("2");
     setPlanNotes("");
     setPaymentPlanError("");
-    const regularAmount = record ? Math.floor(record.tuitionFeeSnapshot / 2) : 0;
-    setPlanItems([newPlanItem(1, regularAmount), newPlanItem(2, record ? record.tuitionFeeSnapshot - regularAmount : 0)]);
+    setPlanItems(buildPlanItems(2, record?.tuitionFeeSnapshot ?? 0));
+    setInheritedPlanItems([]);
   };
 
   const registerStudent = async () => {
     if (!selectedStudent || !record || isRegisteringStudent) return;
     let paymentPlan: EnrollmentPaymentPlanPayload | null = null;
     if (isCustomPaymentPlan) {
-      const items = planItems.map((item) => ({ ...item, amount: toMoney(item.amount) }));
+      if (!selectedBillingPolicy) {
+        setPaymentPlanError("Vui lòng chọn chính sách tham chiếu.");
+        return;
+      }
+      const items = isSelectedBillingPolicyInstallment ? planItems.map((item) => ({ ...item, amount: toMoney(item.amount) })) : undefined;
+      if (isSelectedBillingPolicyInstallment && items?.some((item) => !item.name.trim() || !item.dueDate || item.amount <= 0)) {
+        setPaymentPlanError("Vui lòng nhập đầy đủ ngày đến hạn và số tiền của từng kỳ.");
+        return;
+      }
+      if (isSelectedBillingPolicyInstallment && items && items.reduce((sum, item) => sum + item.amount, 0) !== record.tuitionFeeSnapshot) {
+        setPaymentPlanError("Tổng tiền các kỳ phải bằng học phí của lớp.");
+        return;
+      }
+      paymentPlan = {
+        billingPolicyId: selectedBillingPolicy.id,
+        type: Number(selectedBillingPolicyTypeCode || planType),
+        numberOfInstallments: isSelectedBillingPolicyInstallment ? Number(numberOfInstallments) : null,
+        notes: planNotes.trim() || null,
+        items,
+      };
+    } else if (isInheritedInstallmentPlan && inheritedBillingPolicy) {
+      const items = inheritedPaymentPlanItems.map((item) => ({ ...item, amount: toMoney(item.amount) }));
       if (items.some((item) => !item.name.trim() || !item.dueDate || item.amount <= 0)) {
-        setPaymentPlanError("Vui lòng nhập đầy đủ tên đợt, ngày đến hạn và số tiền của từng kỳ.");
+        setPaymentPlanError("Vui lòng nhập đầy đủ ngày đến hạn và số tiền của từng kỳ.");
         return;
       }
       if (items.reduce((sum, item) => sum + item.amount, 0) !== record.tuitionFeeSnapshot) {
@@ -214,10 +296,10 @@ export function ClassViewPage() {
         return;
       }
       paymentPlan = {
-        billingPolicyId: billingPolicyId ? Number(billingPolicyId) : null,
-        type: Number(planType),
-        numberOfInstallments: planType === "1" ? null : Number(numberOfInstallments),
-        notes: planNotes.trim() || null,
+        billingPolicyId: inheritedBillingPolicy.id,
+        type: Number(isInheritedInstallmentPlan ? installmentPlanTypeCode : inheritedBillingPolicyTypeCode),
+        numberOfInstallments: inheritedInstallmentCount,
+        notes: null,
         items,
       };
     }
@@ -243,26 +325,96 @@ export function ClassViewPage() {
   const roomName = rooms.find((item) => item.id === record?.roomId)?.name;
   const updatePlanItem = (index: number, field: keyof PlanItemForm, value: string) =>
     setPlanItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: field === "amount" ? moneyInput(value) : value } : item));
+  const updateInheritedPlanItem = (index: number, field: keyof PlanItemForm, value: string) =>
+    setInheritedPlanItems((current) => {
+      const items = current.length > 0 ? current : inheritedDefaultPlanItems;
+      return items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: field === "amount" ? moneyInput(value) : value } : item);
+    });
   const resizePlanItems = (count: number) => {
-    const safeCount = Math.max(1, count);
-    const regularAmount = record ? Math.floor(record.tuitionFeeSnapshot / safeCount) : 0;
-    setPlanItems(Array.from({ length: safeCount }, (_, index) => newPlanItem(index + 1, index === safeCount - 1 && record ? record.tuitionFeeSnapshot - regularAmount * (safeCount - 1) : regularAmount)));
+    setPlanItems(buildPlanItems(count, record?.tuitionFeeSnapshot ?? 0));
   };
-  const choosePlanType = (value: string) => {
-    setPlanType(value);
-    const count = value === "1" ? 1 : Math.max(2, Number(numberOfInstallments) || 2);
-    setNumberOfInstallments(String(count));
-    resizePlanItems(count);
+  const cancelRegistration = async () => {
+    if (!cancellingStudent?.enrollmentId || !record || isCancellingEnrollment) return;
+    setIsCancellingEnrollment(true);
+    try {
+      await adminEnrollmentsApi.delete(cancellingStudent.enrollmentId);
+      await loadClassStudents(record.id);
+      setCancellingStudent(null);
+      toastSuccess("Hủy đăng ký học viên thành công.");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsCancellingEnrollment(false);
+    }
   };
   const chooseBillingPolicy = (value: string) => {
     setBillingPolicyId(value);
     const policy = billingPolicies.find((item) => item.id === Number(value));
     if (!policy) return;
-    const typeValue = String(typeof policy.type === "number" ? policy.type : planTypes.find((item) => item.value === policy.type)?.code ?? 1);
+    const typeValue = getPolicyTypeCode(policy.type, planTypes);
     setPlanType(typeValue);
     const count = typeValue === "1" ? 1 : policy.numberOfInstallments ?? Math.max(2, Number(numberOfInstallments) || 2);
     setNumberOfInstallments(String(count));
     resizePlanItems(count);
+  };
+  const defaultBillingPolicy = billingPolicies.find((policy) => policy.isDefault);
+  const selectedCourse = courses.find((course) => course.id === record?.courseId);
+  const courseDefaultBillingPolicyId = selectedCourse?.defaultBillingPolicyId;
+  const classBillingPolicy = record?.billingPolicy ?? billingPolicies.find((policy) => policy.id === record?.billingPolicyId);
+  const courseBillingPolicy = billingPolicies.find((policy) => policy.id === courseDefaultBillingPolicyId);
+  const inheritedBillingPolicy = classBillingPolicy ?? courseBillingPolicy ?? defaultBillingPolicy;
+  const customBillingPolicies = billingPolicies.filter((policy) => policy.id !== inheritedBillingPolicy?.id);
+  const selectedBillingPolicy = customBillingPolicies.find((policy) => policy.id === Number(billingPolicyId));
+  const selectedBillingPolicyTypeCode = getPolicyTypeCode(selectedBillingPolicy?.type, planTypes);
+  const isSelectedBillingPolicyInstallment =
+    selectedBillingPolicyTypeCode === installmentPlanTypeCode ||
+    String(selectedBillingPolicy?.type ?? "").toLowerCase() === "installment";
+  const inheritedBillingPolicyName =
+    record?.billingPolicy?.name ??
+    record?.effectiveBillingPolicyName ??
+    record?.billingPolicyName ??
+    inheritedBillingPolicy?.name ??
+    selectedCourse?.defaultBillingPolicyName ??
+    null;
+  const inheritedBillingPolicyIsDefault =
+    record?.billingPolicy?.isDefault ??
+    record?.effectiveBillingPolicyIsDefault ??
+    record?.billingPolicyIsDefault ??
+    inheritedBillingPolicy?.isDefault ??
+    selectedCourse?.defaultBillingPolicyIsDefault ??
+    false;
+  const inheritedBillingPolicyScope = classBillingPolicy
+    ? "Lớp học"
+    : courseBillingPolicy || selectedCourse?.defaultBillingPolicyName
+      ? "Khóa học"
+      : defaultBillingPolicy || record?.effectiveBillingPolicyName
+        ? "Mặc định hệ thống"
+        : "";
+  const inheritedBillingPolicyTypeCode =
+    record?.effectiveBillingPolicyType !== undefined && record.effectiveBillingPolicyType !== null
+      ? String(record.effectiveBillingPolicyType)
+      : record?.billingPolicy?.type !== undefined && record.billingPolicy.type !== null
+        ? String(record.billingPolicy.type)
+        : record?.billingPolicyType !== undefined && record.billingPolicyType !== null
+          ? String(record.billingPolicyType)
+          : getPolicyTypeCode(inheritedBillingPolicy?.type, planTypes);
+  const billingPolicyDisplay = inheritedBillingPolicyName
+    ? `${inheritedBillingPolicyName}${inheritedBillingPolicyIsDefault ? " (default)" : ""}`
+    : "Chưa có chính sách áp dụng";
+  const isInheritedInstallmentPlan =
+    inheritedBillingPolicyTypeCode === installmentPlanTypeCode ||
+    String(record?.effectiveBillingPolicyType ?? record?.billingPolicy?.type ?? record?.billingPolicyType ?? inheritedBillingPolicy?.type ?? "").toLowerCase() === "installment";
+  const inheritedInstallmentCount = Math.max(1, record?.billingPolicy?.numberOfInstallments ?? inheritedBillingPolicy?.numberOfInstallments ?? 2);
+  const inheritedDefaultPlanItems = isInheritedInstallmentPlan ? buildPlanItems(inheritedInstallmentCount, record?.tuitionFeeSnapshot ?? 0) : [];
+  const inheritedPaymentPlanItems = inheritedPlanItems.length > 0 ? inheritedPlanItems : inheritedDefaultPlanItems;
+  const chooseCustomMode = () => {
+    setIsCustomPaymentPlan(true);
+    const hasSelectedCustomPolicy = customBillingPolicies.some((policy) => policy.id === Number(billingPolicyId));
+    if (!hasSelectedCustomPolicy && customBillingPolicies.length > 0) {
+      chooseBillingPolicy(String(customBillingPolicies[0].id));
+    } else if (!hasSelectedCustomPolicy) {
+      setBillingPolicyId("");
+    }
   };
 
   return (
@@ -315,6 +467,7 @@ export function ClassViewPage() {
                 {field("Tổng số buổi", record.totalSessions)}
                 {field("Số buổi đã hoàn thành", record.completedSessions)}
                 {field("Trạng thái", statusLabels[String(record.status)] ?? String(record.status))}
+                {field("Chính sách học phí", billingPolicyDisplay)}
                 {field("Ngày mở lớp", formatDate(record.openedAt))}
                 {field("Ngày đóng lớp", formatDate(record.closedAt))}
                 <label className={`${formStyles.field} ${formStyles.notesField}`}>
@@ -328,16 +481,16 @@ export function ClassViewPage() {
               <div className={styles.tabHeader}>
                 <div><h2>Danh sách học viên</h2><p>Danh sách học viên đã đăng ký vào lớp.</p></div>
                 <button type="button" onClick={() => { resetPaymentPlan(); setRecentEnrollment(null); setSelectedStudent(null); setIsStudentPanelOpen(true); }}>
-                  <Plus size={17} /> Thêm học viên
+                  <Plus size={15} /> Thêm học viên
                 </button>
               </div>
               <div className={styles.tableWrap}>
                 <table className={styles.table}>
-                  <thead><tr><th>Mã học viên</th><th>Tên học viên</th><th>Điện thoại</th><th>Email</th><th>Tình trạng</th></tr></thead>
+                  <thead><tr><th>Mã học viên</th><th>Tên học viên</th><th>Điện thoại</th><th>Email</th><th>Tình trạng</th><th>Action</th></tr></thead>
                   <tbody>
                     {classStudents.length === 0 ? (
-                      <tr><td colSpan={5}><div className={styles.emptyState}>Chưa có học viên trong lớp.</div></td></tr>
-                    ) : classStudents.map((student) => <tr key={student.studentCode}><td><strong>{student.studentCode}</strong></td><td>{student.fullName}</td><td>{student.phoneNumber ?? "Chưa cập nhật"}</td><td>{student.email ?? "Chưa cập nhật"}</td><td><span className={`${listStyles.statusBadge} ${listStyles[studentStatusTone[String(student.status)] ?? "pending"]}`}>{studentStatusLabels[String(student.status)] ?? String(student.status)}</span></td></tr>)}
+                      <tr><td colSpan={6}><div className={styles.emptyState}>Chưa có học viên trong lớp.</div></td></tr>
+                    ) : classStudents.map((student) => <tr key={student.studentCode}><td><strong>{student.studentCode}</strong></td><td>{student.fullName}</td><td>{student.phoneNumber ?? "Chưa cập nhật"}</td><td>{student.email ?? "Chưa cập nhật"}</td><td><span className={`${listStyles.statusBadge} ${listStyles[studentStatusTone[String(student.status)] ?? "pending"]}`}>{studentStatusLabels[String(student.status)] ?? String(student.status)}</span></td><td><button className={styles.cancelEnrollmentButton} disabled={!student.enrollmentId} title={student.enrollmentId ? "Hủy đăng ký học viên khỏi lớp" : "Chưa có mã đăng ký để hủy"} type="button" onClick={() => setCancellingStudent(student)}>Hủy đăng ký</button></td></tr>)}
                   </tbody>
                 </table>
               </div>
@@ -372,29 +525,47 @@ export function ClassViewPage() {
         {selectedStudent && <section className={styles.paymentPlanConfig}>
           <div><strong>Phương án thanh toán riêng cho học viên</strong><p>Mặc định kế thừa chính sách của lớp. Chỉ cấu hình khi học viên có ngoại lệ.</p></div>
           <label><input checked={!isCustomPaymentPlan} name="payment-plan-mode" type="radio" onChange={() => { setIsCustomPaymentPlan(false); setPaymentPlanError(""); }} /> Kế thừa từ lớp học</label>
-          <label><input checked={isCustomPaymentPlan} name="payment-plan-mode" type="radio" onChange={() => setIsCustomPaymentPlan(true)} /> Tùy chỉnh cho học viên</label>
+          {!isCustomPaymentPlan && <>
+            <div className={styles.inheritedPolicyPreview}><span>Chính sách áp dụng</span><strong>{inheritedBillingPolicyName ? `${inheritedBillingPolicyName}${inheritedBillingPolicyIsDefault ? " (default)" : ""}` : "Chưa có chính sách áp dụng"}</strong>{inheritedBillingPolicyScope && <small>{inheritedBillingPolicyScope}</small>}</div>
+            {isInheritedInstallmentPlan && <div className={styles.planItems}>
+              {inheritedPaymentPlanItems.map((item, index) => <div className={styles.planItem} key={item.sequenceNumber}>
+                <strong>Kỳ {item.sequenceNumber}</strong>
+                <input disabled placeholder="Tên đợt" value={item.name} onChange={(event) => updateInheritedPlanItem(index, "name", event.target.value)} />
+                <input type="date" value={item.dueDate} onChange={(event) => updateInheritedPlanItem(index, "dueDate", event.target.value)} />
+                <input inputMode="numeric" placeholder="Số tiền" value={item.amount} onChange={(event) => updateInheritedPlanItem(index, "amount", event.target.value)} />
+              </div>)}
+            </div>}
+          </>}
+          <label><input checked={isCustomPaymentPlan} name="payment-plan-mode" type="radio" onChange={chooseCustomMode} /> Tùy chỉnh cho học viên</label>
           {isCustomPaymentPlan && <div className={styles.customPlanFields}>
-            <label><span>Chính sách tham chiếu</span><select value={billingPolicyId} onChange={(event) => chooseBillingPolicy(event.target.value)}><option value="">Không gắn chính sách, dùng lịch riêng</option>{billingPolicies.map((policy) => <option key={policy.id} value={policy.id}>{policy.name}</option>)}</select></label>
-            <label><span>Loại phương án</span><select value={planType} onChange={(event) => choosePlanType(event.target.value)}>{planTypes.map((type) => <option key={type.code} value={type.code}>{type.label}</option>)}</select></label>
-            {planType !== "1" && <label><span>Số kỳ</span><input min={2} type="number" value={numberOfInstallments} onChange={(event) => { setNumberOfInstallments(event.target.value); resizePlanItems(Number(event.target.value) || 1); }} /></label>}
+            <label><span>Chính sách tham chiếu</span><select disabled={customBillingPolicies.length === 0} value={selectedBillingPolicy ? billingPolicyId : ""} onChange={(event) => chooseBillingPolicy(event.target.value)}>{!selectedBillingPolicy && <option value="">Chọn chính sách</option>}{customBillingPolicies.length === 0 ? <option value="">Không có chính sách khác</option> : customBillingPolicies.map((policy) => <option key={policy.id} value={policy.id}>{policy.name}</option>)}</select></label>
             <label className={styles.planNotes}><span>Ghi chú</span><textarea rows={2} value={planNotes} onChange={(event) => setPlanNotes(event.target.value)} /></label>
-            <div className={styles.planTotal}><span>Tổng học phí</span><strong>{record ? formatMoney(record.tuitionFeeSnapshot) : "0 đ"}</strong></div>
-            <div className={styles.planItems}>
+            {isSelectedBillingPolicyInstallment && <div className={styles.planItems}>
               {planItems.map((item, index) => <div className={styles.planItem} key={item.sequenceNumber}>
                 <strong>Kỳ {item.sequenceNumber}</strong>
-                <input placeholder="Tên đợt" value={item.name} onChange={(event) => updatePlanItem(index, "name", event.target.value)} />
+                <input disabled placeholder="Tên đợt" value={item.name} onChange={(event) => updatePlanItem(index, "name", event.target.value)} />
                 <input type="date" value={item.dueDate} onChange={(event) => updatePlanItem(index, "dueDate", event.target.value)} />
                 <input inputMode="numeric" placeholder="Số tiền" value={item.amount} onChange={(event) => updatePlanItem(index, "amount", event.target.value)} />
               </div>)}
-            </div>
-            {paymentPlanError && <p className={styles.planError}>{paymentPlanError}</p>}
+            </div>}
           </div>}
+          {paymentPlanError && <p className={styles.planError}>{paymentPlanError}</p>}
         </section>}
         {recentEnrollment && <section className={styles.enrollmentResult}>
           <div><strong>Đăng ký thành công</strong><span>{recentEnrollment.enrollment.enrollmentCode}</span></div>
           {recentEnrollment.paymentPlan ? <><div><span>Tổng học phí sau giảm</span><strong>{formatMoney(recentEnrollment.paymentPlan.totalAmount)}</strong></div><div><span>Loại plan</span><strong>{paymentPlanTypeLabels[String(recentEnrollment.paymentPlan.type)] ?? String(recentEnrollment.paymentPlan.type)}</strong></div><div><span>Số kỳ</span><strong>{recentEnrollment.paymentPlan.items.length}</strong></div><Link to={`/admin/enrollments/${recentEnrollment.enrollment.id}/view`}>Xem chi tiết công nợ</Link></> : <span>Đăng ký này không phát sinh công nợ.</span>}
         </section>}
       </SidePanel>
+      <ConfirmModal
+        confirmText={isCancellingEnrollment ? "Đang hủy..." : "Hủy đăng ký"}
+        description={cancellingStudent ? `Bạn có chắc muốn hủy đăng ký của ${cancellingStudent.fullName} khỏi lớp này?` : ""}
+        isConfirmDisabled={isCancellingEnrollment}
+        isOpen={Boolean(cancellingStudent)}
+        title="Xác nhận hủy đăng ký"
+        tone="danger"
+        onCancel={() => setCancellingStudent(null)}
+        onConfirm={cancelRegistration}
+      />
     </>
   );
 }

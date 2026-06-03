@@ -68,6 +68,7 @@ export const ENDPOINTS = {
     GET_LIST: "/admin/academic/enrollments/get-list",
     GET_BY_ID: (id: string | number) => `/admin/academic/enrollments/${id}/get-by-id`,
     CREATE: "/admin/academic/enrollments/insert",
+    DELETE: (id: string | number) => `/admin/academic/enrollments/${id}/delete`,
   },
 
   ADMIN_PAYMENT_PLANS: {

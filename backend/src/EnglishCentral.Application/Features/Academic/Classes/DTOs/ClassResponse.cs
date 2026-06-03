@@ -1,4 +1,5 @@
 using EnglishCentral.Domain.Enums.Academic;
+using EnglishCentral.Application.Features.Finance.BillingPolicies.DTOs;
 using AcademicClass = EnglishCentral.Domain.Entities.Academic.Class;
 
 namespace EnglishCentral.Application.Features.Academic.Classes.DTOs
@@ -10,6 +11,7 @@ namespace EnglishCentral.Application.Features.Academic.Classes.DTOs
         long TeacherId,
         long? RoomId,
         long? BillingPolicyId,
+        BillingPolicyResponse? BillingPolicy,
         string Code,
         string Name,
         DateOnly StartDate,
@@ -34,6 +36,7 @@ namespace EnglishCentral.Application.Features.Academic.Classes.DTOs
                 classroom.TeacherId,
                 classroom.RoomId,
                 classroom.BillingPolicyId,
+                classroom.BillingPolicy?.ToResponse(),
                 classroom.Code,
                 classroom.Name,
                 classroom.StartDate,

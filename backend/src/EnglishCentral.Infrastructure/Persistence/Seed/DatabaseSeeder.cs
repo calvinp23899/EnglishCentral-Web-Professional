@@ -1,4 +1,5 @@
 ﻿using EnglishCentral.Infrastructure.Persistence.Context;
+using EnglishCentral.Infrastructure.Persistence.Seed.Finance;
 using EnglishCentral.Infrastructure.Persistence.Seed.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed
             await PermissionSeeder.SeedAsync(context);
             await RolePermissionSeeder.SeedAsync(context);
             await AdminSeeder.SeedAsync(context);
+            await BillingPolicySeeder.SeedAsync(context);
         }
     }
 }

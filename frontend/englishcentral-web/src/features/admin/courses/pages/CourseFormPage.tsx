@@ -16,7 +16,6 @@ type Props = { mode: "create" | "edit" };
 type FormState = {
   courseCategoryId: string;
   defaultBillingPolicyId: string;
-  code: string;
   name: string;
   description: string;
   level: string;
@@ -34,7 +33,6 @@ type FormErrors = Partial<Record<keyof FormState, string>>;
 const initialForm: FormState = {
   courseCategoryId: "",
   defaultBillingPolicyId: "",
-  code: "",
   name: "",
   description: "",
   level: "",
@@ -70,9 +68,15 @@ export function CourseFormPage({ mode }: Props) {
       .then(([categoryResult, policyResult]) => {
         setCategories(categoryResult.items);
         setBillingPolicies(policyResult.items);
+        if (!isEditMode) {
+          const defaultPolicy = policyResult.items.find((policy) => policy.isDefault);
+          if (defaultPolicy) {
+            setForm((current) => ({ ...current, defaultBillingPolicyId: String(defaultPolicy.id) }));
+          }
+        }
       })
       .catch((error) => toastDanger(getAuthErrorMessage(error)));
-  }, []);
+  }, [isEditMode]);
 
   useEffect(() => {
     if (!isEditMode || !recordId) return;
@@ -83,7 +87,6 @@ export function CourseFormPage({ mode }: Props) {
         setForm({
           courseCategoryId: String(record.courseCategoryId),
           defaultBillingPolicyId: record.defaultBillingPolicyId ? String(record.defaultBillingPolicyId) : "",
-          code: record.code,
           name: record.name,
           description: record.description ?? "",
           level: record.level ?? "",
@@ -112,8 +115,6 @@ export function CourseFormPage({ mode }: Props) {
     const nameMaxLength = isEditMode ? 255 : 50;
     const descriptionMaxLength = isEditMode ? 2000 : 500;
     if (!form.courseCategoryId) nextErrors.courseCategoryId = "Vui lòng chọn danh mục khóa học.";
-    if (!form.code.trim()) nextErrors.code = "Vui lòng nhập mã khóa học.";
-    else if (form.code.trim().length > 50) nextErrors.code = "Mã khóa học không được vượt quá 50 ký tự.";
     if (!form.name.trim()) nextErrors.name = "Vui lòng nhập tên khóa học.";
     else if (form.name.trim().length > nameMaxLength) nextErrors.name = `Tên khóa học không được vượt quá ${nameMaxLength} ký tự.`;
     if (form.description.trim().length > descriptionMaxLength) nextErrors.description = `Mô tả không được vượt quá ${descriptionMaxLength} ký tự.`;
@@ -131,7 +132,6 @@ export function CourseFormPage({ mode }: Props) {
     const payload: CourseFormPayload = {
       courseCategoryId: Number(form.courseCategoryId),
       defaultBillingPolicyId: form.defaultBillingPolicyId ? Number(form.defaultBillingPolicyId) : null,
-      code: form.code.trim(),
       name: form.name.trim(),
       description: form.description.trim() || null,
       level: form.level.trim() || null,
@@ -180,8 +180,7 @@ export function CourseFormPage({ mode }: Props) {
         {isLoading ? <p className={styles.accountState}>Đang tải thông tin khóa học...</p> : (
           <div className={styles.formGrid}>
             <label className={styles.field}><span>Danh mục <em className={styles.requiredMark}>*</em></span><select value={form.courseCategoryId} onChange={(event) => updateField("courseCategoryId", event.target.value)}><option value="">Chọn danh mục</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select><ErrorMessage message={errors.courseCategoryId} /></label>
-            <label className={styles.field}><span>Chính sách học phí mặc định</span><select value={form.defaultBillingPolicyId} onChange={(event) => updateField("defaultBillingPolicyId", event.target.value)}><option value="">Dùng chính sách mặc định toàn hệ thống</option>{billingPolicies.map((policy) => <option key={policy.id} value={policy.id}>{policy.name}</option>)}</select></label>
-            <label className={styles.field}><span>Mã khóa học <em className={styles.requiredMark}>*</em></span><input value={form.code} onChange={(event) => updateField("code", event.target.value)} /><ErrorMessage message={errors.code} /></label>
+            <label className={styles.field}><span>Chính sách học phí mặc định</span><select value={form.defaultBillingPolicyId} onChange={(event) => updateField("defaultBillingPolicyId", event.target.value)}>{billingPolicies.map((policy) => <option key={policy.id} value={policy.id}>{policy.name}{policy.isDefault ? " (default)" : ""}</option>)}</select></label>
             <label className={styles.field}><span>Tên khóa học <em className={styles.requiredMark}>*</em></span><input value={form.name} onChange={(event) => updateField("name", event.target.value)} /><ErrorMessage message={errors.name} /></label>
             <label className={styles.field}><span>Cấp độ</span><input value={form.level} onChange={(event) => updateField("level", event.target.value)} /><ErrorMessage message={errors.level} /></label>
             {numberField("durationWeeks", "Số tuần")}
