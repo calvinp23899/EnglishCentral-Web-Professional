@@ -1,0 +1,151 @@
+.page {
+  display: grid;
+  gap: 18px;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.card {
+  padding: 15px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  display: grid;
+  gap: 7px;
+
+  span {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 18px;
+  }
+}
+
+.section {
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.sectionHeader {
+  padding: 16px 18px;
+  border-bottom: 1px solid #e5edf6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    color: #0f172a;
+    font-size: 17px;
+  }
+
+  p {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  button,
+  a {
+    min-height: 38px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+  }
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e5edf6;
+    color: #334155;
+    text-align: left;
+    font-size: 13px;
+  }
+
+  th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+}
+
+.empty {
+  padding: 24px;
+  color: #64748b;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.paymentGrid {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.receipt {
+  padding: 18px;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  background: #ecfdf5;
+  display: grid;
+  gap: 8px;
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    color: #065f46;
+  }
+
+  p {
+    color: #047857;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 900px) {
+  .summary,
+  .paymentGrid {
+    grid-template-columns: 1fr;
+  }
+}

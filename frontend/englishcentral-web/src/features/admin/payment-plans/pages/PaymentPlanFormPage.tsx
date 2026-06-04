@@ -20,10 +20,10 @@ type ItemForm = { sequenceNumber: number; name: string; dueDate: string; amount:
 type FormState = { enrollmentId: string; billingPolicyId: string; type: PaymentPlanType; numberOfInstallments: string; status: PaymentPlanStatus; notes: string; items: ItemForm[] };
 type FormErrors = Partial<Record<"enrollmentId" | "billingPolicyId" | "numberOfInstallments" | "items", string>>;
 
-const typeLabels: Record<PaymentPlanType, string> = { FullPayment: "Thanh toán đủ", Monthly: "Theo tháng", Installment: "Trả góp", Custom: "Tùy chỉnh" };
+const typeLabels: Record<PaymentPlanType, string> = { FullPayment: "Thanh toán đủ", Monthly: "Theo tháng", Installment: "Trả góp" };
 const statusLabels: Record<PaymentPlanStatus, string> = { Draft: "Nháp", Active: "Đang áp dụng", Completed: "Hoàn thành", Cancelled: "Đã hủy" };
 const itemStatusLabels: Record<PaymentPlanItemStatus, string> = { Pending: "Chờ thu", Invoiced: "Đã xuất hóa đơn", Paid: "Đã thanh toán", Overdue: "Quá hạn", Cancelled: "Đã hủy" };
-const typeValues: Record<string, PaymentPlanType> = { "1": "FullPayment", "2": "Monthly", "3": "Installment", "4": "Custom" };
+const typeValues: Record<string, PaymentPlanType> = { "1": "FullPayment", "2": "Monthly", "3": "Installment" };
 const statusValues: Record<string, PaymentPlanStatus> = { "1": "Draft", "2": "Active", "3": "Completed", "4": "Cancelled" };
 const itemStatusValues: Record<string, PaymentPlanItemStatus> = { "1": "Pending", "2": "Invoiced", "3": "Paid", "4": "Overdue", "5": "Cancelled" };
 const today = () => new Date().toISOString().slice(0, 10);

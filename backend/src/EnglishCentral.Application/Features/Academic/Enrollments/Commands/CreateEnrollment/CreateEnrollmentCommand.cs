@@ -30,8 +30,8 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
     public record CreateEnrollmentDiscountRequest(
         long? DiscountId,
         string? Name,
-        EDiscountType Type,
-        decimal Value,
+        EDiscountType? Type,
+        decimal? Value,
         decimal? Amount,
         string? Reason);
 
@@ -67,8 +67,8 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             {
                 discount.RuleFor(x => x.DiscountId).GreaterThan(0).When(x => x.DiscountId.HasValue);
                 discount.RuleFor(x => x.Name).MaximumLength(255);
-                discount.RuleFor(x => x.Type).IsInEnum();
-                discount.RuleFor(x => x.Value).GreaterThan(0);
+                discount.RuleFor(x => x.Type).NotNull().IsInEnum().When(x => !x.DiscountId.HasValue);
+                discount.RuleFor(x => x.Value).NotNull().GreaterThan(0).When(x => !x.DiscountId.HasValue);
                 discount.RuleFor(x => x.Amount).GreaterThan(0).When(x => x.Amount.HasValue);
                 discount.RuleFor(x => x.Reason).MaximumLength(1000);
             }).When(x => x.Discounts is not null);

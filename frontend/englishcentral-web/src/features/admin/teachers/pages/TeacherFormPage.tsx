@@ -490,7 +490,7 @@ export function TeacherFormPage({ mode }: Props) {
                     onChange={(event) => updateEditTeacherInfo("gender", event.target.value)}
                   >
                     {genderOptions.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                      <option key={option.value} value={option.value}>{option.value}</option>
                     ))}
                   </select>
                   <ErrorMessage message={editErrors.gender} />
@@ -596,7 +596,7 @@ export function TeacherFormPage({ mode }: Props) {
                     }
                   >
                     {contractTypeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                      <option key={option.value} value={option.value}>{option.value}</option>
                     ))}
                   </select>
                   <ErrorMessage message={editErrors.contractType} />
@@ -617,7 +617,7 @@ export function TeacherFormPage({ mode }: Props) {
                     onChange={(event) => updateEditTeacherInfo("status", event.target.value)}
                   >
                     {statusOptions.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                      <option key={option.value} value={option.value}>{option.value}</option>
                     ))}
                   </select>
                   <ErrorMessage message={editErrors.status} />
@@ -631,7 +631,7 @@ export function TeacherFormPage({ mode }: Props) {
                     }
                   >
                     {salaryTypeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                      <option key={option.value} value={option.value}>{option.value}</option>
                     ))}
                   </select>
                   <ErrorMessage message={editErrors.salaryType} />
@@ -1031,7 +1031,7 @@ export function TeacherFormPage({ mode }: Props) {
                   onChange={(event) => updateTeacherInfo("gender", event.target.value)}
                 >
                   {genderOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>{option.value}</option>
                   ))}
                 </select>
                 <ErrorMessage message={errors.gender} />
@@ -1139,7 +1139,7 @@ export function TeacherFormPage({ mode }: Props) {
                   }
                 >
                   {contractTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>{option.value}</option>
                   ))}
                 </select>
                 <ErrorMessage message={errors.contractType} />
@@ -1162,7 +1162,7 @@ export function TeacherFormPage({ mode }: Props) {
                   onChange={(event) => updateTeacherInfo("status", event.target.value)}
                 >
                   {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>{option.value}</option>
                   ))}
                 </select>
                 <ErrorMessage message={errors.status} />
@@ -1176,7 +1176,7 @@ export function TeacherFormPage({ mode }: Props) {
                   }
                 >
                   {salaryTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>{option.value}</option>
                   ))}
                 </select>
                 <ErrorMessage message={errors.salaryType} />

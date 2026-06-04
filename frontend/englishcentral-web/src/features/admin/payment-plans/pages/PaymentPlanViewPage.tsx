@@ -10,7 +10,7 @@ import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 import paymentStyles from "./PaymentPlanPage.module.scss";
 
-const typeLabels: Record<string, string> = { "1": "Thanh toán đủ", "2": "Theo tháng", "3": "Trả góp", "4": "Tùy chỉnh", FullPayment: "Thanh toán đủ", Monthly: "Theo tháng", Installment: "Trả góp", Custom: "Tùy chỉnh" };
+const typeLabels: Record<string, string> = { "1": "Thanh toán đủ", "2": "Theo tháng", "3": "Trả góp", FullPayment: "Thanh toán đủ", Monthly: "Theo tháng", Installment: "Trả góp" };
 const statusLabels: Record<string, string> = { "1": "Nháp", "2": "Đang áp dụng", "3": "Hoàn thành", "4": "Đã hủy", "5": "Đã hủy", Draft: "Nháp", Active: "Đang áp dụng", Completed: "Hoàn thành", Cancelled: "Đã hủy", Pending: "Chờ thu", Invoiced: "Đã xuất hóa đơn", Paid: "Đã thanh toán", Overdue: "Quá hạn" };
 const money = (value: number) => `${new Intl.NumberFormat("en-US").format(value)} đ`;
 const date = (value: string) => new Intl.DateTimeFormat("vi-VN").format(new Date(value));

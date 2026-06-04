@@ -5,6 +5,10 @@ export type AdminCourse = {
   publicId: string;
   id: number;
   courseCategoryId: number;
+  defaultBillingPolicyId?: number | null;
+  defaultBillingPolicyName?: string | null;
+  defaultBillingPolicyType?: string | number | null;
+  defaultBillingPolicyIsDefault?: boolean | null;
   code: string;
   name: string;
   description?: string | null;
@@ -19,7 +23,7 @@ export type AdminCourse = {
   isActive: boolean;
 };
 
-export type CourseFormPayload = Omit<AdminCourse, "publicId" | "id">;
+export type CourseFormPayload = Omit<AdminCourse, "publicId" | "id" | "code">;
 
 export type UpdateCoursePayload = CourseFormPayload & {
   id: number;

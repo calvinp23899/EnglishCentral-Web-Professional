@@ -1,4 +1,5 @@
 using EnglishCentral.Application.Features.Finance.Payments.DTOs;
+using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Academic;
 using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Domain.Entities.Academic;
@@ -18,6 +19,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
         private readonly IFinanceRepository<EnrollmentPaymentPlanItem> _paymentPlanItemRepository;
         private readonly IFinanceRepository<EnrollmentPaymentPlan> _paymentPlanRepository;
         private readonly IFinanceRepository<BillingLedgerEntry> _ledgerRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public CreatePaymentCommandHandler(
             IFinanceRepository<Payment> paymentRepository,
@@ -26,7 +28,8 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
             IAcademicRepository<Enrollment> enrollmentRepository,
             IFinanceRepository<EnrollmentPaymentPlanItem> paymentPlanItemRepository,
             IFinanceRepository<EnrollmentPaymentPlan> paymentPlanRepository,
-            IFinanceRepository<BillingLedgerEntry> ledgerRepository)
+            IFinanceRepository<BillingLedgerEntry> ledgerRepository,
+            IUnitOfWork unitOfWork)
         {
             _paymentRepository = paymentRepository;
             _studentRepository = studentRepository;
@@ -35,6 +38,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
             _paymentPlanItemRepository = paymentPlanItemRepository;
             _paymentPlanRepository = paymentPlanRepository;
             _ledgerRepository = ledgerRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result<PaymentResponse>> Handle(CreatePaymentCommand request, CancellationToken ct)
@@ -178,6 +182,7 @@ namespace EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePa
             await UpdateCompletedPaymentPlansAsync(paymentPlanItems, now, ct);
 
             await _paymentRepository.AddAsync(payment, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
             return Result<PaymentResponse>.Success(payment.ToResponse(), 201);
         }
 

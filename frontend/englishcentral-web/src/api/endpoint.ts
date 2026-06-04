@@ -65,7 +65,10 @@ export const ENDPOINTS = {
   },
 
   ADMIN_ENROLLMENTS: {
+    GET_LIST: "/admin/academic/enrollments/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/academic/enrollments/${id}/get-by-id`,
     CREATE: "/admin/academic/enrollments/insert",
+    DELETE: (id: string | number) => `/admin/academic/enrollments/${id}/delete`,
   },
 
   ADMIN_PAYMENT_PLANS: {
@@ -84,6 +87,36 @@ export const ENDPOINTS = {
     DELETE: (id: string | number) => `/admin/billing/policies/${id}/delete`,
   },
 
+  ADMIN_DISCOUNTS: {
+    GET_LIST: "/admin/billing/discounts/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/billing/discounts/${id}/get-by-id`,
+    CREATE: "/admin/billing/discounts/insert",
+    UPDATE: (id: string | number) => `/admin/billing/discounts/${id}/update`,
+    DELETE: (id: string | number) => `/admin/billing/discounts/${id}/delete`,
+  },
+
+  ADMIN_INVOICES: {
+    GET_LIST: "/admin/billing/invoices/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/billing/invoices/${id}/get-by-id`,
+  },
+
+  ADMIN_BILLING_JOBS: {
+    GENERATE_INVOICES: "/admin/billing/jobs/generate-invoices",
+  },
+
+  ADMIN_BILLING_SUMMARIES: {
+    GET: "/admin/billing/summaries/get",
+  },
+
+  ADMIN_PAYMENTS: {
+    CREATE: "/admin/billing/payments/insert",
+  },
+
+  ADMIN_RECEIPTS: {
+    GET_LIST: "/admin/billing/receipts/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/billing/receipts/${id}/get-by-id`,
+  },
+
   ADMIN_ACCOUNT: {
     GET_STUDENT_ACCOUNT: "/admin/account/get-student-account",
     GET_TEACHER_ACCOUNT: "/admin/account/get-teacher-account",
@@ -95,6 +128,9 @@ export const ENDPOINTS = {
     TEACHER_STATUS: "/admin/metadata/get-teacher-status",
     CONTRACT_TYPE: "/admin/metadata/get-contract-type",
     SALARY_TYPE: "/admin/metadata/get-salary-type",
+    BILLING_POLICY_TYPE: "/admin/metadata/get-billing-policy-type",
+    DISCOUNT_TYPE: "/admin/metadata/get-discount-type",
+    PAYMENT_METHOD: "/admin/metadata/get-payment-method",
     ROLE: "/admin/metadata/role-dropdown",
   },
 };

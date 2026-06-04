@@ -6,7 +6,7 @@ namespace EnglishCentral.Application.Features.Academic.Courses.Commands.CreateCo
 {
     public record CreateCourseCommand(
         long CourseCategoryId,
-        string Code,
+        long? DefaultBillingPolicyId,
         string Name,
         string? Description,
         string? Level,

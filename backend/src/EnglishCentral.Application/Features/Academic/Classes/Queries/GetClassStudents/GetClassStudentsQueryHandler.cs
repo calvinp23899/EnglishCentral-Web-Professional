@@ -15,9 +15,7 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Queries.GetClassS
             _studentRepository = studentRepository;
         }
 
-        public async Task<Result<List<ClassStudentResponse>>> Handle(
-            GetClassStudentsQuery request,
-            CancellationToken ct)
+        public async Task<Result<List<ClassStudentResponse>>> Handle(GetClassStudentsQuery request, CancellationToken ct)
         {
             var classStudents = await _studentRepository.GetStudentsByClassIdAsync(request.ClassId, ct);
 

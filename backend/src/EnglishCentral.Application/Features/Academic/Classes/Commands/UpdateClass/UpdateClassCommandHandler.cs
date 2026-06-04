@@ -1,6 +1,8 @@
 using EnglishCentral.Application.Features.Academic.Classes.DTOs;
 using EnglishCentral.Application.Interfaces.Academic;
+using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Domain.Entities.Academic;
+using EnglishCentral.Domain.Entities.Finance;
 using EnglishCentral.Shared.Results;
 using MediatR;
 using AcademicClass = EnglishCentral.Domain.Entities.Academic.Class;
@@ -13,17 +15,20 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.UpdateCl
         private readonly IAcademicRepository<Course> _courseRepository;
         private readonly IAcademicRepository<Teacher> _teacherRepository;
         private readonly IAcademicRepository<Room> _roomRepository;
+        private readonly IFinanceRepository<BillingPolicy> _billingPolicyRepository;
 
         public UpdateClassCommandHandler(
             IAcademicRepository<AcademicClass> repository,
             IAcademicRepository<Course> courseRepository,
             IAcademicRepository<Teacher> teacherRepository,
-            IAcademicRepository<Room> roomRepository)
+            IAcademicRepository<Room> roomRepository,
+            IFinanceRepository<BillingPolicy> billingPolicyRepository)
         {
             _repository = repository;
             _courseRepository = courseRepository;
             _teacherRepository = teacherRepository;
             _roomRepository = roomRepository;
+            _billingPolicyRepository = billingPolicyRepository;
         }
 
         public async Task<Result<ClassResponse>> Handle(UpdateClassCommand request, CancellationToken ct)
@@ -44,10 +49,14 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.UpdateCl
 
             if (request.RoomId.HasValue && !await _roomRepository.ExistsAsync(x => x.Id == request.RoomId.Value, ct))
                 return Result<ClassResponse>.Failure("Room is not found.", 404);
+            if (request.BillingPolicyId.HasValue &&
+                !await _billingPolicyRepository.ExistsAsync(x => x.Id == request.BillingPolicyId.Value && x.IsActive, ct))
+                return Result<ClassResponse>.Failure("Active billing policy is not found.", 404);
 
             classroom.CourseId = request.CourseId;
             classroom.TeacherId = request.TeacherId;
             classroom.RoomId = request.RoomId;
+            classroom.BillingPolicyId = request.BillingPolicyId;
             classroom.Code = code;
             classroom.Name = request.Name.Trim();
             classroom.StartDate = request.StartDate;

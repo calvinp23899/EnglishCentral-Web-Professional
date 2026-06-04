@@ -8,6 +8,7 @@ import {
   type AdminBillingPolicy,
   type BillingPolicyType,
 } from "@/features/admin/billing-policies/api/admin-billing-policies-api";
+import { adminMetadataApi, type MetadataOption } from "@/features/admin/shared/api/admin-metadata-api";
 import listStyles from "@/features/admin/students/pages/StudentListPage.module.scss";
 import toolbarStyles from "@/features/admin/teachers/pages/TeacherListPage.module.scss";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
@@ -31,17 +32,15 @@ const typeLabels: Record<string, string> = {
   "1": "Thanh toán đủ",
   "2": "Theo tháng",
   "3": "Trả góp",
-  "4": "Tùy chỉnh",
   FullPayment: "Thanh toán đủ",
   Monthly: "Theo tháng",
   Installment: "Trả góp",
-  Custom: "Tùy chỉnh",
 };
-const typeOptions: BillingPolicyType[] = ["FullPayment", "Monthly", "Installment", "Custom"];
 
 export function BillingPolicyListPage() {
   const [records, setRecords] = useState<AdminBillingPolicy[]>([]);
   const [totalItems, setTotalItems] = useState(0);
+  const [typeOptions, setTypeOptions] = useState<MetadataOption[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [draftFilters, setDraftFilters] = useState<Filters>(emptyFilters);
@@ -54,6 +53,12 @@ export function BillingPolicyListPage() {
   const [deletingRecord, setDeletingRecord] = useState<AdminBillingPolicy | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
+
+  useEffect(() => {
+    adminMetadataApi.getBillingPolicyTypeOptions()
+      .then(setTypeOptions)
+      .catch((error) => toastDanger(getAuthErrorMessage(error)));
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(async () => {
@@ -115,7 +120,7 @@ export function BillingPolicyListPage() {
       </tr>)}</tbody></table>{records.length === 0 && <div className={listStyles.emptyState}>Không có chính sách học phí phù hợp.</div>}</div><Pagination pageNumber={pageNumber} pageSize={pageSize} totalItems={totalItems} onPageChange={setPageNumber} onPageSizeChange={(value) => { setPageSize(value); setPageNumber(1); }} /></section>
     </div>
     <SidePanel description="Lọc danh sách chính sách học phí theo loại và trạng thái." footer={<div className={toolbarStyles.panelActions}><button type="button" onClick={() => { setDraftFilters(emptyFilters); setFilters(emptyFilters); }}>Xóa bộ lọc</button><button type="button" onClick={() => { setFilters(draftFilters); setPageNumber(1); setIsFilterPanelOpen(false); }}>Áp dụng</button></div>} isOpen={isFilterPanelOpen} title="Bộ lọc" onClose={() => setIsFilterPanelOpen(false)}><div className={toolbarStyles.panelForm}>
-      <label><span>Loại chính sách</span><select value={draftFilters.type} onChange={(event) => setDraftFilters((current) => ({ ...current, type: event.target.value as Filters["type"] }))}><option value="all">Tất cả</option>{typeOptions.map((type) => <option key={type} value={type}>{typeLabels[type]}</option>)}</select></label>
+      <label><span>Loại chính sách</span><select value={draftFilters.type} onChange={(event) => setDraftFilters((current) => ({ ...current, type: event.target.value as Filters["type"] }))}><option value="all">Tất cả</option>{typeOptions.map((option) => <option key={option.value} value={option.value}>{option.value}</option>)}</select></label>
       <label><span>Trạng thái</span><select value={draftFilters.status} onChange={(event) => setDraftFilters((current) => ({ ...current, status: event.target.value as Filters["status"] }))}><option value="all">Tất cả</option><option value="active">Hoạt động</option><option value="inactive">Ngừng hoạt động</option></select></label>
     </div></SidePanel>
     <ConfirmModal confirmText={isDeleting ? "Đang xóa..." : "Xóa"} description={deletingRecord ? `Bạn có chắc muốn xóa chính sách ${deletingRecord.name}?` : ""} isConfirmDisabled={isDeleting} isOpen={Boolean(deletingRecord)} title="Xác nhận xóa chính sách" tone="danger" onCancel={() => setDeletingRecord(null)} onConfirm={handleDelete} />

@@ -19,10 +19,9 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.D
             var policy = await _repository.GetByIdAsync(request.Id, ct);
             if (policy is null)
                 return Result<bool>.Failure("Billing policy is not found.", 404);
-
+            if (policy.IsDefault)
+                return Result<bool>.Failure("Default billing policy cannot be deleted. Set another default policy first.", 409);
             policy.IsDeleted = true;
-            policy.DeletedAt = DateTimeOffset.UtcNow;
-            policy.UpdatedAt = DateTimeOffset.UtcNow;
             return Result<bool>.Success(true);
         }
     }

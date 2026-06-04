@@ -29,6 +29,11 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Upda
             RuleFor(x => x.Id).GreaterThan(0);
             RuleFor(x => x.EnrollmentCode).MaximumLength(50);
             RuleFor(x => x.Status).IsInEnum();
+            RuleFor(x => x.TuitionFee).GreaterThanOrEqualTo(0);
+            RuleFor(x => x.DiscountAmount).GreaterThanOrEqualTo(0);
+            RuleFor(x => x.FinalAmount).GreaterThanOrEqualTo(0);
+            RuleFor(x => x.PaidAmount).GreaterThanOrEqualTo(0);
+            RuleFor(x => x.OutstandingAmount).GreaterThanOrEqualTo(0);
             RuleFor(x => x.CancellationReason).MaximumLength(1000);
             RuleFor(x => x.Notes).MaximumLength(2000);
         }

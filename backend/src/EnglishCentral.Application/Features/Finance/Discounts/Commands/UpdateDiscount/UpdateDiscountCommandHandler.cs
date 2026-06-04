@@ -16,7 +16,20 @@ namespace EnglishCentral.Application.Features.Finance.Discounts.Commands.UpdateD
             if (discount is null) return Result<DiscountResponse>.Failure("Discount is not found.", 404);
             var code = request.Code.Trim();
             if (await _repository.ExistsAsync(x => x.Id != request.Id && x.Code == code, ct)) return Result<DiscountResponse>.Failure("Discount code already exists.", 409);
-            discount.Code = code; discount.Name = request.Name.Trim(); discount.Type = request.Type; discount.Value = request.Value; discount.ValidFrom = request.ValidFrom; discount.ValidTo = request.ValidTo; discount.IsActive = request.IsActive; discount.Description = request.Description?.Trim(); discount.UpdatedAt = DateTimeOffset.UtcNow;
+            if (request.MaxUsageCount.HasValue && request.MaxUsageCount.Value < discount.UsedCount)
+                return Result<DiscountResponse>.Failure("Max usage count cannot be less than used count.", 400);
+
+            discount.Code = code;
+            discount.Name = code;
+            discount.Type = request.Type;
+            discount.Value = request.Value;
+            discount.ValidFrom = request.ValidFrom;
+            discount.ValidTo = request.ValidTo;
+            discount.IsActive = request.IsActive;
+            discount.MaxUsageCount = request.MaxUsageCount;
+            discount.MaxUsagePerStudent = request.MaxUsagePerStudent;
+            discount.Description = request.Description?.Trim();
+            discount.UpdatedAt = DateTimeOffset.UtcNow;
             return Result<DiscountResponse>.Success(discount.ToResponse());
         }
     }

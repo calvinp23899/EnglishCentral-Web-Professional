@@ -11,7 +11,6 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.U
         string Name,
         EBillingPolicyType Type,
         int? NumberOfInstallments,
-        bool IsDefault,
         bool IsActive,
         string? Notes) : IRequest<Result<BillingPolicyResponse>>;
 
@@ -23,7 +22,7 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.U
             RuleFor(x => x.Name).NotEmpty().MaximumLength(255);
             RuleFor(x => x.Type).IsInEnum();
             RuleFor(x => x.NumberOfInstallments).GreaterThan(1).When(x => x.Type == EBillingPolicyType.Installment);
-            RuleFor(x => x.NumberOfInstallments).Null().When(x => x.Type == EBillingPolicyType.Monthly || x.Type == EBillingPolicyType.Custom);
+            RuleFor(x => x.NumberOfInstallments).Null().When(x => x.Type == EBillingPolicyType.Monthly);
             RuleFor(x => x.Notes).MaximumLength(2000);
         }
     }

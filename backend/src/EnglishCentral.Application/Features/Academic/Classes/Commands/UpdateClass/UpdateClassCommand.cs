@@ -11,6 +11,7 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.UpdateCl
         long CourseId,
         long TeacherId,
         long? RoomId,
+        long? BillingPolicyId,
         string Code,
         string Name,
         DateOnly StartDate,
@@ -31,6 +32,7 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.UpdateCl
             RuleFor(x => x.Id).GreaterThan(0);
             RuleFor(x => x.CourseId).GreaterThan(0);
             RuleFor(x => x.TeacherId).GreaterThan(0);
+            RuleFor(x => x.BillingPolicyId).GreaterThan(0).When(x => x.BillingPolicyId.HasValue);
             RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
             RuleFor(x => x.Name).NotEmpty().MaximumLength(255);
             RuleFor(x => x.Capacity).GreaterThan(0);

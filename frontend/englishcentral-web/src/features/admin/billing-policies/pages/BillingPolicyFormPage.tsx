@@ -8,23 +8,30 @@ import {
   type BillingPolicyFormPayload,
   type BillingPolicyType,
 } from "@/features/admin/billing-policies/api/admin-billing-policies-api";
+import { adminMetadataApi, type MetadataOption } from "@/features/admin/shared/api/admin-metadata-api";
 import styles from "@/features/admin/students/pages/StudentCreatePage.module.scss";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 type Props = { mode: "create" | "edit" };
 type FormState = { name: string; type: BillingPolicyType; numberOfInstallments: string; isDefault: boolean; isActive: boolean; notes: string };
 type FormErrors = Partial<Record<keyof FormState, string>>;
-const typeLabels: Record<BillingPolicyType, string> = { FullPayment: "Thanh toán đủ", Monthly: "Theo tháng", Installment: "Trả góp", Custom: "Tùy chỉnh" };
-const typeValues: Record<string, BillingPolicyType> = { "1": "FullPayment", "2": "Monthly", "3": "Installment", "4": "Custom" };
+const typeValues: Record<string, BillingPolicyType> = { "1": "FullPayment", "2": "Monthly", "3": "Installment" };
 
 export function BillingPolicyFormPage({ mode }: Props) {
   const navigate = useNavigate();
   const { recordId } = useParams();
   const isEditMode = mode === "edit";
   const [form, setForm] = useState<FormState>({ name: "", type: "FullPayment", numberOfInstallments: "", isDefault: false, isActive: true, notes: "" });
+  const [typeOptions, setTypeOptions] = useState<MetadataOption[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    adminMetadataApi.getBillingPolicyTypeOptions()
+      .then(setTypeOptions)
+      .catch((error) => toastDanger(getAuthErrorMessage(error)));
+  }, []);
 
   useEffect(() => {
     if (!isEditMode || !recordId) return;
@@ -77,7 +84,7 @@ export function BillingPolicyFormPage({ mode }: Props) {
     <form className={styles.panel} onSubmit={handleSubmit}><div className={styles.panelHeader}><div><h2>Thông tin chính sách</h2><p>Thiết lập quy tắc thanh toán học phí dùng trong hệ thống.</p></div></div>
       {isLoading ? <p className={styles.accountState}>Đang tải thông tin chính sách...</p> : <div className={styles.formGrid}>
         <label className={styles.field}><span>Tên chính sách <em className={styles.requiredMark}>*</em></span><input value={form.name} onChange={(event) => updateField("name", event.target.value)} /><ErrorMessage message={errors.name} /></label>
-        <label className={styles.field}><span>Loại chính sách <em className={styles.requiredMark}>*</em></span><select value={form.type} onChange={(event) => updateField("type", event.target.value as BillingPolicyType)}>{(Object.keys(typeLabels) as BillingPolicyType[]).map((type) => <option key={type} value={type}>{typeLabels[type]}</option>)}</select></label>
+        <label className={styles.field}><span>Loại chính sách <em className={styles.requiredMark}>*</em></span><select value={form.type} onChange={(event) => updateField("type", event.target.value as BillingPolicyType)}>{typeOptions.map((option) => <option key={option.value} value={option.value}>{option.value}</option>)}</select></label>
         {form.type === "Installment" && <label className={styles.field}><span>Số kỳ trả góp <em className={styles.requiredMark}>*</em></span><input min={2} type="number" value={form.numberOfInstallments} onChange={(event) => updateField("numberOfInstallments", event.target.value)} /><ErrorMessage message={errors.numberOfInstallments} /></label>}
         <label className={styles.field}><span>Chính sách mặc định <em className={styles.requiredMark}>*</em></span><select value={String(form.isDefault)} onChange={(event) => updateField("isDefault", event.target.value === "true")}><option value="false">Không</option><option value="true">Có</option></select></label>
         <label className={styles.field}><span>Trạng thái <em className={styles.requiredMark}>*</em></span><select value={String(form.isActive)} onChange={(event) => updateField("isActive", event.target.value === "true")}><option value="true">Hoạt động</option><option value="false">Ngừng hoạt động</option></select></label>

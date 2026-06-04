@@ -74,7 +74,7 @@ const truncateText = (value?: string | null) => {
 
 const getStatusLabel = (status: AdminTeacher["status"], options: MetadataOption[]) =>
   options.find((option) => option.code === Number(status) || option.value === String(status))
-    ?.label ?? String(status);
+    ?.value ?? String(status);
 
 const getStatusTone = (status: AdminTeacher["status"]) => {
   if (Number(status) === 1 || status === "Active") {
@@ -405,7 +405,7 @@ export function TeacherListPage() {
             >
               <option value="all">Tất cả</option>
               {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
+                <option key={option.value} value={option.value}>{option.value}</option>
               ))}
             </select>
           </label>

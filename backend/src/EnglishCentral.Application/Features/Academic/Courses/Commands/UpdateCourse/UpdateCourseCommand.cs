@@ -8,6 +8,7 @@ namespace EnglishCentral.Application.Features.Academic.Courses.Commands.UpdateCo
     public record UpdateCourseCommand(
         long Id,
         long CourseCategoryId,
+        long? DefaultBillingPolicyId,
         string Code,
         string Name,
         string? Description,
@@ -27,6 +28,7 @@ namespace EnglishCentral.Application.Features.Academic.Courses.Commands.UpdateCo
         {
             RuleFor(x => x.Id).GreaterThan(0);
             RuleFor(x => x.CourseCategoryId).GreaterThan(0);
+            RuleFor(x => x.DefaultBillingPolicyId).GreaterThan(0).When(x => x.DefaultBillingPolicyId.HasValue);
             RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
             RuleFor(x => x.Name).NotEmpty().MaximumLength(255);
             RuleFor(x => x.Description).MaximumLength(2000);

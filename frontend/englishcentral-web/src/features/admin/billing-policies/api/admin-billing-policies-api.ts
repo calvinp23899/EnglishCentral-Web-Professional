@@ -1,7 +1,7 @@
 import { api } from "@/api/axios";
 import { ENDPOINTS } from "@/api/endpoint";
 
-export type BillingPolicyType = "FullPayment" | "Monthly" | "Installment" | "Custom";
+export type BillingPolicyType = "FullPayment" | "Monthly" | "Installment";
 
 export type AdminBillingPolicy = {
   publicId: string;

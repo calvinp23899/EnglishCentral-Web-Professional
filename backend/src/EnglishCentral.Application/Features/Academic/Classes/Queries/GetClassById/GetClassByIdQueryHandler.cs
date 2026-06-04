@@ -1,5 +1,7 @@
 using EnglishCentral.Application.Features.Academic.Classes.DTOs;
 using EnglishCentral.Application.Interfaces.Academic;
+using EnglishCentral.Application.Interfaces.Finance;
+using EnglishCentral.Domain.Entities.Finance;
 using EnglishCentral.Shared.Results;
 using MediatR;
 using AcademicClass = EnglishCentral.Domain.Entities.Academic.Class;
@@ -9,18 +11,26 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Queries.GetClassB
     public class GetClassByIdQueryHandler : IRequestHandler<GetClassByIdQuery, Result<ClassResponse>>
     {
         private readonly IAcademicRepository<AcademicClass> _repository;
+        private readonly IFinanceRepository<BillingPolicy> _billingPolicyRepository;
 
-        public GetClassByIdQueryHandler(IAcademicRepository<AcademicClass> repository)
+        public GetClassByIdQueryHandler(
+            IAcademicRepository<AcademicClass> repository,
+            IFinanceRepository<BillingPolicy> billingPolicyRepository)
         {
             _repository = repository;
+            _billingPolicyRepository = billingPolicyRepository;
         }
 
         public async Task<Result<ClassResponse>> Handle(GetClassByIdQuery request, CancellationToken ct)
         {
             var classroom = await _repository.FirstOrDefaultAsync(x => x.Id == request.Id, ct);
-            return classroom is null
-                ? Result<ClassResponse>.Failure("Class is not found.", 404)
-                : Result<ClassResponse>.Success(classroom.ToResponse());
+            if (classroom is null)
+                return Result<ClassResponse>.Failure("Class is not found.", 404);
+
+            if (classroom.BillingPolicyId.HasValue)
+                classroom.BillingPolicy = await _billingPolicyRepository.GetByIdAsync(classroom.BillingPolicyId.Value, ct);
+
+            return Result<ClassResponse>.Success(classroom.ToResponse());
         }
     }
 }

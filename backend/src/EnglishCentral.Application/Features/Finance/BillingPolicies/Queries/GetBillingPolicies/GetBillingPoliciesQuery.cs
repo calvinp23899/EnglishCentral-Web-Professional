@@ -11,6 +11,7 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Queries.Ge
         string? Keyword = null,
         EBillingPolicyType? Type = null,
         bool? IsActive = null,
+        bool? IsDefault = null,
         int Page = 1,
         int PageSize = 20,
         bool IsDescending = true) : IRequest<Result<PagedResult<BillingPolicyResponse>>>;

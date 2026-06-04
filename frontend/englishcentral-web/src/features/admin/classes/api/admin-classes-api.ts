@@ -1,5 +1,6 @@
 import { api } from "@/api/axios";
 import { ENDPOINTS } from "@/api/endpoint";
+import type { AdminBillingPolicy } from "@/features/admin/billing-policies/api/admin-billing-policies-api";
 
 export type ClassStatus = "Draft" | "Open" | "Ongoing" | "Completed" | "Cancelled";
 
@@ -9,6 +10,15 @@ export type AdminClass = {
   courseId: number;
   teacherId: number;
   roomId?: number | null;
+  billingPolicyId?: number | null;
+  billingPolicy?: AdminBillingPolicy | null;
+  billingPolicyName?: string | null;
+  billingPolicyType?: string | number | null;
+  billingPolicyIsDefault?: boolean | null;
+  effectiveBillingPolicyId?: number | null;
+  effectiveBillingPolicyName?: string | null;
+  effectiveBillingPolicyType?: string | number | null;
+  effectiveBillingPolicyIsDefault?: boolean | null;
   code: string;
   name: string;
   startDate: string;
@@ -27,6 +37,7 @@ export type ClassFormPayload = {
   courseId: number;
   teacherId: number;
   roomId?: number | null;
+  billingPolicyId?: number | null;
   code: string;
   name: string;
   startDate: string;
@@ -42,6 +53,8 @@ export type ClassFormPayload = {
 };
 
 export type ClassStudent = {
+  studentId?: number;
+  enrollmentId?: number;
   studentCode: string;
   fullName: string;
   phoneNumber?: string | null;

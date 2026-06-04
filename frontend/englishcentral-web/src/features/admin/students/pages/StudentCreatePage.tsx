@@ -489,7 +489,7 @@ export function StudentCreatePage() {
                 >
                   {genderOptions.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.label}
+                      {option.value}
                     </option>
                   ))}
                 </select>
@@ -615,7 +615,7 @@ export function StudentCreatePage() {
                 >
                   {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.label}
+                      {option.value}
                     </option>
                   ))}
                 </select>
