@@ -4,10 +4,11 @@ import { Link, useParams } from "react-router-dom";
 
 import { ConfirmModal, SidePanel, toastDanger, toastSuccess } from "@/components/ui";
 import { adminClassesApi, type AdminClass, type ClassStudent } from "@/features/admin/classes/api/admin-classes-api";
-import { adminEnrollmentsApi, type EnrollmentPaymentPlanPayload, type EnrollmentStudentOption } from "@/features/admin/classes/api/admin-enrollments-api";
+import { adminEnrollmentsApi, type EnrollmentDiscountPayload, type EnrollmentPaymentPlanPayload, type EnrollmentStudentOption } from "@/features/admin/classes/api/admin-enrollments-api";
 import { adminRoomsApi, type AdminRoom } from "@/features/admin/classes/api/admin-rooms-api";
 import { adminBillingPoliciesApi, type AdminBillingPolicy } from "@/features/admin/billing-policies/api/admin-billing-policies-api";
 import { adminCoursesApi, type AdminCourse } from "@/features/admin/courses/api/admin-courses-api";
+import { adminDiscountsApi, type AdminDiscount } from "@/features/admin/discounts/api/admin-discounts-api";
 import type { AdminEnrollment } from "@/features/admin/enrollments/api/admin-enrollment-finance-api";
 import type { AdminPaymentPlan } from "@/features/admin/payment-plans/api/admin-payment-plans-api";
 import { adminMetadataApi, type MetadataOption } from "@/features/admin/shared/api/admin-metadata-api";
@@ -83,12 +84,30 @@ const billingPolicyTypeCodes: Record<string, string> = {
   monthly: "2",
   installment: "3",
 };
+const discountTypeCodes: Record<string, string> = {
+  fixedamount: "1",
+  amount: "1",
+  percentage: "2",
+  percent: "2",
+};
 const getPolicyTypeCode = (value: string | number | null | undefined, metadata: MetadataOption[]) => {
   if (value === undefined || value === null) return "";
   if (typeof value === "number") return String(value);
   const rawType = String(value);
   return String(billingPolicyTypeCodes[rawType.toLowerCase()] ?? metadata.find((type) => type.value === rawType || String(type.code) === rawType)?.code ?? rawType);
 };
+const getDiscountTypeCode = (value: string | number | null | undefined, metadata: MetadataOption[]) => {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "number") return String(value);
+  const rawType = String(value);
+  return String(discountTypeCodes[rawType.toLowerCase()] ?? metadata.find((type) => type.value === rawType || String(type.code) === rawType)?.code ?? rawType);
+};
+const toPaymentPlanType = (value: string) => {
+  if (value === "1" || value === "FullPayment") return "FullPayment";
+  if (value === "2" || value === "Monthly") return "Monthly";
+  return "Installment";
+};
+const toEnrollmentDiscountType = (value: string) => value === "2" || value === "Percentage" ? "Percentage" : "FixedAmount";
 
 export function ClassViewPage() {
   const { recordId } = useParams();
@@ -118,6 +137,12 @@ export function ClassViewPage() {
   const [planItems, setPlanItems] = useState<PlanItemForm[]>([newPlanItem(1), newPlanItem(2)]);
   const [inheritedPlanItems, setInheritedPlanItems] = useState<PlanItemForm[]>([]);
   const [paymentPlanError, setPaymentPlanError] = useState("");
+  const [discountOptions, setDiscountOptions] = useState<AdminDiscount[]>([]);
+  const [discountTypes, setDiscountTypes] = useState<MetadataOption[]>([]);
+  const [discountMode, setDiscountMode] = useState<"none" | "existing">("none");
+  const [discountId, setDiscountId] = useState("");
+  const [discountReason, setDiscountReason] = useState("");
+  const [discountError, setDiscountError] = useState("");
 
   useEffect(() => {
     Promise.all([
@@ -138,10 +163,14 @@ export function ClassViewPage() {
     Promise.all([
       adminBillingPoliciesApi.getList({ page: 1, pageSize: 20, isActive: true }),
       adminMetadataApi.getBillingPolicyTypeOptions(),
+      adminDiscountsApi.getList({ page: 1, pageSize: 20, isActive: true }),
+      adminMetadataApi.getDiscountTypeOptions(),
     ])
-      .then(([policyResult, typeResult]) => {
+      .then(([policyResult, typeResult, discountResult, discountTypeResult]) => {
         setBillingPolicies(policyResult.items);
         setPlanTypes(typeResult);
+        setDiscountOptions(discountResult.items);
+        setDiscountTypes(discountTypeResult);
         const customPolicies = policyResult.items.filter((policy) => !policy.isDefault);
         if (!billingPolicyId && customPolicies.length > 0) {
           const policy = customPolicies[0];
@@ -250,6 +279,20 @@ export function ClassViewPage() {
       <input readOnly value={value} />
     </label>
   );
+  const selectedDiscount = discountOptions.find((discount) => discount.id === Number(discountId));
+  const selectedDiscountTypeCode = getDiscountTypeCode(selectedDiscount?.type, discountTypes);
+  const isSelectedDiscountPercentage =
+    selectedDiscountTypeCode === "2" || String(selectedDiscount?.type ?? "").toLowerCase().includes("percent");
+  const originalTuitionFee = record?.tuitionFeeSnapshot ?? 0;
+  const discountAmount = discountMode === "existing" && selectedDiscount
+    ? Math.min(originalTuitionFee, isSelectedDiscountPercentage ? Math.floor(originalTuitionFee * selectedDiscount.value / 100) : selectedDiscount.value)
+    : 0;
+  const netTuitionFee = Math.max(0, originalTuitionFee - discountAmount);
+  const selectedDiscountValue = selectedDiscount
+    ? isSelectedDiscountPercentage
+      ? `${new Intl.NumberFormat("en-US").format(selectedDiscount.value)}%`
+      : `${new Intl.NumberFormat("en-US").format(selectedDiscount.value)} đ`
+    : "";
   const resetPaymentPlan = () => {
     setIsCustomPaymentPlan(false);
     setBillingPolicyId("");
@@ -257,13 +300,25 @@ export function ClassViewPage() {
     setNumberOfInstallments("2");
     setPlanNotes("");
     setPaymentPlanError("");
-    setPlanItems(buildPlanItems(2, record?.tuitionFeeSnapshot ?? 0));
+    setPlanItems(buildPlanItems(2, originalTuitionFee));
     setInheritedPlanItems([]);
+    setDiscountMode("none");
+    setDiscountId("");
+    setDiscountReason("");
+    setDiscountError("");
+  };
+  const closeStudentPanel = () => {
+    resetPaymentPlan();
+    setRecentEnrollment(null);
+    setSelectedStudent(null);
+    setStudentSearch("");
+    setIsStudentPanelOpen(false);
   };
 
   const registerStudent = async () => {
     if (!selectedStudent || !record || isRegisteringStudent) return;
     let paymentPlan: EnrollmentPaymentPlanPayload | null = null;
+    let discounts: EnrollmentDiscountPayload[] | null = null;
     if (isCustomPaymentPlan) {
       if (!selectedBillingPolicy) {
         setPaymentPlanError("Vui lòng chọn chính sách tham chiếu.");
@@ -274,13 +329,13 @@ export function ClassViewPage() {
         setPaymentPlanError("Vui lòng nhập đầy đủ ngày đến hạn và số tiền của từng kỳ.");
         return;
       }
-      if (isSelectedBillingPolicyInstallment && items && items.reduce((sum, item) => sum + item.amount, 0) !== record.tuitionFeeSnapshot) {
-        setPaymentPlanError("Tổng tiền các kỳ phải bằng học phí của lớp.");
+      if (isSelectedBillingPolicyInstallment && items && items.reduce((sum, item) => sum + item.amount, 0) !== netTuitionFee) {
+        setPaymentPlanError("Tổng tiền các kỳ phải bằng số còn phải thu.");
         return;
       }
       paymentPlan = {
         billingPolicyId: selectedBillingPolicy.id,
-        type: Number(selectedBillingPolicyTypeCode || planType),
+        type: toPaymentPlanType(selectedBillingPolicyTypeCode || planType),
         numberOfInstallments: isSelectedBillingPolicyInstallment ? Number(numberOfInstallments) : null,
         notes: planNotes.trim() || null,
         items,
@@ -291,27 +346,40 @@ export function ClassViewPage() {
         setPaymentPlanError("Vui lòng nhập đầy đủ ngày đến hạn và số tiền của từng kỳ.");
         return;
       }
-      if (items.reduce((sum, item) => sum + item.amount, 0) !== record.tuitionFeeSnapshot) {
-        setPaymentPlanError("Tổng tiền các kỳ phải bằng học phí của lớp.");
+      if (items.reduce((sum, item) => sum + item.amount, 0) !== netTuitionFee) {
+        setPaymentPlanError("Tổng tiền các kỳ phải bằng số còn phải thu.");
         return;
       }
       paymentPlan = {
         billingPolicyId: inheritedBillingPolicy.id,
-        type: Number(isInheritedInstallmentPlan ? installmentPlanTypeCode : inheritedBillingPolicyTypeCode),
+        type: toPaymentPlanType(isInheritedInstallmentPlan ? installmentPlanTypeCode : inheritedBillingPolicyTypeCode),
         numberOfInstallments: inheritedInstallmentCount,
         notes: null,
         items,
       };
     }
+    if (discountMode === "existing") {
+      const selectedDiscount = discountOptions.find((discount) => discount.id === Number(discountId));
+      if (!selectedDiscount) {
+        setDiscountError("Vui lòng chọn mã giảm giá.");
+        return;
+      }
+      discounts = [{
+        discountId: selectedDiscount.id,
+        name: null,
+        type: toEnrollmentDiscountType(getDiscountTypeCode(selectedDiscount.type, discountTypes)),
+        value: 0,
+        amount: null,
+        reason: discountReason.trim() || null,
+      }];
+    }
     setPaymentPlanError("");
+    setDiscountError("");
     setIsRegisteringStudent(true);
     try {
-      const result = await adminEnrollmentsApi.create(selectedStudent.studentId, record.id, paymentPlan);
+      await adminEnrollmentsApi.create(selectedStudent.studentId, record.id, record.tuitionFeeSnapshot, paymentPlan, discounts);
       await loadClassStudents(record.id);
-      setRecentEnrollment(result);
-      setSelectedStudent(null);
-      setStudentSearch("");
-      resetPaymentPlan();
+      closeStudentPanel();
       toastSuccess("Đăng ký học viên vào lớp thành công.");
     } catch (error) {
       toastDanger(getAuthErrorMessage(error));
@@ -324,14 +392,51 @@ export function ClassViewPage() {
   const teacherName = teachers.find((item) => item.id === record?.teacherId)?.fullName;
   const roomName = rooms.find((item) => item.id === record?.roomId)?.name;
   const updatePlanItem = (index: number, field: keyof PlanItemForm, value: string) =>
-    setPlanItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: field === "amount" ? moneyInput(value) : value } : item));
+    setPlanItems((current) => {
+      const next = current.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: field === "amount" ? moneyInput(value) : value } : item);
+      if (field !== "amount") return next;
+      const changedAmount = toMoney(next[index]?.amount ?? "0");
+      const otherIndexes = next.map((_, itemIndex) => itemIndex).filter((itemIndex) => itemIndex !== index);
+      if (otherIndexes.length === 0) return next;
+      const remainingAmount = Math.max(0, netTuitionFee - changedAmount);
+      const regularAmount = Math.floor(remainingAmount / otherIndexes.length);
+      return next.map((item, itemIndex) => {
+        const remainingIndex = otherIndexes.indexOf(itemIndex);
+        if (remainingIndex === -1) return item;
+        const amount = remainingIndex === otherIndexes.length - 1 ? remainingAmount - regularAmount * (otherIndexes.length - 1) : regularAmount;
+        return { ...item, amount: moneyInput(amount) };
+      });
+    });
   const updateInheritedPlanItem = (index: number, field: keyof PlanItemForm, value: string) =>
     setInheritedPlanItems((current) => {
       const items = current.length > 0 ? current : inheritedDefaultPlanItems;
-      return items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: field === "amount" ? moneyInput(value) : value } : item);
+      const next = items.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: field === "amount" ? moneyInput(value) : value } : item);
+      if (field !== "amount") return next;
+      const changedAmount = toMoney(next[index]?.amount ?? "0");
+      const otherIndexes = next.map((_, itemIndex) => itemIndex).filter((itemIndex) => itemIndex !== index);
+      if (otherIndexes.length === 0) return next;
+      const remainingAmount = Math.max(0, netTuitionFee - changedAmount);
+      const regularAmount = Math.floor(remainingAmount / otherIndexes.length);
+      return next.map((item, itemIndex) => {
+        const remainingIndex = otherIndexes.indexOf(itemIndex);
+        if (remainingIndex === -1) return item;
+        const amount = remainingIndex === otherIndexes.length - 1 ? remainingAmount - regularAmount * (otherIndexes.length - 1) : regularAmount;
+        return { ...item, amount: moneyInput(amount) };
+      });
     });
+  const chooseDiscount = (value: string) => {
+    const discount = discountOptions.find((item) => item.id === Number(value));
+    const typeCode = getDiscountTypeCode(discount?.type, discountTypes);
+    const nextDiscountAmount = discount
+      ? Math.min(originalTuitionFee, typeCode === "2" || String(discount.type).toLowerCase().includes("percent") ? Math.floor(originalTuitionFee * discount.value / 100) : discount.value)
+      : 0;
+    const nextNetTuitionFee = Math.max(0, originalTuitionFee - nextDiscountAmount);
+    setDiscountId(value);
+    setPlanItems(buildPlanItems(Number(numberOfInstallments) || 2, nextNetTuitionFee));
+    setInheritedPlanItems([]);
+  };
   const resizePlanItems = (count: number) => {
-    setPlanItems(buildPlanItems(count, record?.tuitionFeeSnapshot ?? 0));
+    setPlanItems(buildPlanItems(count, netTuitionFee));
   };
   const cancelRegistration = async () => {
     if (!cancellingStudent?.enrollmentId || !record || isCancellingEnrollment) return;
@@ -405,7 +510,7 @@ export function ClassViewPage() {
     inheritedBillingPolicyTypeCode === installmentPlanTypeCode ||
     String(record?.effectiveBillingPolicyType ?? record?.billingPolicy?.type ?? record?.billingPolicyType ?? inheritedBillingPolicy?.type ?? "").toLowerCase() === "installment";
   const inheritedInstallmentCount = Math.max(1, record?.billingPolicy?.numberOfInstallments ?? inheritedBillingPolicy?.numberOfInstallments ?? 2);
-  const inheritedDefaultPlanItems = isInheritedInstallmentPlan ? buildPlanItems(inheritedInstallmentCount, record?.tuitionFeeSnapshot ?? 0) : [];
+  const inheritedDefaultPlanItems = isInheritedInstallmentPlan ? buildPlanItems(inheritedInstallmentCount, netTuitionFee) : [];
   const inheritedPaymentPlanItems = inheritedPlanItems.length > 0 ? inheritedPlanItems : inheritedDefaultPlanItems;
   const chooseCustomMode = () => {
     setIsCustomPaymentPlan(true);
@@ -503,11 +608,11 @@ export function ClassViewPage() {
 
       <SidePanel
         description="Tìm theo email, số điện thoại hoặc mã học viên, sau đó chọn học viên cần đăng ký."
-        footer={<div className={styles.panelActions}><button type="button" onClick={() => setIsStudentPanelOpen(false)}>Hủy</button><button disabled={!selectedStudent || isRegisteringStudent} type="button" onClick={registerStudent}>{isRegisteringStudent ? "Đang đăng ký..." : "Đăng ký vào lớp"}</button></div>}
+        footer={<div className={styles.panelActions}><button type="button" onClick={closeStudentPanel}>Hủy</button><button disabled={!selectedStudent || isRegisteringStudent} type="button" onClick={registerStudent}>{isRegisteringStudent ? "Đang đăng ký..." : "Đăng ký vào lớp"}</button></div>}
         isOpen={isStudentPanelOpen}
         title="Thêm học viên"
         width="lg"
-        onClose={() => setIsStudentPanelOpen(false)}
+        onClose={closeStudentPanel}
       >
         <label className={styles.studentSearch}>
           <Search size={18} />
@@ -522,6 +627,18 @@ export function ClassViewPage() {
           ))}
           {!isSearchingStudents && availableStudents.length === 0 && <div className={styles.emptyState}>Không tìm thấy học viên phù hợp.</div>}
         </div>
+        {selectedStudent && <section className={styles.paymentPlanConfig}>
+          <div><strong>Giảm giá / Ưu đãi</strong><p>Chọn voucher đang hoạt động để áp dụng cho học viên.</p></div>
+          <label><input checked={discountMode === "none"} name="discount-mode" type="radio" onChange={() => { setDiscountMode("none"); setDiscountError(""); setPlanItems(buildPlanItems(Number(numberOfInstallments) || 2, originalTuitionFee)); setInheritedPlanItems([]); }} /> Không áp dụng giảm giá</label>
+          <label><input checked={discountMode === "existing"} name="discount-mode" type="radio" onChange={() => { setDiscountMode("existing"); setDiscountError(""); }} /> Chọn mã giảm giá có sẵn</label>
+          {discountMode === "existing" && <div className={styles.customPlanFields}>
+            <label><span>Mã giảm giá</span><select disabled={discountOptions.length === 0} value={discountId} onChange={(event) => chooseDiscount(event.target.value)}><option value="">{discountOptions.length === 0 ? "Không có mã giảm giá" : "--- mã giảm giá ---"}</option>{discountOptions.map((discount) => <option key={discount.id} value={discount.id}>{discount.code}</option>)}</select></label>
+            <label><span>Lý do</span><input placeholder="Ưu đãi nhập học" value={discountReason} onChange={(event) => setDiscountReason(event.target.value)} /></label>
+            {selectedDiscount && <p className={styles.discountPreview}>Được giảm {selectedDiscountValue}</p>}
+            {selectedDiscount && <div className={styles.discountSummary}><div><span>Học phí gốc</span><strong>{formatMoney(originalTuitionFee)}</strong></div><div><span>Giảm giá</span><strong>-{formatMoney(discountAmount)}</strong></div><div><span>Còn phải thu</span><strong>{formatMoney(netTuitionFee)}</strong></div></div>}
+          </div>}
+          {discountError && <p className={styles.planError}>{discountError}</p>}
+        </section>}
         {selectedStudent && <section className={styles.paymentPlanConfig}>
           <div><strong>Phương án thanh toán riêng cho học viên</strong><p>Mặc định kế thừa chính sách của lớp. Chỉ cấu hình khi học viên có ngoại lệ.</p></div>
           <label><input checked={!isCustomPaymentPlan} name="payment-plan-mode" type="radio" onChange={() => { setIsCustomPaymentPlan(false); setPaymentPlanError(""); }} /> Kế thừa từ lớp học</label>

@@ -5,7 +5,7 @@ import type { AdminEnrollment } from "@/features/admin/enrollments/api/admin-enr
 
 export type EnrollmentPaymentPlanPayload = {
   billingPolicyId?: number | null;
-  type: number;
+  type: "FullPayment" | "Monthly" | "Installment";
   numberOfInstallments?: number | null;
   notes?: string | null;
   items?: Array<{
@@ -14,6 +14,15 @@ export type EnrollmentPaymentPlanPayload = {
     dueDate: string;
     amount: number;
   }>;
+};
+
+export type EnrollmentDiscountPayload = {
+  discountId?: number | null;
+  name?: string | null;
+  type: "FixedAmount" | "Percentage";
+  value: number;
+  amount?: number | null;
+  reason?: string | null;
 };
 
 export type EnrollmentStudentOption = {
@@ -49,7 +58,7 @@ export const adminEnrollmentsApi = {
     return unwrap(response.data, "Không thể tìm kiếm học viên.");
   },
 
-  async create(studentId: number, classId: number, paymentPlan?: EnrollmentPaymentPlanPayload | null) {
+  async create(studentId: number, classId: number, tuitionFee: number, paymentPlan?: EnrollmentPaymentPlanPayload | null, discounts?: EnrollmentDiscountPayload[] | null) {
     const response = await api.post<ApiResult<AdminEnrollment>>(ENDPOINTS.ADMIN_ENROLLMENTS.CREATE, {
       studentId,
       classId,
@@ -58,7 +67,7 @@ export const adminEnrollmentsApi = {
       startDate: null,
       endDate: null,
       status: "Active",
-      tuitionFee: 0,
+      tuitionFee,
       discountAmount: 0,
       finalAmount: 0,
       paidAmount: 0,
@@ -67,7 +76,7 @@ export const adminEnrollmentsApi = {
       cancelledAt: null,
       cancelledBy: null,
       notes: null,
-      discounts: null,
+      discounts: discounts && discounts.length > 0 ? discounts : null,
       paymentPlan: paymentPlan ?? null,
     });
     const enrollment = unwrap(response.data, "Không thể đăng ký học viên vào lớp.");

@@ -17,7 +17,20 @@ namespace EnglishCentral.Application.Features.Finance.Discounts.Commands.CreateD
             if (await _repository.ExistsAsync(x => x.Code == code, ct))
                 return Result<DiscountResponse>.Failure("Discount code already exists.", 409);
 
-            var discount = new Discount { Code = code, Name = request.Name.Trim(), Type = request.Type, Value = request.Value, ValidFrom = request.ValidFrom, ValidTo = request.ValidTo, IsActive = request.IsActive, Description = request.Description?.Trim(), CreatedAt = DateTimeOffset.UtcNow };
+            var discount = new Discount
+            {
+                Code = code,
+                Name = code,
+                Type = request.Type,
+                Value = request.Value,
+                ValidFrom = request.ValidFrom,
+                ValidTo = request.ValidTo,
+                IsActive = request.IsActive,
+                MaxUsageCount = request.MaxUsageCount,
+                MaxUsagePerStudent = request.MaxUsagePerStudent,
+                Description = request.Description?.Trim(),
+                CreatedAt = DateTimeOffset.UtcNow
+            };
             await _repository.AddAsync(discount, ct);
             return Result<DiscountResponse>.Success(discount.ToResponse(), 201);
         }

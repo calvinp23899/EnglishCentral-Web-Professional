@@ -9,7 +9,6 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.C
         string Name,
         EBillingPolicyType Type,
         int? NumberOfInstallments,
-        bool IsDefault,
         bool IsActive,
         string? Notes) : IRequest<Result<BillingPolicyResponse>>;
 }

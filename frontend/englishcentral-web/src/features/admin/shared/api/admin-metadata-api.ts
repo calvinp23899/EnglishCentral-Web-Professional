@@ -61,6 +61,14 @@ export const adminMetadataApi = {
     return response.data;
   },
 
+  async getDiscountTypeOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.DISCOUNT_TYPE
+    );
+
+    return response.data;
+  },
+
   async getPaymentMethodOptions() {
     const response = await api.get<MetadataOption[]>(
       ENDPOINTS.ADMIN_METADATA.PAYMENT_METHOD

@@ -12,6 +12,9 @@ namespace EnglishCentral.Domain.Entities.Finance
         public DateOnly? ValidFrom { get; set; }
         public DateOnly? ValidTo { get; set; }
         public bool IsActive { get; set; } = true;
+        public int? MaxUsageCount { get; set; }
+        public int UsedCount { get; set; }
+        public int? MaxUsagePerStudent { get; set; }
         public string? Description { get; set; }
         public ICollection<EnrollmentDiscount> EnrollmentDiscounts { get; set; } = [];
         public ICollection<InvoiceDiscount> InvoiceDiscounts { get; set; } = [];

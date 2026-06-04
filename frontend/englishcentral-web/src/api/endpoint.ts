@@ -87,6 +87,14 @@ export const ENDPOINTS = {
     DELETE: (id: string | number) => `/admin/billing/policies/${id}/delete`,
   },
 
+  ADMIN_DISCOUNTS: {
+    GET_LIST: "/admin/billing/discounts/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/billing/discounts/${id}/get-by-id`,
+    CREATE: "/admin/billing/discounts/insert",
+    UPDATE: (id: string | number) => `/admin/billing/discounts/${id}/update`,
+    DELETE: (id: string | number) => `/admin/billing/discounts/${id}/delete`,
+  },
+
   ADMIN_INVOICES: {
     GET_LIST: "/admin/billing/invoices/get-list",
     GET_BY_ID: (id: string | number) => `/admin/billing/invoices/${id}/get-by-id`,
@@ -121,6 +129,7 @@ export const ENDPOINTS = {
     CONTRACT_TYPE: "/admin/metadata/get-contract-type",
     SALARY_TYPE: "/admin/metadata/get-salary-type",
     BILLING_POLICY_TYPE: "/admin/metadata/get-billing-policy-type",
+    DISCOUNT_TYPE: "/admin/metadata/get-discount-type",
     PAYMENT_METHOD: "/admin/metadata/get-payment-method",
     ROLE: "/admin/metadata/role-dropdown",
   },

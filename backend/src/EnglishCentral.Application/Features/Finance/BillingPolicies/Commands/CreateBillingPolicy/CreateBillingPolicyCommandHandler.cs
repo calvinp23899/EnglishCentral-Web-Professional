@@ -24,23 +24,12 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.C
             if (await _repository.ExistsAsync(x => x.Name == name, ct))
                 return Result<BillingPolicyResponse>.Failure("Billing policy name already exists.", 409);
 
-            if (request.IsDefault)
-            {
-                var currentDefault = await _repository.FirstOrDefaultAsync(x => x.IsDefault, ct, false);
-                if (currentDefault is not null)
-                {
-                    currentDefault.IsDefault = false;
-                    currentDefault.UpdatedAt = DateTimeOffset.UtcNow;
-                    await _unitOfWork.SaveChangesAsync(ct);
-                }
-            }
-
             var policy = new BillingPolicy
             {
                 Name = name,
                 Type = request.Type,
                 NumberOfInstallments = request.NumberOfInstallments,
-                IsDefault = request.IsDefault,
+                IsDefault = false,
                 IsActive = request.IsActive,
                 Notes = request.Notes?.Trim(),
                 CreatedAt = DateTimeOffset.UtcNow

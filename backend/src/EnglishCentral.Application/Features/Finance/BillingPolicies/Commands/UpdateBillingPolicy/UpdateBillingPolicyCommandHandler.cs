@@ -28,21 +28,12 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.U
             if (await _repository.ExistsAsync(x => x.Id != request.Id && x.Name == name, ct))
                 return Result<BillingPolicyResponse>.Failure("Billing policy name already exists.", 409);
 
-            if (request.IsDefault)
-            {
-                var currentDefault = await _repository.FirstOrDefaultAsync(x => x.Id != request.Id && x.IsDefault, ct, false);
-                if (currentDefault is not null)
-                {
-                    currentDefault.IsDefault = false;
-                    currentDefault.UpdatedAt = DateTimeOffset.UtcNow;
-                    await _unitOfWork.SaveChangesAsync(ct);
-                }
-            }
+            if (policy.IsDefault && !request.IsActive)
+                return Result<BillingPolicyResponse>.Failure("Default billing policy must be active.", 400);
 
             policy.Name = name;
             policy.Type = request.Type;
             policy.NumberOfInstallments = request.NumberOfInstallments;
-            policy.IsDefault = request.IsDefault;
             policy.IsActive = request.IsActive;
             policy.Notes = request.Notes?.Trim();
             policy.UpdatedAt = DateTimeOffset.UtcNow;

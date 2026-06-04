@@ -75,7 +75,9 @@
 
     public enum EDiscountType
     {
+        //Giam tien
         FixedAmount = 1,
+        //Giam theo %
         Percentage = 2
     }
 

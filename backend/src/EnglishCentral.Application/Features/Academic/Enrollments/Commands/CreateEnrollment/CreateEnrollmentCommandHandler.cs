@@ -19,6 +19,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
         private readonly IAcademicRepository<Course> _courseRepository;
         private readonly IFinanceRepository<BillingPolicy> _billingPolicyRepository;
         private readonly IFinanceRepository<Discount> _discountRepository;
+        private readonly IFinanceRepository<EnrollmentDiscount> _enrollmentDiscountRepository;
         private readonly ICodeGenerator _codeGenerator;
         private readonly IUnitOfWork _unitOfWork;
 
@@ -29,6 +30,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             IAcademicRepository<Course> courseRepository,
             IFinanceRepository<BillingPolicy> billingPolicyRepository,
             IFinanceRepository<Discount> discountRepository,
+            IFinanceRepository<EnrollmentDiscount> enrollmentDiscountRepository,
             ICodeGenerator codeGenerator,
             IUnitOfWork unitOfWork)
         {
@@ -38,6 +40,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             _courseRepository = courseRepository;
             _billingPolicyRepository = billingPolicyRepository;
             _discountRepository = discountRepository;
+            _enrollmentDiscountRepository = enrollmentDiscountRepository;
             _codeGenerator = codeGenerator;
             _unitOfWork = unitOfWork;
         }
@@ -111,9 +114,30 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             if (!paymentPlanResult.IsSuccess)
                 return Result<EnrollmentResponse>.Failure(paymentPlanResult.Error!, paymentPlanResult.StatusCode);
 
+            await IncrementDiscountUsageAsync(request, ct);
+
             await _repository.AddAsync(enrollment, ct);
             await _unitOfWork.SaveChangesAsync(ct);
             return Result<EnrollmentResponse>.Success(enrollment.ToResponse(), 201);
+        }
+
+        private async Task IncrementDiscountUsageAsync(CreateEnrollmentCommand request, CancellationToken ct)
+        {
+            if (request.Discounts is null)
+                return;
+
+            foreach (var discountId in request.Discounts
+                .Where(x => x.DiscountId.HasValue)
+                .Select(x => x.DiscountId!.Value)
+                .Distinct())
+            {
+                var discount = await _discountRepository.GetByIdAsync(discountId, ct);
+                if (discount is null)
+                    continue;
+
+                discount.UsedCount += 1;
+                discount.UpdatedAt = DateTimeOffset.UtcNow;
+            }
         }
 
         private async Task<Result<List<EnrollmentDiscount>>> BuildEnrollmentDiscountsAsync(
@@ -125,6 +149,13 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             if (request.Discounts is null || request.Discounts.Count == 0)
                 return Result<List<EnrollmentDiscount>>.Success(result);
 
+            var duplicatedDiscountId = request.Discounts
+                .Where(x => x.DiscountId.HasValue)
+                .GroupBy(x => x.DiscountId!.Value)
+                .FirstOrDefault(x => x.Count() > 1);
+            if (duplicatedDiscountId is not null)
+                return Result<List<EnrollmentDiscount>>.Failure("Discount code cannot be applied multiple times to the same enrollment.", 400);
+
             foreach (var discountRequest in request.Discounts)
             {
                 Discount? discount = null;
@@ -133,20 +164,23 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
                     discount = await _discountRepository.GetByIdAsync(discountRequest.DiscountId.Value, ct);
                     if (discount is null)
                         return Result<List<EnrollmentDiscount>>.Failure("Discount is not found.", 404);
-                    if (!discount.IsActive)
-                        return Result<List<EnrollmentDiscount>>.Failure("Discount is inactive.", 400);
+                    var usageValidation = await ValidateDiscountUsageAsync(discount, request.StudentId, ct);
+                    if (!usageValidation.IsSuccess)
+                        return Result<List<EnrollmentDiscount>>.Failure(usageValidation.Error!, usageValidation.StatusCode);
                 }
 
-                var type = discount?.Type ?? discountRequest.Type;
-                var value = discount?.Value ?? discountRequest.Value;
-                var amount = discountRequest.Amount ?? CalculateDiscountAmount(tuitionFee, type, value);
+                var type = discount?.Type ?? discountRequest.Type!.Value;
+                var value = discount?.Value ?? discountRequest.Value!.Value;
+                var amount = discount is not null
+                    ? CalculateDiscountAmount(tuitionFee, type, value)
+                    : discountRequest.Amount ?? CalculateDiscountAmount(tuitionFee, type, value);
                 if (amount > tuitionFee)
                     return Result<List<EnrollmentDiscount>>.Failure("Discount amount cannot be greater than tuition fee.", 400);
 
                 result.Add(new EnrollmentDiscount
                 {
                     DiscountId = discount?.Id,
-                    Name = discount?.Name ?? discountRequest.Name?.Trim() ?? "Manual discount",
+                    Name = discount?.Code ?? discountRequest.Name?.Trim() ?? "Manual discount",
                     Type = type,
                     Value = value,
                     Amount = amount,
@@ -156,6 +190,44 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
             }
 
             return Result<List<EnrollmentDiscount>>.Success(result);
+        }
+
+        private async Task<Result<bool>> ValidateDiscountUsageAsync(
+            Discount discount,
+            long studentId,
+            CancellationToken ct)
+        {
+            if (!discount.IsActive)
+                return Result<bool>.Failure("Discount is inactive.", 400);
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            if (discount.ValidFrom.HasValue && today < discount.ValidFrom.Value)
+                return Result<bool>.Failure("Discount is not valid yet.", 400);
+            if (discount.ValidTo.HasValue && today > discount.ValidTo.Value)
+                return Result<bool>.Failure("Discount is expired.", 400);
+
+            if (discount.MaxUsageCount.HasValue && discount.UsedCount >= discount.MaxUsageCount.Value)
+                return Result<bool>.Failure("Discount usage limit has been reached.", 400);
+
+            if (discount.MaxUsagePerStudent.HasValue)
+            {
+                var enrollmentIds = await _repository.ListAsync(
+                    q => q.Where(x => x.StudentId == studentId),
+                    ct);
+                var enrollmentIdValues = enrollmentIds.Select(x => x.Id).ToList();
+                if (enrollmentIdValues.Count > 0)
+                {
+                    var studentUsageCount = await _enrollmentDiscountRepository.CountAsync(
+                        q => q.Where(x =>
+                            x.DiscountId == discount.Id &&
+                            enrollmentIdValues.Contains(x.EnrollmentId)),
+                        ct);
+                    if (studentUsageCount >= discount.MaxUsagePerStudent.Value)
+                        return Result<bool>.Failure("Student discount usage limit has been reached.", 400);
+                }
+            }
+
+            return Result<bool>.Success(true);
         }
 
         private static decimal CalculateDiscountAmount(decimal baseAmount, EDiscountType type, decimal value)

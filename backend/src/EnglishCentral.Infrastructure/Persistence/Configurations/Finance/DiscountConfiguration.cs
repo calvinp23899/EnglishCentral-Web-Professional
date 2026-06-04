@@ -14,6 +14,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Finance
             builder.HasIndex(x => x.PublicId).IsUnique();
             builder.HasIndex(x => x.Code).IsUnique();
             builder.HasIndex(x => x.IsActive);
+            builder.HasIndex(x => x.UsedCount);
             builder.Property(x => x.Code).HasMaxLength(50).IsRequired();
             builder.Property(x => x.Name).HasMaxLength(255).IsRequired();
             builder.Property(x => x.Type).HasConversion<int>();

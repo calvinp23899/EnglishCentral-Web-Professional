@@ -15,6 +15,9 @@ import { CourseFormPage } from "@/features/admin/courses/pages/CourseFormPage";
 import { CourseListPage } from "@/features/admin/courses/pages/CourseListPage";
 import { CourseViewPage } from "@/features/admin/courses/pages/CourseViewPage";
 import { AdminDashboardPage } from "@/features/admin/dashboard/pages/AdminDashboardPage";
+import { DiscountFormPage } from "@/features/admin/discounts/pages/DiscountFormPage";
+import { DiscountListPage } from "@/features/admin/discounts/pages/DiscountListPage";
+import { DiscountViewPage } from "@/features/admin/discounts/pages/DiscountViewPage";
 import { EnrollmentDetailPage } from "@/features/admin/enrollments/pages/EnrollmentDetailPage";
 import { PaymentCreatePage } from "@/features/admin/enrollments/pages/PaymentCreatePage";
 import { AdminChangePasswordPage } from "@/features/admin/profile/pages/AdminChangePasswordPage";
@@ -335,7 +338,23 @@ export const adminRoutes = [
         path: "finance/payment-plans/:recordId/edit",
         element: <PaymentPlanFormPage mode="edit" />,
       },
-      ...financeRoutes.filter((route) => !["finance/tuition-policies", "finance/payment-plans"].includes(route.path)).map((route) => ({
+      {
+        path: "finance/discounts",
+        element: <DiscountListPage />,
+      },
+      {
+        path: "finance/discounts/create",
+        element: <DiscountFormPage mode="create" />,
+      },
+      {
+        path: "finance/discounts/:recordId/view",
+        element: <DiscountViewPage />,
+      },
+      {
+        path: "finance/discounts/:recordId/edit",
+        element: <DiscountFormPage mode="edit" />,
+      },
+      ...financeRoutes.filter((route) => !["finance/tuition-policies", "finance/payment-plans", "finance/discounts"].includes(route.path)).map((route) => ({
         path: route.path,
         element: (
           <AdminPlaceholderPage
