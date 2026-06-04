@@ -1,3 +1,4 @@
+using EnglishCentral.Application.Features.Academic.Enrollments.Commands.CancelEnrollment;
 using EnglishCentral.Application.Features.Academic.Enrollments.Commands.CreateEnrollment;
 using EnglishCentral.Application.Features.Academic.Enrollments.Commands.DeleteEnrollment;
 using EnglishCentral.Application.Features.Academic.Enrollments.Commands.UpdateEnrollment;
@@ -44,6 +45,14 @@ namespace EnglishCentral.API.Controllers.Admin.Academic
         [HttpPut("{id:long}/update")]
         [HasPermission(SystemPermissions.EnrollmentUpdate)]
         public async Task<IActionResult> Update(long id, UpdateEnrollmentCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command with { Id = id }, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPost("{id:long}/cancel")]
+        [HasPermission(SystemPermissions.EnrollmentUpdate)]
+        public async Task<IActionResult> Cancel(long id, CancelEnrollmentCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command with { Id = id }, ct);
             return StatusCode(result.StatusCode, result);

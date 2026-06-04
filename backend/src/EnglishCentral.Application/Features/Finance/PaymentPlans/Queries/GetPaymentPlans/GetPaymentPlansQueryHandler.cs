@@ -11,13 +11,16 @@ namespace EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPa
     {
         private readonly IFinanceRepository<EnrollmentPaymentPlan> _repository;
         private readonly IFinanceRepository<EnrollmentPaymentPlanItem> _itemRepository;
+        private readonly IFinanceRepository<Invoice> _invoiceRepository;
 
         public GetPaymentPlansQueryHandler(
             IFinanceRepository<EnrollmentPaymentPlan> repository,
-            IFinanceRepository<EnrollmentPaymentPlanItem> itemRepository)
+            IFinanceRepository<EnrollmentPaymentPlanItem> itemRepository,
+            IFinanceRepository<Invoice> invoiceRepository)
         {
             _repository = repository;
             _itemRepository = itemRepository;
+            _invoiceRepository = invoiceRepository;
         }
 
         public async Task<Result<PagedResult<PaymentPlanResponse>>> Handle(GetPaymentPlansQuery request, CancellationToken ct)
@@ -42,6 +45,13 @@ namespace EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPa
             var items = await _itemRepository.ListAsync(
                 q => q.Where(x => planIds.Contains(x.PaymentPlanId)),
                 ct);
+            var itemIds = items.Select(x => x.Id).ToList();
+            var invoices = await _invoiceRepository.ListAsync(
+                q => q.Where(x => x.PaymentPlanItemId.HasValue && itemIds.Contains(x.PaymentPlanItemId.Value)),
+                ct);
+
+            foreach (var item in items)
+                item.Invoice = invoices.FirstOrDefault(x => x.PaymentPlanItemId == item.Id);
 
             foreach (var plan in plans)
                 plan.Items = items.Where(x => x.PaymentPlanId == plan.Id).ToList();

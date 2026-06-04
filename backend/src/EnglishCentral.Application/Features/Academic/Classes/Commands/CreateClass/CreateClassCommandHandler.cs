@@ -17,6 +17,7 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.CreateCl
         private readonly IAcademicRepository<Teacher> _teacherRepository;
         private readonly IAcademicRepository<Room> _roomRepository;
         private readonly IFinanceRepository<BillingPolicy> _billingPolicyRepository;
+        private readonly ICodeGenerator _codeGenerator;
         private readonly IUnitOfWork _unitOfWork;
 
         public CreateClassCommandHandler(
@@ -25,7 +26,8 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.CreateCl
             IAcademicRepository<Teacher> teacherRepository,
             IAcademicRepository<Room> roomRepository,
             IFinanceRepository<BillingPolicy> billingPolicyRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            ICodeGenerator codeGenerator)
         {
             _classRepository = classRepository;
             _courseRepository = courseRepository;
@@ -33,11 +35,12 @@ namespace EnglishCentral.Application.Features.Academic.Classes.Commands.CreateCl
             _roomRepository = roomRepository;
             _billingPolicyRepository = billingPolicyRepository;
             _unitOfWork = unitOfWork;
+            _codeGenerator = codeGenerator;
         }
 
         public async Task<Result<ClassResponse>> Handle(CreateClassCommand request, CancellationToken ct)
         {
-            var code = request.Code.Trim();
+            var code = $"CLA-{_codeGenerator.GenerateCode()}";
             if (await _classRepository.ExistsAsync(x => x.Code == code, ct))
                 return Result<ClassResponse>.Failure("Class code already exists.", 409);
 

@@ -89,8 +89,10 @@ export const adminEnrollmentsApi = {
     return { enrollment, paymentPlan: plans.items[0] ?? null };
   },
 
-  async delete(id: string | number) {
-    const response = await api.delete<ApiResult<boolean>>(ENDPOINTS.ADMIN_ENROLLMENTS.DELETE(id));
+  async cancel(id: string | number, reason: string) {
+    const response = await api.post<ApiResult<boolean>>(ENDPOINTS.ADMIN_ENROLLMENTS.CANCEL(id), {
+      cancellationReason: reason,
+    });
     return unwrap(response.data, "Không thể hủy đăng ký học viên.");
   },
 };

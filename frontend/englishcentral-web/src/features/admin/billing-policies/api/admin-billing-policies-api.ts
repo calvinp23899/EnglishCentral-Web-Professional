@@ -18,7 +18,6 @@ export type BillingPolicyFormPayload = {
   name: string;
   type: BillingPolicyType;
   numberOfInstallments?: number | null;
-  isDefault: boolean;
   isActive: boolean;
   notes?: string | null;
 };

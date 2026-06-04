@@ -62,12 +62,17 @@ export const ENDPOINTS = {
 
   ADMIN_ROOMS: {
     GET_LIST: "/admin/academic/rooms/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/academic/rooms/${id}/get-by-id`,
+    CREATE: "/admin/academic/rooms/insert",
+    UPDATE: (id: string | number) => `/admin/academic/rooms/${id}/update`,
+    DELETE: (id: string | number) => `/admin/academic/rooms/${id}/delete`,
   },
 
   ADMIN_ENROLLMENTS: {
     GET_LIST: "/admin/academic/enrollments/get-list",
     GET_BY_ID: (id: string | number) => `/admin/academic/enrollments/${id}/get-by-id`,
     CREATE: "/admin/academic/enrollments/insert",
+    CANCEL: (id: string | number) => `/admin/academic/enrollments/${id}/cancel`,
     DELETE: (id: string | number) => `/admin/academic/enrollments/${id}/delete`,
   },
 

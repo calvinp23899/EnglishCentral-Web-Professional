@@ -1,4 +1,5 @@
 using EnglishCentral.Application.Features.Finance.Invoices.Commands.CancelInvoice;
+using EnglishCentral.Application.Features.Finance.Invoices.Commands.CreateInvoiceFromPaymentPlanItem;
 using EnglishCentral.Application.Features.Finance.Invoices.Queries.GetInvoiceById;
 using EnglishCentral.Application.Features.Finance.Invoices.Queries.GetInvoices;
 using EnglishCentral.Infrastructure.Authorization;
@@ -37,6 +38,14 @@ namespace EnglishCentral.API.Controllers.Admin.Finance
         public async Task<IActionResult> Cancel(long id, CancelInvoiceCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command with { Id = id }, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPost("create-from-payment-plan-item")]
+        [HasPermission(SystemPermissions.BillingCreate)]
+        public async Task<IActionResult> CreateFromPaymentPlanItem(CreateInvoiceFromPaymentPlanItemCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
             return StatusCode(result.StatusCode, result);
         }
     }

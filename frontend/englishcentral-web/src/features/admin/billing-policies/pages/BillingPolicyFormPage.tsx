@@ -13,7 +13,7 @@ import styles from "@/features/admin/students/pages/StudentCreatePage.module.scs
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 type Props = { mode: "create" | "edit" };
-type FormState = { name: string; type: BillingPolicyType; numberOfInstallments: string; isDefault: boolean; isActive: boolean; notes: string };
+type FormState = { name: string; type: BillingPolicyType; numberOfInstallments: string; isActive: boolean; notes: string };
 type FormErrors = Partial<Record<keyof FormState, string>>;
 const typeValues: Record<string, BillingPolicyType> = { "1": "FullPayment", "2": "Monthly", "3": "Installment" };
 
@@ -21,7 +21,7 @@ export function BillingPolicyFormPage({ mode }: Props) {
   const navigate = useNavigate();
   const { recordId } = useParams();
   const isEditMode = mode === "edit";
-  const [form, setForm] = useState<FormState>({ name: "", type: "FullPayment", numberOfInstallments: "", isDefault: false, isActive: true, notes: "" });
+  const [form, setForm] = useState<FormState>({ name: "", type: "FullPayment", numberOfInstallments: "", isActive: true, notes: "" });
   const [typeOptions, setTypeOptions] = useState<MetadataOption[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(isEditMode);
@@ -39,7 +39,7 @@ export function BillingPolicyFormPage({ mode }: Props) {
     adminBillingPoliciesApi.getById(recordId)
       .then((record) => {
         if (!isMounted) return;
-        setForm({ name: record.name, type: typeValues[String(record.type)] ?? record.type as BillingPolicyType, numberOfInstallments: record.numberOfInstallments ? String(record.numberOfInstallments) : "", isDefault: record.isDefault, isActive: record.isActive, notes: record.notes ?? "" });
+        setForm({ name: record.name, type: typeValues[String(record.type)] ?? record.type as BillingPolicyType, numberOfInstallments: record.numberOfInstallments ? String(record.numberOfInstallments) : "", isActive: record.isActive, notes: record.notes ?? "" });
       })
       .catch((error) => toastDanger(getAuthErrorMessage(error)))
       .finally(() => { if (isMounted) setIsLoading(false); });
@@ -62,7 +62,7 @@ export function BillingPolicyFormPage({ mode }: Props) {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validate() || isSubmitting) return;
-    const payload: BillingPolicyFormPayload = { name: form.name.trim(), type: form.type, numberOfInstallments: form.type === "Installment" ? Number(form.numberOfInstallments) : null, isDefault: form.isDefault, isActive: form.isActive, notes: form.notes.trim() || null };
+    const payload: BillingPolicyFormPayload = { name: form.name.trim(), type: form.type, numberOfInstallments: form.type === "Installment" ? Number(form.numberOfInstallments) : null, isActive: form.isActive, notes: form.notes.trim() || null };
     setIsSubmitting(true);
     try {
       if (isEditMode && recordId) {
@@ -86,7 +86,6 @@ export function BillingPolicyFormPage({ mode }: Props) {
         <label className={styles.field}><span>Tên chính sách <em className={styles.requiredMark}>*</em></span><input value={form.name} onChange={(event) => updateField("name", event.target.value)} /><ErrorMessage message={errors.name} /></label>
         <label className={styles.field}><span>Loại chính sách <em className={styles.requiredMark}>*</em></span><select value={form.type} onChange={(event) => updateField("type", event.target.value as BillingPolicyType)}>{typeOptions.map((option) => <option key={option.value} value={option.value}>{option.value}</option>)}</select></label>
         {form.type === "Installment" && <label className={styles.field}><span>Số kỳ trả góp <em className={styles.requiredMark}>*</em></span><input min={2} type="number" value={form.numberOfInstallments} onChange={(event) => updateField("numberOfInstallments", event.target.value)} /><ErrorMessage message={errors.numberOfInstallments} /></label>}
-        <label className={styles.field}><span>Chính sách mặc định <em className={styles.requiredMark}>*</em></span><select value={String(form.isDefault)} onChange={(event) => updateField("isDefault", event.target.value === "true")}><option value="false">Không</option><option value="true">Có</option></select></label>
         <label className={styles.field}><span>Trạng thái <em className={styles.requiredMark}>*</em></span><select value={String(form.isActive)} onChange={(event) => updateField("isActive", event.target.value === "true")}><option value="true">Hoạt động</option><option value="false">Ngừng hoạt động</option></select></label>
         <label className={`${styles.field} ${styles.notesField}`}><span>Ghi chú</span><textarea rows={5} value={form.notes} onChange={(event) => updateField("notes", event.target.value)} /><ErrorMessage message={errors.notes} /></label>
       </div>}

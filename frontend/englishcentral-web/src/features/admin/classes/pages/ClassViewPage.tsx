@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, Search, UserRoundPlus } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CloudDownload, Eye, Plus, Send, Search, UserRoundPlus, UserX, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
-import { ConfirmModal, SidePanel, toastDanger, toastSuccess } from "@/components/ui";
+import { SidePanel, toastDanger, toastSuccess } from "@/components/ui";
 import { adminClassesApi, type AdminClass, type ClassStudent } from "@/features/admin/classes/api/admin-classes-api";
 import { adminEnrollmentsApi, type EnrollmentDiscountPayload, type EnrollmentPaymentPlanPayload, type EnrollmentStudentOption } from "@/features/admin/classes/api/admin-enrollments-api";
 import { adminRoomsApi, type AdminRoom } from "@/features/admin/classes/api/admin-rooms-api";
@@ -20,13 +20,12 @@ import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 import styles from "./ClassViewPage.module.scss";
 
-type TabKey = "info" | "students" | "schedule" | "attendance" | "tuition";
+type TabKey = "info" | "students" | "schedule" | "tuition";
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "info", label: "Thông tin lớp" },
   { key: "students", label: "Danh sách học viên" },
   { key: "schedule", label: "Lịch học" },
-  { key: "attendance", label: "Điểm danh" },
   { key: "tuition", label: "Học phí" },
 ];
 
@@ -122,9 +121,23 @@ export function ClassViewPage() {
   const [selectedStudent, setSelectedStudent] = useState<EnrollmentStudentOption | null>(null);
   const [studentOptions, setStudentOptions] = useState<EnrollmentStudentOption[]>([]);
   const [classStudents, setClassStudents] = useState<ClassStudent[]>([]);
+  const [selectedTuitionStudent, setSelectedTuitionStudent] = useState<ClassStudent | null>(null);
+  const [isTuitionDetailOpen, setIsTuitionDetailOpen] = useState(false);
+  const [selectedInvoiceItem, setSelectedInvoiceItem] = useState<{
+    period: string;
+    dueDate: string;
+    amount: number;
+    status: string;
+    invoiceCode: string;
+  } | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank-transfer">("cash");
+  const [paymentNote, setPaymentNote] = useState("");
+  const [isConfirmPaymentOpen, setIsConfirmPaymentOpen] = useState(false);
   const [isSearchingStudents, setIsSearchingStudents] = useState(false);
   const [isRegisteringStudent, setIsRegisteringStudent] = useState(false);
   const [cancellingStudent, setCancellingStudent] = useState<ClassStudent | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelReasonError, setCancelReasonError] = useState("");
   const [isCancellingEnrollment, setIsCancellingEnrollment] = useState(false);
   const [recentEnrollment, setRecentEnrollment] = useState<{ enrollment: AdminEnrollment; paymentPlan: AdminPaymentPlan | null } | null>(null);
   const [isCustomPaymentPlan, setIsCustomPaymentPlan] = useState(false);
@@ -279,6 +292,14 @@ export function ClassViewPage() {
       <input readOnly value={value} />
     </label>
   );
+  const tuitionTotal = 7500000;
+  const tuitionPaid = 0;
+  const tuitionOutstanding = tuitionTotal - tuitionPaid;
+  const tuitionInstallmentAmount = tuitionTotal / 2;
+  const tuitionInstallments = [
+    { period: "Đợt 1", dueDate: "2026-06-04", amount: tuitionInstallmentAmount, status: "Pending", invoiceCode: "Chưa tạo" },
+    { period: "Đợt 2", dueDate: "2026-07-04", amount: tuitionInstallmentAmount, status: "Pending", invoiceCode: "INV-0002" },
+  ];
   const selectedDiscount = discountOptions.find((discount) => discount.id === Number(discountId));
   const selectedDiscountTypeCode = getDiscountTypeCode(selectedDiscount?.type, discountTypes);
   const isSelectedDiscountPercentage =
@@ -440,17 +461,29 @@ export function ClassViewPage() {
   };
   const cancelRegistration = async () => {
     if (!cancellingStudent?.enrollmentId || !record || isCancellingEnrollment) return;
+    if (!cancelReason.trim()) {
+      setCancelReasonError("Vui lòng nhập lý do hủy đăng ký.");
+      return;
+    }
     setIsCancellingEnrollment(true);
     try {
-      await adminEnrollmentsApi.delete(cancellingStudent.enrollmentId);
+      await adminEnrollmentsApi.cancel(cancellingStudent.enrollmentId, cancelReason.trim());
       await loadClassStudents(record.id);
       setCancellingStudent(null);
+      setCancelReason("");
+      setCancelReasonError("");
       toastSuccess("Hủy đăng ký học viên thành công.");
     } catch (error) {
       toastDanger(getAuthErrorMessage(error));
     } finally {
       setIsCancellingEnrollment(false);
     }
+  };
+  const closeCancelModal = () => {
+    if (isCancellingEnrollment) return;
+    setCancellingStudent(null);
+    setCancelReason("");
+    setCancelReasonError("");
   };
   const chooseBillingPolicy = (value: string) => {
     setBillingPolicyId(value);
@@ -539,11 +572,16 @@ export function ClassViewPage() {
             {tabs.map((tab) => (
               <button
                 className={activeTab === tab.key ? styles.activeTab : ""}
+                disabled={tab.key === "tuition"}
                 key={tab.key}
                 type="button"
                 role="tab"
                 aria-selected={activeTab === tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => {
+                  if (tab.key !== "tuition") {
+                    setActiveTab(tab.key);
+                  }
+                }}
               >
                 {tab.label}
               </button>
@@ -595,10 +633,76 @@ export function ClassViewPage() {
                   <tbody>
                     {classStudents.length === 0 ? (
                       <tr><td colSpan={6}><div className={styles.emptyState}>Chưa có học viên trong lớp.</div></td></tr>
-                    ) : classStudents.map((student) => <tr key={student.studentCode}><td><strong>{student.studentCode}</strong></td><td>{student.fullName}</td><td>{student.phoneNumber ?? "Chưa cập nhật"}</td><td>{student.email ?? "Chưa cập nhật"}</td><td><span className={`${listStyles.statusBadge} ${listStyles[studentStatusTone[String(student.status)] ?? "pending"]}`}>{studentStatusLabels[String(student.status)] ?? String(student.status)}</span></td><td><button className={styles.cancelEnrollmentButton} disabled={!student.enrollmentId} title={student.enrollmentId ? "Hủy đăng ký học viên khỏi lớp" : "Chưa có mã đăng ký để hủy"} type="button" onClick={() => setCancellingStudent(student)}>Hủy đăng ký</button></td></tr>)}
+                    ) : classStudents.map((student) => <tr key={student.studentCode}><td><strong>{student.studentCode}</strong></td><td>{student.fullName}</td><td>{student.phoneNumber ?? "Chưa cập nhật"}</td><td>{student.email ?? "Chưa cập nhật"}</td><td><span className={`${listStyles.statusBadge} ${listStyles[studentStatusTone[String(student.status)] ?? "pending"]}`}>{studentStatusLabels[String(student.status)] ?? String(student.status)}</span></td><td><div className={styles.studentActions}><button aria-label="Xem học phí" className={styles.tuitionAction} disabled={!student.enrollmentId} title="Xem học phí" type="button" onClick={() => { setSelectedTuitionStudent(student); setIsTuitionDetailOpen(false); setActiveTab("tuition"); }}><Eye size={16} /></button><button aria-label="Hủy đăng ký" className={styles.cancelEnrollmentButton} disabled={!student.enrollmentId} title={student.enrollmentId ? "Hủy đăng ký học viên khỏi lớp" : "Chưa có mã đăng ký để hủy"} type="button" onClick={() => { setCancellingStudent(student); setCancelReason(""); setCancelReasonError(""); }}><UserX size={16} /></button></div></td></tr>)}
                   </tbody>
                 </table>
               </div>
+            </div>
+          ) : activeTab === "tuition" ? (
+            <div className={styles.tabContent}>
+              <div className={styles.tabHeader}>
+                <div><h2>Học phí</h2><p>Xem thông tin học viên và tình trạng công nợ trong lớp.</p></div>
+              </div>
+              {!selectedTuitionStudent ? (
+                <div className={styles.emptyState}>Vui lòng chọn Xem học phí tại danh sách học viên.</div>
+              ) : (
+                <>
+                  <div className={formStyles.formGrid}>
+                    {field("Tên học viên", selectedTuitionStudent.fullName)}
+                    {field("Mã học viên", selectedTuitionStudent.studentCode)}
+                    {field("SĐT", selectedTuitionStudent.phoneNumber ?? "Chưa cập nhật")}
+                    {field("Email", selectedTuitionStudent.email ?? "Chưa cập nhật")}
+                  </div>
+                  <div className={styles.tableWrap}>
+                    <table className={styles.table}>
+                      <thead><tr><th>Tổng tiền</th><th>Đã thanh toán</th><th>Còn nợ</th><th>Plan</th><th>Trạng thái</th><th>Action</th></tr></thead>
+                      <tbody>
+                        <tr>
+                          <td>{formatMoney(tuitionTotal)}</td>
+                          <td>{formatMoney(tuitionPaid)}</td>
+                          <td>{formatMoney(tuitionOutstanding)}</td>
+                          <td>Trả góp 2 kỳ</td>
+                          <td><span className={`${listStyles.statusBadge} ${listStyles.pending}`}>Đang nợ</span></td>
+                          <td><button className={styles.iconActionButton} title="Xem chi tiết kỳ thu" type="button" onClick={() => setIsTuitionDetailOpen((current) => !current)}><Eye size={16} /></button></td>
+                        </tr>
+                        {isTuitionDetailOpen && (
+                          <tr>
+                            <td colSpan={6}>
+                              <div className={styles.installmentDetail}>
+                                <table className={styles.table}>
+                                  <thead><tr><th>Kỳ</th><th>Hạn thanh toán</th><th>Số tiền</th><th>Trạng thái</th><th>Hóa đơn</th><th>Action</th></tr></thead>
+                                  <tbody>
+                                    {tuitionInstallments.map((item) => (
+                                      <tr key={item.period}>
+                                        <td>{item.period}</td>
+                                        <td>{item.dueDate}</td>
+                                        <td>{formatMoney(item.amount)}</td>
+                                        <td>{item.status}</td>
+                                        <td>{item.invoiceCode}</td>
+                                        <td>
+                                          {item.invoiceCode === "Chưa tạo" ? (
+                                            <button className={styles.iconActionButton} title="Tạo hóa đơn" type="button" onClick={() => toastSuccess("Đã chọn tạo hóa đơn cho kỳ thu.")}>
+                                              <Plus size={16} />
+                                            </button>
+                                          ) : (
+                                            <button className={styles.iconActionButton} title="Xem chi tiết hóa đơn" type="button" onClick={() => setSelectedInvoiceItem(item)}>
+                                              <Eye size={16} />
+                                            </button>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className={styles.emptyState}>Nội dung tab {tabs.find((tab) => tab.key === activeTab)?.label} sẽ được tích hợp sau.</div>
@@ -673,16 +777,114 @@ export function ClassViewPage() {
           {recentEnrollment.paymentPlan ? <><div><span>Tổng học phí sau giảm</span><strong>{formatMoney(recentEnrollment.paymentPlan.totalAmount)}</strong></div><div><span>Loại plan</span><strong>{paymentPlanTypeLabels[String(recentEnrollment.paymentPlan.type)] ?? String(recentEnrollment.paymentPlan.type)}</strong></div><div><span>Số kỳ</span><strong>{recentEnrollment.paymentPlan.items.length}</strong></div><Link to={`/admin/enrollments/${recentEnrollment.enrollment.id}/view`}>Xem chi tiết công nợ</Link></> : <span>Đăng ký này không phát sinh công nợ.</span>}
         </section>}
       </SidePanel>
-      <ConfirmModal
-        confirmText={isCancellingEnrollment ? "Đang hủy..." : "Hủy đăng ký"}
-        description={cancellingStudent ? `Bạn có chắc muốn hủy đăng ký của ${cancellingStudent.fullName} khỏi lớp này?` : ""}
-        isConfirmDisabled={isCancellingEnrollment}
-        isOpen={Boolean(cancellingStudent)}
-        title="Xác nhận hủy đăng ký"
-        tone="danger"
-        onCancel={() => setCancellingStudent(null)}
-        onConfirm={cancelRegistration}
-      />
+      <SidePanel
+        description="Thông tin hóa đơn của kỳ thu."
+        footer={<div className={styles.panelActions}><button type="button" onClick={() => setSelectedInvoiceItem(null)}>Hủy</button><button type="button" onClick={() => setIsConfirmPaymentOpen(true)}>Thu tiền</button></div>}
+        isOpen={Boolean(selectedInvoiceItem)}
+        title="Chi tiết hóa đơn"
+        width="lg"
+        onClose={() => setSelectedInvoiceItem(null)}
+      >
+        {selectedInvoiceItem && (
+          <div className={styles.invoiceInfoBox}>
+            <div><span>Hóa đơn</span><strong>{selectedInvoiceItem.invoiceCode}</strong></div>
+            <div><span>Kỳ thu</span><strong>{selectedInvoiceItem.period}</strong></div>
+            <div><span>Hạn thanh toán</span><strong>{selectedInvoiceItem.dueDate}</strong></div>
+            <div><span>Total</span><strong>{formatMoney(selectedInvoiceItem.amount)}</strong></div>
+            <div><span>Paid</span><strong>{formatMoney(0)}</strong></div>
+            <div><span>Outstanding</span><strong>{formatMoney(selectedInvoiceItem.amount)}</strong></div>
+            <div><span>Trạng thái</span><strong>Invoice Issued</strong></div>
+          </div>
+        )}
+        {selectedInvoiceItem && (
+          <div className={styles.paymentFormBox}>
+            <label>
+              <span>Phương thức thanh toán</span>
+              <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as typeof paymentMethod)}>
+                <option value="cash">Tiền mặt</option>
+                <option value="bank-transfer">Chuyển khoản</option>
+              </select>
+            </label>
+            <label>
+              <span>Ghi chú</span>
+              <textarea placeholder="Nhập ghi chú thanh toán" rows={4} value={paymentNote} onChange={(event) => setPaymentNote(event.target.value)} />
+            </label>
+          </div>
+        )}
+      </SidePanel>
+      {isConfirmPaymentOpen && selectedInvoiceItem && <div className={styles.invoicePreviewBackdrop} role="presentation" onMouseDown={() => setIsConfirmPaymentOpen(false)}>
+        <section aria-modal="true" className={styles.invoicePreviewModal} role="dialog" onMouseDown={(event) => event.stopPropagation()}>
+          <button aria-label="Đóng" className={styles.invoicePreviewClose} type="button" onClick={() => setIsConfirmPaymentOpen(false)}><X size={18} /></button>
+          <div className={styles.invoiceConfirmIntro}>
+            <h2>Xác nhận thu tiền</h2>
+            <p>Kiểm tra preview invoice trước khi ghi nhận thanh toán.</p>
+          </div>
+          <div className={styles.invoicePreviewHeader}>
+            <div>
+              <h2>English Central</h2>
+              <p>123 Awesome Street, Denver CO</p>
+              <p>billing@englishcentral.com</p>
+            </div>
+            <div>
+              <span>Amount Due:</span>
+              <strong>{formatMoney(selectedInvoiceItem.amount)}</strong>
+            </div>
+          </div>
+          <div className={styles.invoicePreviewMeta}>
+            <div>
+              <strong>Billed to:</strong>
+              <p>{selectedTuitionStudent?.fullName ?? "Học viên"}</p>
+              <p>{selectedTuitionStudent?.studentCode ?? "STU-0000"}</p>
+              <p>{selectedTuitionStudent?.email ?? "student@email.com"}</p>
+            </div>
+            <div>
+              <strong>Invoice Number:</strong>
+              <p>{selectedInvoiceItem.invoiceCode}</p>
+              <strong>Date Of Issue:</strong>
+              <p>{selectedInvoiceItem.dueDate}</p>
+            </div>
+          </div>
+          <table className={styles.invoicePreviewTable}>
+            <thead><tr><th>QTY</th><th>DESCRIPTION</th><th>PRICE</th><th>AMOUNT</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>{selectedInvoiceItem.period} - Học phí lớp</td><td>{formatMoney(selectedInvoiceItem.amount)}</td><td>{formatMoney(selectedInvoiceItem.amount)}</td></tr>
+            </tbody>
+          </table>
+          <div className={styles.invoicePreviewTotals}>
+            <div><span>SUBTOTAL</span><strong>{formatMoney(selectedInvoiceItem.amount)}</strong></div>
+            <div><span>TAX</span><strong>{formatMoney(0)}</strong></div>
+            <div><span>DISCOUNT</span><strong>{formatMoney(0)}</strong></div>
+            <div><span>TOTAL</span><strong>{formatMoney(selectedInvoiceItem.amount)}</strong></div>
+          </div>
+          <div className={styles.invoicePreviewNote}>
+            {paymentNote.trim() || "Thanks for learning with English Central!"}
+          </div>
+          <div className={styles.paymentConfirmSummaryInInvoice}>
+            <div><span>Phương thức</span><strong>{paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"}</strong></div>
+            <div><span>Ghi chú</span><strong>{paymentNote.trim() || "Không có ghi chú"}</strong></div>
+          </div>
+          <div className={styles.invoicePreviewActions}>
+            <button type="button" onClick={() => { setIsConfirmPaymentOpen(false); toastSuccess("Đã xác nhận thu tiền."); }}><Send size={15} /> Xác nhận thu tiền</button>
+            <button type="button" onClick={() => setIsConfirmPaymentOpen(false)}><CloudDownload size={15} /> Hủy</button>
+          </div>
+        </section>
+      </div>}
+      {cancellingStudent && <div className={styles.cancelModalBackdrop} role="presentation" onMouseDown={closeCancelModal}>
+        <section aria-modal="true" className={styles.cancelModal} role="dialog" onMouseDown={(event) => event.stopPropagation()}>
+          <button aria-label="Đóng" className={styles.cancelModalClose} disabled={isCancellingEnrollment} type="button" onClick={closeCancelModal}><X size={18} /></button>
+          <div className={styles.cancelModalIcon}><AlertTriangle size={22} /></div>
+          <div className={styles.cancelModalContent}>
+            <h2>Xác nhận hủy đăng ký</h2>
+            <p>Bạn có chắc muốn hủy đăng ký của {cancellingStudent.fullName} khỏi lớp này?</p>
+            <label><span>Lý do hủy đăng ký <em>*</em></span><textarea rows={4} value={cancelReason} onChange={(event) => { setCancelReason(event.target.value); setCancelReasonError(""); }} /></label>
+            {cancelReasonError && <strong>{cancelReasonError}</strong>}
+          </div>
+          <div className={styles.cancelModalActions}>
+            <button disabled={isCancellingEnrollment} type="button" onClick={closeCancelModal}>Hủy</button>
+            <button disabled={isCancellingEnrollment} type="button" onClick={cancelRegistration}>{isCancellingEnrollment ? "Đang hủy..." : "Hủy đăng ký"}</button>
+          </div>
+        </section>
+      </div>}
     </>
   );
 }
