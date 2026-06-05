@@ -79,7 +79,7 @@ export const adminPaymentPlansApi = {
         params: {
           Page: params.page,
           PageSize: params.pageSize,
-          EnrollmentId: params.enrollmentId,
+          enrollmentId: params.enrollmentId,
           Type: params.type,
           Status: params.status,
           IsDescending: params.isDescending,

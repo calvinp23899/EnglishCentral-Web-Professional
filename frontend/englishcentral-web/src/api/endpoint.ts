@@ -103,6 +103,7 @@ export const ENDPOINTS = {
   ADMIN_INVOICES: {
     GET_LIST: "/admin/billing/invoices/get-list",
     GET_BY_ID: (id: string | number) => `/admin/billing/invoices/${id}/get-by-id`,
+    CREATE_FROM_PAYMENT_PLAN_ITEM: "/admin/billing/invoices/create-from-payment-plan-item",
   },
 
   ADMIN_BILLING_JOBS: {

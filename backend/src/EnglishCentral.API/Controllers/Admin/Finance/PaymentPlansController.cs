@@ -1,5 +1,6 @@
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.CreatePaymentPlan;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.DeletePaymentPlan;
+using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.SettleRemainingPaymentPlan;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.UpdatePaymentPlan;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPaymentPlanById;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPaymentPlans;
@@ -45,6 +46,14 @@ namespace EnglishCentral.API.Controllers.Admin.Finance
         [HttpPut("{id:long}/update")]
         [HasPermission(SystemPermissions.BillingUpdate)]
         public async Task<IActionResult> Update(long id, UpdatePaymentPlanCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command with { Id = id }, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPost("{id:long}/settle-remaining")]
+        [HasPermission(SystemPermissions.BillingPaymentCreate)]
+        public async Task<IActionResult> SettleRemaining(long id, SettleRemainingPaymentPlanCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command with { Id = id }, ct);
             return StatusCode(result.StatusCode, result);

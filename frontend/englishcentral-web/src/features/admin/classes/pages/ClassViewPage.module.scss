@@ -178,6 +178,10 @@
     opacity: 0.45;
   }
 }
+.debtStatusBadge {
+  background: #fef2f2;
+  color: #dc2626;
+}
 .iconActionButton {
   width: 34px;
   height: 34px;
@@ -192,6 +196,12 @@
   &:hover {
     background: #eff6ff;
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    background: #f8fafc;
+  }
 }
 .installmentDetail {
   padding: 12px;
@@ -203,6 +213,33 @@
     min-width: 560px;
     background: #ffffff;
   }
+}
+.installmentStatusBadge {
+  min-width: 82px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+}
+.installmentStatusPaid {
+  background: #dcfce7;
+  color: #15803d;
+}
+.installmentStatusInvoiced {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.installmentStatusPending {
+  background: #fef3c7;
+  color: #b45309;
+}
+.installmentStatusDefault {
+  background: #f1f5f9;
+  color: #475569;
 }
 .invoiceInfoBox {
   width: 100%;
@@ -239,6 +276,145 @@
   strong {
     background: #ffffff;
     font-weight: 800;
+  }
+}
+.bulkInvoiceList {
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+
+  label {
+    padding: 12px;
+    border: 1px solid #dbe5f0;
+    border-radius: 9px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: #2563eb;
+  }
+
+  span {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+  }
+
+  strong {
+    color: #334155;
+    font-size: 13px;
+  }
+
+  small {
+    color: #64748b;
+    font-size: 12px;
+  }
+}
+.disabledBulkInvoiceItem {
+  opacity: 0.6;
+}
+.bulkInvoiceStepper {
+  display: grid;
+  gap: 0;
+}
+.bulkInvoiceStep {
+  position: relative;
+  min-height: 54px;
+  padding-left: 42px;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 3px;
+  color: #94a3b8;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 28px;
+    left: 14px;
+    bottom: -2px;
+    width: 2px;
+    background: #dbe5f0;
+  }
+
+  &:last-child::before {
+    display: none;
+  }
+
+  > span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #64748b;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  > strong {
+    padding-top: 5px;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 900;
+  }
+}
+.activeBulkInvoiceStep {
+  color: #2563eb;
+
+  > span {
+    background: #2563eb;
+    color: #ffffff;
+  }
+}
+.doneBulkInvoiceStep {
+  color: #16a34a;
+
+  &::before {
+    background: #93c5fd;
+  }
+
+  > span {
+    background: #dcfce7;
+    color: #15803d;
+  }
+}
+.bulkInvoiceSuccess {
+  margin: 2px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 800;
+}
+.bulkInvoicePreview {
+  margin-top: 16px;
+  border: 1px solid #dbe5f0;
+  border-radius: 10px;
+  overflow: hidden;
+
+  .invoicePreviewHeader {
+    padding: 22px;
+  }
+
+  .invoicePreviewTable {
+    width: calc(100% - 44px);
+    margin: 0 22px;
+  }
+
+  .paymentConfirmSummaryInInvoice {
+    margin: 18px 22px 22px;
   }
 }
 .paymentFormBox {

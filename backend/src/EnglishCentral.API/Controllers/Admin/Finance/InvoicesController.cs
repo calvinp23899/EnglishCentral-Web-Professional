@@ -1,3 +1,4 @@
+using EnglishCentral.Application.Features.Finance.Invoices.Commands.BulkCreateInvoicesFromPaymentPlanItems;
 using EnglishCentral.Application.Features.Finance.Invoices.Commands.CancelInvoice;
 using EnglishCentral.Application.Features.Finance.Invoices.Commands.CreateInvoiceFromPaymentPlanItem;
 using EnglishCentral.Application.Features.Finance.Invoices.Queries.GetInvoiceById;
@@ -44,6 +45,14 @@ namespace EnglishCentral.API.Controllers.Admin.Finance
         [HttpPost("create-from-payment-plan-item")]
         [HasPermission(SystemPermissions.BillingCreate)]
         public async Task<IActionResult> CreateFromPaymentPlanItem(CreateInvoiceFromPaymentPlanItemCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPost("bulk-create-from-payment-plan-items")]
+        [HasPermission(SystemPermissions.BillingCreate)]
+        public async Task<IActionResult> BulkCreateFromPaymentPlanItems(BulkCreateInvoicesFromPaymentPlanItemsCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
             return StatusCode(result.StatusCode, result);

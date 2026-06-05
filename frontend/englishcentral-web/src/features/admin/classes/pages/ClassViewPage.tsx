@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowLeft, CloudDownload, Eye, Plus, Send, Search, UserRoundPlus, UserX, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
@@ -9,8 +9,8 @@ import { adminRoomsApi, type AdminRoom } from "@/features/admin/classes/api/admi
 import { adminBillingPoliciesApi, type AdminBillingPolicy } from "@/features/admin/billing-policies/api/admin-billing-policies-api";
 import { adminCoursesApi, type AdminCourse } from "@/features/admin/courses/api/admin-courses-api";
 import { adminDiscountsApi, type AdminDiscount } from "@/features/admin/discounts/api/admin-discounts-api";
-import type { AdminEnrollment } from "@/features/admin/enrollments/api/admin-enrollment-finance-api";
-import type { AdminPaymentPlan } from "@/features/admin/payment-plans/api/admin-payment-plans-api";
+import { adminEnrollmentFinanceApi, type AdminEnrollment, type AdminInvoice } from "@/features/admin/enrollments/api/admin-enrollment-finance-api";
+import { adminPaymentPlansApi, type AdminPaymentPlan } from "@/features/admin/payment-plans/api/admin-payment-plans-api";
 import { adminMetadataApi, type MetadataOption } from "@/features/admin/shared/api/admin-metadata-api";
 import { adminStudentsApi } from "@/features/admin/students/api/admin-students-api";
 import listStyles from "@/features/admin/students/pages/StudentListPage.module.scss";
@@ -52,6 +52,9 @@ const studentStatusTone: Record<string, "active" | "pending" | "inactive"> = {
   "1": "active",
   "2": "pending",
   "3": "inactive",
+  Active: "active",
+  Pending: "pending",
+  Inactive: "inactive",
 };
 
 const formatDate = (value?: string | null) =>
@@ -122,17 +125,34 @@ export function ClassViewPage() {
   const [studentOptions, setStudentOptions] = useState<EnrollmentStudentOption[]>([]);
   const [classStudents, setClassStudents] = useState<ClassStudent[]>([]);
   const [selectedTuitionStudent, setSelectedTuitionStudent] = useState<ClassStudent | null>(null);
+  const [tuitionPaymentPlans, setTuitionPaymentPlans] = useState<AdminPaymentPlan[]>([]);
+  const [selectedTuitionPlanId, setSelectedTuitionPlanId] = useState<number | null>(null);
+  const [selectedTuitionPlanDetail, setSelectedTuitionPlanDetail] = useState<AdminPaymentPlan | null>(null);
+  const [isLoadingTuitionPlans, setIsLoadingTuitionPlans] = useState(false);
+  const [isLoadingTuitionPlanDetail, setIsLoadingTuitionPlanDetail] = useState(false);
   const [isTuitionDetailOpen, setIsTuitionDetailOpen] = useState(false);
+  const [isBulkInvoicePanelOpen, setIsBulkInvoicePanelOpen] = useState(false);
+  const [bulkInvoiceStep, setBulkInvoiceStep] = useState<1 | 2 | 3>(1);
+  const [isBulkInvoiceCreated, setIsBulkInvoiceCreated] = useState(false);
+  const [isCreatingBulkInvoices, setIsCreatingBulkInvoices] = useState(false);
+  const [selectedBulkInvoicePeriods, setSelectedBulkInvoicePeriods] = useState<string[]>([]);
   const [selectedInvoiceItem, setSelectedInvoiceItem] = useState<{
+    paymentPlanItemId: number;
+    invoiceId?: number | null;
+    invoice?: AdminInvoice | null;
     period: string;
     dueDate: string;
     amount: number;
     status: string;
     invoiceCode: string;
   } | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank-transfer">("cash");
+  const [isLoadingInvoiceDetail, setIsLoadingInvoiceDetail] = useState(false);
+  const [creatingInvoiceItemId, setCreatingInvoiceItemId] = useState<number | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethodOptions, setPaymentMethodOptions] = useState<MetadataOption[]>([]);
   const [paymentNote, setPaymentNote] = useState("");
   const [isConfirmPaymentOpen, setIsConfirmPaymentOpen] = useState(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [isSearchingStudents, setIsSearchingStudents] = useState(false);
   const [isRegisteringStudent, setIsRegisteringStudent] = useState(false);
   const [cancellingStudent, setCancellingStudent] = useState<ClassStudent | null>(null);
@@ -281,6 +301,61 @@ export function ClassViewPage() {
     return () => window.clearTimeout(timeoutId);
   }, [isStudentPanelOpen, studentSearch]);
 
+  useEffect(() => {
+    if (!isBulkInvoicePanelOpen && !selectedInvoiceItem) return;
+    let isMounted = true;
+    adminMetadataApi.getPaymentMethodOptions()
+      .then((options) => {
+        if (!isMounted) return;
+        setPaymentMethodOptions(options);
+        setPaymentMethod((current) => current || options[0]?.value || "");
+      })
+      .catch((error) => toastDanger(getAuthErrorMessage(error)));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isBulkInvoicePanelOpen, selectedInvoiceItem]);
+
+  const loadTuitionPaymentPlans = async (enrollmentId: number, preferredPlanId?: number | null) => {
+    const result = await adminPaymentPlansApi.getList({ page: 1, pageSize: 20, enrollmentId });
+    setTuitionPaymentPlans(result.items);
+    setSelectedTuitionPlanId(preferredPlanId && result.items.some((plan) => plan.id === preferredPlanId) ? preferredPlanId : result.items[0]?.id ?? null);
+    return result.items;
+  };
+
+  useEffect(() => {
+    if (activeTab !== "tuition" || !selectedTuitionStudent?.enrollmentId) {
+      setTuitionPaymentPlans([]);
+      setSelectedTuitionPlanId(null);
+      setIsTuitionDetailOpen(false);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingTuitionPlans(true);
+    loadTuitionPaymentPlans(selectedTuitionStudent.enrollmentId)
+      .then(() => {
+        if (!isMounted) return;
+        setSelectedTuitionPlanDetail(null);
+        setIsTuitionDetailOpen(false);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        setTuitionPaymentPlans([]);
+        setSelectedTuitionPlanId(null);
+        setSelectedTuitionPlanDetail(null);
+        toastDanger(getAuthErrorMessage(error));
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingTuitionPlans(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, selectedTuitionStudent?.enrollmentId]);
+
   const availableStudents = useMemo(
     () => studentOptions.filter((student) => !classStudents.some((item) => item.studentCode === student.studentCode)),
     [classStudents, studentOptions],
@@ -292,14 +367,172 @@ export function ClassViewPage() {
       <input readOnly value={value} />
     </label>
   );
-  const tuitionTotal = 7500000;
-  const tuitionPaid = 0;
-  const tuitionOutstanding = tuitionTotal - tuitionPaid;
-  const tuitionInstallmentAmount = tuitionTotal / 2;
-  const tuitionInstallments = [
-    { period: "Đợt 1", dueDate: "2026-06-04", amount: tuitionInstallmentAmount, status: "Pending", invoiceCode: "Chưa tạo" },
-    { period: "Đợt 2", dueDate: "2026-07-04", amount: tuitionInstallmentAmount, status: "Pending", invoiceCode: "INV-0002" },
+  const getPlanPaidAmount = (plan: AdminPaymentPlan) =>
+    plan.items
+      .filter((item) => String(item.status) === "3" || String(item.status) === "Paid")
+      .reduce((sum, item) => sum + item.amount, 0);
+  const getPlanOutstandingAmount = (plan: AdminPaymentPlan) => Math.max(0, plan.totalAmount - getPlanPaidAmount(plan));
+  const getPlanDebtStatus = (plan: AdminPaymentPlan) => getPlanOutstandingAmount(plan) > 0 ? "Đang nợ" : "Đã thanh toán";
+  const getPlanLabel = (plan: AdminPaymentPlan) => {
+    const typeLabel = paymentPlanTypeLabels[String(plan.type)] ?? String(plan.type);
+    const installmentCount = plan.numberOfInstallments ?? plan.items.length;
+    return installmentCount > 1 ? `${typeLabel} ${installmentCount} kỳ` : typeLabel;
+  };
+  const getInstallmentStatusClass = (status: string) => {
+    const normalizedStatus = status.toLowerCase();
+    if (normalizedStatus === "paid" || normalizedStatus === "3") return styles.installmentStatusPaid;
+    if (normalizedStatus === "invoiced" || normalizedStatus === "2") return styles.installmentStatusInvoiced;
+    if (normalizedStatus === "pending" || normalizedStatus === "1") return styles.installmentStatusPending;
+    return styles.installmentStatusDefault;
+  };
+  const getPlanInstallments = (plan: AdminPaymentPlan | null) => (plan?.items ?? []).map((item) => ({
+    paymentPlanItemId: item.id,
+    invoiceId: item.invoiceId ?? null,
+    period: item.name,
+    dueDate: item.dueDate ? item.dueDate.split("T")[0] : "Chưa cập nhật",
+    amount: item.amount,
+    status: String(item.status),
+    invoiceCode: item.invoiceId ? `INV-${String(item.invoiceId).padStart(4, "0")}` : "Chưa tạo",
+  }));
+  const selectedTuitionPlan = tuitionPaymentPlans.find((plan) => plan.id === selectedTuitionPlanId) ?? tuitionPaymentPlans[0] ?? null;
+  const tuitionInstallments = getPlanInstallments(selectedTuitionPlan);
+  const bulkInvoiceSteps: Array<{ step: 1 | 2 | 3; label: string }> = [
+    { step: 1, label: "Chọn đợt" },
+    { step: 2, label: "Thanh toán" },
+    { step: 3, label: "Preview" },
   ];
+  const resetBulkInvoiceFlow = (items = tuitionInstallments) => {
+    setBulkInvoiceStep(1);
+    setIsBulkInvoiceCreated(false);
+    setSelectedBulkInvoicePeriods(items.filter((item) => item.invoiceCode === "Chưa tạo").map((item) => item.period));
+  };
+  const openBulkInvoicePanel = (planId?: number) => {
+    const targetPlan = tuitionPaymentPlans.find((plan) => plan.id === planId) ?? selectedTuitionPlan;
+    if (targetPlan) setSelectedTuitionPlanId(targetPlan.id);
+    resetBulkInvoiceFlow(getPlanInstallments(targetPlan));
+    setIsBulkInvoicePanelOpen(true);
+  };
+  const toggleTuitionPlanDetail = async (planId: number) => {
+    if (isTuitionDetailOpen && selectedTuitionPlanId === planId) {
+      setIsTuitionDetailOpen(false);
+      return;
+    }
+
+    setSelectedTuitionPlanId(planId);
+    setSelectedTuitionPlanDetail(null);
+    setIsTuitionDetailOpen(true);
+    setIsLoadingTuitionPlanDetail(true);
+    try {
+      setSelectedTuitionPlanDetail(await adminPaymentPlansApi.getById(planId));
+    } catch (error) {
+      setIsTuitionDetailOpen(false);
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsLoadingTuitionPlanDetail(false);
+    }
+  };
+  const refreshSelectedTuitionPlanDetail = async () => {
+    if (!selectedTuitionPlanId) return;
+    setSelectedTuitionPlanDetail(await adminPaymentPlansApi.getById(selectedTuitionPlanId));
+  };
+  const createInvoiceForPlanItem = async (paymentPlanItemId: number) => {
+    if (creatingInvoiceItemId) return;
+    setCreatingInvoiceItemId(paymentPlanItemId);
+    try {
+      await adminEnrollmentFinanceApi.createInvoiceFromPaymentPlanItem(paymentPlanItemId);
+      await refreshSelectedTuitionPlanDetail();
+      toastSuccess("Tạo hóa đơn thành công.");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setCreatingInvoiceItemId(null);
+    }
+  };
+  const openInvoiceDetail = async (item: {
+    paymentPlanItemId: number;
+    invoiceId?: number | null;
+    period: string;
+    dueDate: string;
+    amount: number;
+    status: string;
+    invoiceCode: string;
+  }) => {
+    if (!item.invoiceId) return;
+    setIsLoadingInvoiceDetail(true);
+    setIsConfirmPaymentOpen(false);
+    try {
+      const invoice = await adminEnrollmentFinanceApi.getInvoiceById(item.invoiceId);
+      setSelectedInvoiceItem({ ...item, invoice, invoiceCode: invoice.invoiceNo || item.invoiceCode });
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsLoadingInvoiceDetail(false);
+    }
+  };
+  const getSelectedInvoiceOutstandingAmount = () =>
+    selectedInvoiceItem?.invoice?.outstandingAmount ?? selectedInvoiceItem?.amount ?? 0;
+  const canPaySelectedInvoice = () => {
+    const status = String(selectedInvoiceItem?.invoice?.status ?? selectedInvoiceItem?.status ?? "").toLowerCase();
+    return getSelectedInvoiceOutstandingAmount() > 0 && status !== "paid" && status !== "3";
+  };
+  const submitInvoicePayment = async () => {
+    if (!selectedInvoiceItem?.invoice?.id || !selectedTuitionStudent?.studentId || !paymentMethod || isSubmittingPayment) return;
+    const amount = getSelectedInvoiceOutstandingAmount();
+    setIsSubmittingPayment(true);
+    try {
+      const paymentPdf = await adminEnrollmentFinanceApi.createPayment({
+        studentId: selectedTuitionStudent.studentId,
+        amount,
+        method: paymentMethod,
+        referenceCode: null,
+        payerName: null,
+        payerPhone: null,
+        notes: paymentNote.trim() || null,
+        allocations: [{ invoiceId: selectedInvoiceItem.invoice.id, amount }],
+      });
+      if (selectedTuitionPlanId) {
+        await refreshSelectedTuitionPlanDetail();
+      }
+      if (selectedTuitionStudent.enrollmentId) {
+        await loadTuitionPaymentPlans(selectedTuitionStudent.enrollmentId, selectedTuitionPlanId);
+      }
+      setIsConfirmPaymentOpen(false);
+      setSelectedInvoiceItem(null);
+      const pdfUrl = window.URL.createObjectURL(paymentPdf);
+      window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => window.URL.revokeObjectURL(pdfUrl), 60_000);
+      toastSuccess("Thu tiền thành công.");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+  const closeBulkInvoicePanel = () => {
+    setIsBulkInvoicePanelOpen(false);
+    resetBulkInvoiceFlow();
+  };
+  const toggleBulkInvoicePeriod = (period: string) => {
+    setIsBulkInvoiceCreated(false);
+    setSelectedBulkInvoicePeriods((current) =>
+      current.includes(period) ? current.filter((item) => item !== period) : [...current, period],
+    );
+  };
+  const createBulkInvoices = async () => {
+    if (selectedBulkInvoicePeriods.length === 0) return;
+    const selectedItems = tuitionInstallments.filter((item) => selectedBulkInvoicePeriods.includes(item.period));
+    setIsCreatingBulkInvoices(true);
+    try {
+      await Promise.all(selectedItems.map((item) => adminEnrollmentFinanceApi.createInvoiceFromPaymentPlanItem(item.paymentPlanItemId)));
+      await refreshSelectedTuitionPlanDetail();
+      setIsBulkInvoiceCreated(true);
+      toastSuccess("Tạo hóa đơn thành công.");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsCreatingBulkInvoices(false);
+    }
+  };
   const selectedDiscount = discountOptions.find((discount) => discount.id === Number(discountId));
   const selectedDiscountTypeCode = getDiscountTypeCode(selectedDiscount?.type, discountTypes);
   const isSelectedDiscountPercentage =
@@ -657,47 +890,72 @@ export function ClassViewPage() {
                     <table className={styles.table}>
                       <thead><tr><th>Tổng tiền</th><th>Đã thanh toán</th><th>Còn nợ</th><th>Plan</th><th>Trạng thái</th><th>Action</th></tr></thead>
                       <tbody>
-                        <tr>
-                          <td>{formatMoney(tuitionTotal)}</td>
-                          <td>{formatMoney(tuitionPaid)}</td>
-                          <td>{formatMoney(tuitionOutstanding)}</td>
-                          <td>Trả góp 2 kỳ</td>
-                          <td><span className={`${listStyles.statusBadge} ${listStyles.pending}`}>Đang nợ</span></td>
-                          <td><button className={styles.iconActionButton} title="Xem chi tiết kỳ thu" type="button" onClick={() => setIsTuitionDetailOpen((current) => !current)}><Eye size={16} /></button></td>
-                        </tr>
-                        {isTuitionDetailOpen && (
-                          <tr>
-                            <td colSpan={6}>
-                              <div className={styles.installmentDetail}>
-                                <table className={styles.table}>
-                                  <thead><tr><th>Kỳ</th><th>Hạn thanh toán</th><th>Số tiền</th><th>Trạng thái</th><th>Hóa đơn</th><th>Action</th></tr></thead>
-                                  <tbody>
-                                    {tuitionInstallments.map((item) => (
-                                      <tr key={item.period}>
-                                        <td>{item.period}</td>
-                                        <td>{item.dueDate}</td>
-                                        <td>{formatMoney(item.amount)}</td>
-                                        <td>{item.status}</td>
-                                        <td>{item.invoiceCode}</td>
-                                        <td>
-                                          {item.invoiceCode === "Chưa tạo" ? (
-                                            <button className={styles.iconActionButton} title="Tạo hóa đơn" type="button" onClick={() => toastSuccess("Đã chọn tạo hóa đơn cho kỳ thu.")}>
-                                              <Plus size={16} />
-                                            </button>
-                                          ) : (
-                                            <button className={styles.iconActionButton} title="Xem chi tiết hóa đơn" type="button" onClick={() => setSelectedInvoiceItem(item)}>
-                                              <Eye size={16} />
-                                            </button>
-                                          )}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
+                        {isLoadingTuitionPlans ? (
+                          <tr><td colSpan={6}><div className={styles.emptyState}>Đang tải kế hoạch thanh toán...</div></td></tr>
+                        ) : tuitionPaymentPlans.length === 0 ? (
+                          <tr><td colSpan={6}><div className={styles.emptyState}>Chưa có kế hoạch thanh toán cho đăng ký này.</div></td></tr>
+                        ) : tuitionPaymentPlans.map((plan) => {
+                          const paidAmount = getPlanPaidAmount(plan);
+                          const outstandingAmount = getPlanOutstandingAmount(plan);
+                          const debtStatus = getPlanDebtStatus(plan);
+                          const canCreateInvoices = debtStatus === "Đang nợ";
+                          const isExpanded = isTuitionDetailOpen && selectedTuitionPlanId === plan.id;
+                          const planItems = getPlanInstallments(isExpanded ? selectedTuitionPlanDetail : null);
+                          return (
+                            <Fragment key={plan.id}>
+                              <tr key={plan.id}>
+                                <td>{formatMoney(plan.totalAmount)}</td>
+                                <td>{formatMoney(paidAmount)}</td>
+                                <td>{formatMoney(outstandingAmount)}</td>
+                                <td>{getPlanLabel(plan)}</td>
+                                <td><span className={`${listStyles.statusBadge} ${debtStatus === "Đang nợ" ? styles.debtStatusBadge : listStyles.active}`}>{debtStatus}</span></td>
+                                <td>
+                                  <div className={styles.studentActions}>
+                                    <button aria-label="Tạo nhiều hóa đơn" className={styles.iconActionButton} disabled={!canCreateInvoices} title={canCreateInvoices ? "Tạo nhiều hóa đơn" : "Chỉ tạo hóa đơn khi trạng thái đang nợ"} type="button" onClick={() => openBulkInvoicePanel(plan.id)}><Plus size={16} /></button>
+                                    <button aria-label="Xem chi tiết kỳ thu" className={styles.iconActionButton} title="Xem chi tiết kỳ thu" type="button" onClick={() => void toggleTuitionPlanDetail(plan.id)}><Eye size={16} /></button>
+                                  </div>
+                                </td>
+                              </tr>
+                              {isExpanded && (
+                                <tr key={`${plan.id}-items`}>
+                                  <td colSpan={6}>
+                                    <div className={styles.installmentDetail}>
+                                      <table className={styles.table}>
+                                        <thead><tr><th>Kỳ</th><th>Hạn thanh toán</th><th>Số tiền</th><th>Trạng thái</th><th>Hóa đơn</th><th>Action</th></tr></thead>
+                                        <tbody>
+                                          {isLoadingTuitionPlanDetail ? (
+                                            <tr><td colSpan={6}><div className={styles.emptyState}>Đang tải chi tiết kỳ thu...</div></td></tr>
+                                          ) : planItems.length === 0 ? (
+                                            <tr><td colSpan={6}><div className={styles.emptyState}>Chưa có kỳ thu trong kế hoạch này.</div></td></tr>
+                                          ) : planItems.map((item) => (
+                                            <tr key={item.period}>
+                                              <td>{item.period}</td>
+                                              <td>{item.dueDate}</td>
+                                              <td>{formatMoney(item.amount)}</td>
+                                              <td><span className={`${styles.installmentStatusBadge} ${getInstallmentStatusClass(item.status)}`}>{item.status}</span></td>
+                                              <td>{item.invoiceCode}</td>
+                                              <td>
+                                                {item.invoiceCode === "Chưa tạo" ? (
+                                                  <button className={styles.iconActionButton} disabled={creatingInvoiceItemId === item.paymentPlanItemId} title="Tạo hóa đơn" type="button" onClick={() => void createInvoiceForPlanItem(item.paymentPlanItemId)}>
+                                                    <Plus size={16} />
+                                                  </button>
+                                                ) : (
+                                                  <button className={styles.iconActionButton} disabled={isLoadingInvoiceDetail} title="Xem chi tiết hóa đơn" type="button" onClick={() => void openInvoiceDetail(item)}>
+                                                    <Eye size={16} />
+                                                  </button>
+                                                )}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -778,8 +1036,87 @@ export function ClassViewPage() {
         </section>}
       </SidePanel>
       <SidePanel
+        description="Chọn các kỳ thu cần tạo hóa đơn cho học viên đang nợ."
+        footer={<div className={styles.panelActions}>
+          {bulkInvoiceStep === 1 && <><button disabled={isCreatingBulkInvoices} type="button" onClick={closeBulkInvoicePanel}>Hủy</button>{isBulkInvoiceCreated ? <button type="button" onClick={() => setBulkInvoiceStep(2)}>Tiếp tục</button> : <button disabled={selectedBulkInvoicePeriods.length === 0 || isCreatingBulkInvoices} type="button" onClick={() => void createBulkInvoices()}>{isCreatingBulkInvoices ? "Đang tạo..." : "Tạo hóa đơn"}</button>}</>}
+          {bulkInvoiceStep === 2 && <><button type="button" onClick={() => setBulkInvoiceStep(1)}>Quay lại</button><button type="button" onClick={() => setBulkInvoiceStep(3)}>Tiếp tục</button></>}
+          {bulkInvoiceStep === 3 && <><button type="button" onClick={() => setBulkInvoiceStep(2)}>Quay lại</button><button type="button" onClick={() => { closeBulkInvoicePanel(); toastSuccess("Thanh toán thành công."); }}>Thanh toán</button></>}
+        </div>}
+        isOpen={isBulkInvoicePanelOpen}
+        title="Tạo nhiều hóa đơn"
+        width="lg"
+        onClose={closeBulkInvoicePanel}
+      >
+        <div className={styles.bulkInvoiceStepper}>
+          {bulkInvoiceSteps.map((item) => {
+            const isDone = item.step < bulkInvoiceStep || (item.step === 1 && isBulkInvoiceCreated);
+            const isActive = item.step === bulkInvoiceStep;
+            return (
+              <div className={`${styles.bulkInvoiceStep} ${isActive ? styles.activeBulkInvoiceStep : ""} ${isDone ? styles.doneBulkInvoiceStep : ""}`} key={item.step}>
+                <span>{isDone ? "✓" : item.step}</span>
+                <strong>{item.label}</strong>
+              </div>
+            );
+          })}
+        </div>
+        {bulkInvoiceStep === 1 && <div className={styles.bulkInvoiceList}>
+          {tuitionInstallments.map((item) => {
+            const canCreateInvoice = item.invoiceCode === "Chưa tạo";
+            const isChecked = selectedBulkInvoicePeriods.includes(item.period);
+            return (
+              <label className={!canCreateInvoice ? styles.disabledBulkInvoiceItem : undefined} key={item.period}>
+                <input checked={isChecked} disabled={!canCreateInvoice || isBulkInvoiceCreated} type="checkbox" onChange={() => toggleBulkInvoicePeriod(item.period)} />
+                <span>
+                  <strong>{item.period}</strong>
+                  <small>{item.dueDate} · {formatMoney(item.amount)} · {item.invoiceCode}</small>
+                </span>
+              </label>
+            );
+          })}
+          {isBulkInvoiceCreated && <p className={styles.bulkInvoiceSuccess}>Tạo hóa đơn thành công. Bạn có thể chuyển sang bước tiếp theo.</p>}
+        </div>}
+        {bulkInvoiceStep === 2 && <div className={styles.paymentFormBox}>
+          <label>
+            <span>Phương thức thanh toán</span>
+            <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
+              {paymentMethodOptions.length === 0 && <option value="">Chọn phương thức thanh toán</option>}
+              {paymentMethodOptions.map((option) => <option key={option.value} value={option.value}>{option.value}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>Ghi chú</span>
+            <textarea placeholder="Nhập ghi chú thanh toán" rows={4} value={paymentNote} onChange={(event) => setPaymentNote(event.target.value)} />
+          </label>
+        </div>}
+        {bulkInvoiceStep === 3 && <div className={styles.bulkInvoicePreview}>
+          <div className={styles.invoicePreviewHeader}>
+            <div>
+              <h2>English Central</h2>
+              <p>{selectedTuitionStudent?.fullName ?? "Học viên"}</p>
+              <p>{selectedTuitionStudent?.email ?? "student@email.com"}</p>
+            </div>
+            <div>
+              <span>Amount Due:</span>
+              <strong>{formatMoney(tuitionInstallments.filter((item) => selectedBulkInvoicePeriods.includes(item.period)).reduce((sum, item) => sum + item.amount, 0))}</strong>
+            </div>
+          </div>
+          <table className={styles.invoicePreviewTable}>
+            <thead><tr><th>QTY</th><th>DESCRIPTION</th><th>PRICE</th><th>AMOUNT</th></tr></thead>
+            <tbody>
+              {tuitionInstallments.filter((item) => selectedBulkInvoicePeriods.includes(item.period)).map((item) => (
+                <tr key={item.period}><td>1</td><td>{item.period} - Học phí lớp</td><td>{formatMoney(item.amount)}</td><td>{formatMoney(item.amount)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+          <div className={styles.paymentConfirmSummaryInInvoice}>
+            <div><span>Phương thức</span><strong>{paymentMethod || "Chưa chọn"}</strong></div>
+            <div><span>Ghi chú</span><strong>{paymentNote.trim() || "Không có ghi chú"}</strong></div>
+          </div>
+        </div>}
+      </SidePanel>
+      <SidePanel
         description="Thông tin hóa đơn của kỳ thu."
-        footer={<div className={styles.panelActions}><button type="button" onClick={() => setSelectedInvoiceItem(null)}>Hủy</button><button type="button" onClick={() => setIsConfirmPaymentOpen(true)}>Thu tiền</button></div>}
+        footer={<div className={styles.panelActions}><button type="button" onClick={() => setSelectedInvoiceItem(null)}>Hủy</button>{selectedInvoiceItem && canPaySelectedInvoice() && <button type="button" onClick={() => setIsConfirmPaymentOpen(true)}>Thu tiền</button>}</div>}
         isOpen={Boolean(selectedInvoiceItem)}
         title="Chi tiết hóa đơn"
         width="lg"
@@ -789,20 +1126,20 @@ export function ClassViewPage() {
           <div className={styles.invoiceInfoBox}>
             <div><span>Hóa đơn</span><strong>{selectedInvoiceItem.invoiceCode}</strong></div>
             <div><span>Kỳ thu</span><strong>{selectedInvoiceItem.period}</strong></div>
-            <div><span>Hạn thanh toán</span><strong>{selectedInvoiceItem.dueDate}</strong></div>
-            <div><span>Total</span><strong>{formatMoney(selectedInvoiceItem.amount)}</strong></div>
-            <div><span>Paid</span><strong>{formatMoney(0)}</strong></div>
-            <div><span>Outstanding</span><strong>{formatMoney(selectedInvoiceItem.amount)}</strong></div>
-            <div><span>Trạng thái</span><strong>Invoice Issued</strong></div>
+            <div><span>Hạn thanh toán</span><strong>{selectedInvoiceItem.invoice?.dueDate?.split("T")[0] ?? selectedInvoiceItem.dueDate}</strong></div>
+            <div><span>Total</span><strong>{formatMoney(selectedInvoiceItem.invoice?.totalAmount ?? selectedInvoiceItem.amount)}</strong></div>
+            <div><span>Paid</span><strong>{formatMoney(selectedInvoiceItem.invoice?.paidAmount ?? 0)}</strong></div>
+            <div><span>Outstanding</span><strong>{formatMoney(selectedInvoiceItem.invoice?.outstandingAmount ?? selectedInvoiceItem.amount)}</strong></div>
+            <div><span>Trạng thái</span><strong>{selectedInvoiceItem.invoice ? String(selectedInvoiceItem.invoice.status) : "Invoice Issued"}</strong></div>
           </div>
         )}
-        {selectedInvoiceItem && (
+        {selectedInvoiceItem && canPaySelectedInvoice() && (
           <div className={styles.paymentFormBox}>
             <label>
               <span>Phương thức thanh toán</span>
-              <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as typeof paymentMethod)}>
-                <option value="cash">Tiền mặt</option>
-                <option value="bank-transfer">Chuyển khoản</option>
+              <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
+                {paymentMethodOptions.length === 0 && <option value="">Chọn phương thức thanh toán</option>}
+                {paymentMethodOptions.map((option) => <option key={option.value} value={option.value}>{option.value}</option>)}
               </select>
             </label>
             <label>
@@ -812,7 +1149,7 @@ export function ClassViewPage() {
           </div>
         )}
       </SidePanel>
-      {isConfirmPaymentOpen && selectedInvoiceItem && <div className={styles.invoicePreviewBackdrop} role="presentation" onMouseDown={() => setIsConfirmPaymentOpen(false)}>
+      {isConfirmPaymentOpen && selectedInvoiceItem && canPaySelectedInvoice() && <div className={styles.invoicePreviewBackdrop} role="presentation" onMouseDown={() => setIsConfirmPaymentOpen(false)}>
         <section aria-modal="true" className={styles.invoicePreviewModal} role="dialog" onMouseDown={(event) => event.stopPropagation()}>
           <button aria-label="Đóng" className={styles.invoicePreviewClose} type="button" onClick={() => setIsConfirmPaymentOpen(false)}><X size={18} /></button>
           <div className={styles.invoiceConfirmIntro}>
@@ -827,7 +1164,7 @@ export function ClassViewPage() {
             </div>
             <div>
               <span>Amount Due:</span>
-              <strong>{formatMoney(selectedInvoiceItem.amount)}</strong>
+              <strong>{formatMoney(getSelectedInvoiceOutstandingAmount())}</strong>
             </div>
           </div>
           <div className={styles.invoicePreviewMeta}>
@@ -841,31 +1178,31 @@ export function ClassViewPage() {
               <strong>Invoice Number:</strong>
               <p>{selectedInvoiceItem.invoiceCode}</p>
               <strong>Date Of Issue:</strong>
-              <p>{selectedInvoiceItem.dueDate}</p>
+              <p>{selectedInvoiceItem.invoice?.issuedAt?.split("T")[0] ?? selectedInvoiceItem.dueDate}</p>
             </div>
           </div>
           <table className={styles.invoicePreviewTable}>
             <thead><tr><th>QTY</th><th>DESCRIPTION</th><th>PRICE</th><th>AMOUNT</th></tr></thead>
             <tbody>
-              <tr><td>1</td><td>{selectedInvoiceItem.period} - Học phí lớp</td><td>{formatMoney(selectedInvoiceItem.amount)}</td><td>{formatMoney(selectedInvoiceItem.amount)}</td></tr>
+              <tr><td>1</td><td>{selectedInvoiceItem.period} - Học phí lớp</td><td>{formatMoney(getSelectedInvoiceOutstandingAmount())}</td><td>{formatMoney(getSelectedInvoiceOutstandingAmount())}</td></tr>
             </tbody>
           </table>
           <div className={styles.invoicePreviewTotals}>
-            <div><span>SUBTOTAL</span><strong>{formatMoney(selectedInvoiceItem.amount)}</strong></div>
+            <div><span>SUBTOTAL</span><strong>{formatMoney(getSelectedInvoiceOutstandingAmount())}</strong></div>
             <div><span>TAX</span><strong>{formatMoney(0)}</strong></div>
             <div><span>DISCOUNT</span><strong>{formatMoney(0)}</strong></div>
-            <div><span>TOTAL</span><strong>{formatMoney(selectedInvoiceItem.amount)}</strong></div>
+            <div><span>TOTAL</span><strong>{formatMoney(getSelectedInvoiceOutstandingAmount())}</strong></div>
           </div>
           <div className={styles.invoicePreviewNote}>
             {paymentNote.trim() || "Thanks for learning with English Central!"}
           </div>
           <div className={styles.paymentConfirmSummaryInInvoice}>
-            <div><span>Phương thức</span><strong>{paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"}</strong></div>
+            <div><span>Phương thức</span><strong>{paymentMethod || "Chưa chọn"}</strong></div>
             <div><span>Ghi chú</span><strong>{paymentNote.trim() || "Không có ghi chú"}</strong></div>
           </div>
           <div className={styles.invoicePreviewActions}>
-            <button type="button" onClick={() => { setIsConfirmPaymentOpen(false); toastSuccess("Đã xác nhận thu tiền."); }}><Send size={15} /> Xác nhận thu tiền</button>
-            <button type="button" onClick={() => setIsConfirmPaymentOpen(false)}><CloudDownload size={15} /> Hủy</button>
+            <button disabled={!paymentMethod || getSelectedInvoiceOutstandingAmount() <= 0 || isSubmittingPayment} type="button" onClick={() => void submitInvoicePayment()}><Send size={15} /> {isSubmittingPayment ? "Đang thu..." : "Xác nhận thu tiền"}</button>
+            <button disabled={isSubmittingPayment} type="button" onClick={() => setIsConfirmPaymentOpen(false)}><CloudDownload size={15} /> Hủy</button>
           </div>
         </section>
       </div>}
