@@ -20,7 +20,7 @@ namespace EnglishCentral.Application.Features.Finance.BillingPolicies.Commands.C
 
         public async Task<Result<BillingPolicyResponse>> Handle(CreateBillingPolicyCommand request, CancellationToken ct)
         {
-            var name = request.Name.Trim();
+            var name = request.Name.ToUpper().Trim();
             if (await _repository.ExistsAsync(x => x.Name == name, ct))
                 return Result<BillingPolicyResponse>.Failure("Billing policy name already exists.", 409);
 

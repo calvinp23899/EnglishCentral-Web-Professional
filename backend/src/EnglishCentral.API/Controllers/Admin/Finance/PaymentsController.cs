@@ -1,5 +1,6 @@
 using EnglishCentral.Application.Features.Finance.Payments.Commands.CancelPayment;
 using EnglishCentral.Application.Features.Finance.Payments.Commands.CreatePayment;
+using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Shared.Constants;
 using MediatR;
@@ -12,15 +13,27 @@ namespace EnglishCentral.API.Controllers.Admin.Finance
     public class PaymentsController : AdminBaseController
     {
         private readonly IMediator _mediator;
+        private readonly IPaymentPdfService _paymentPdfService;
 
-        public PaymentsController(IMediator mediator) => _mediator = mediator;
+        public PaymentsController(IMediator mediator, IPaymentPdfService paymentPdfService)
+        {
+            _mediator = mediator;
+            _paymentPdfService = paymentPdfService;
+        }
 
         [HttpPost("insert")]
         [HasPermission(SystemPermissions.BillingPaymentCreate)]
         public async Task<IActionResult> Create(CreatePaymentCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
-            return StatusCode(result.StatusCode, result);
+            if (!result.IsSuccess || result.Data is null)
+                return StatusCode(result.StatusCode, result);
+
+            var pdfResult = await _paymentPdfService.GeneratePaymentInvoicePdfAsync(result.Data.Id, ct);
+            if (!pdfResult.IsSuccess || pdfResult.Data is null)
+                return StatusCode(pdfResult.StatusCode, pdfResult);
+
+            return File(pdfResult.Data.Content, pdfResult.Data.ContentType, pdfResult.Data.FileName);
         }
 
         [HttpPost("{id:long}/cancel")]

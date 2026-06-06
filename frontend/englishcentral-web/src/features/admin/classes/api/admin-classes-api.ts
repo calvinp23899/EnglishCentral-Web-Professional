@@ -38,7 +38,6 @@ export type ClassFormPayload = {
   teacherId: number;
   roomId?: number | null;
   billingPolicyId?: number | null;
-  code: string;
   name: string;
   startDate: string;
   endDate: string;

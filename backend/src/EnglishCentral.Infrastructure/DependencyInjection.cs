@@ -1,6 +1,7 @@
 using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Academic;
 using EnglishCentral.Application.Interfaces.Academic.ITeacher;
+using EnglishCentral.Application.Interfaces.Documents;
 using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Infrastructure.Authorization;
@@ -14,6 +15,7 @@ using EnglishCentral.Infrastructure.Services.CodeGenerator;
 using EnglishCentral.Infrastructure.Services.CurrentUser;
 using EnglishCentral.Infrastructure.Services.Identity;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
+using EnglishCentral.Infrastructure.Services.Pdf;
 using EnglishCentral.Shared.Constants;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -78,6 +80,9 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped<ITeacherRepository, TeacherRepository>();
             services.AddScoped(typeof(IAcademicRepository<>), typeof(AcademicRepository<>));
             services.AddScoped(typeof(IFinanceRepository<>), typeof(FinanceRepository<>));
+            services.AddScoped<IPdfGenerator, PdfGenerator>();
+            services.AddScoped<IPaymentPdfService, PaymentPdfService>();
+            services.AddScoped<IBillingPdfService, BillingPdfService>();
             #endregion
 
             #region JWT Setting

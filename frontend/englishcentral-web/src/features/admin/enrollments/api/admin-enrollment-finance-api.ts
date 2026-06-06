@@ -94,6 +94,43 @@ export const adminEnrollmentFinanceApi = {
     return unwrap(response.data, "Không thể tải danh sách hóa đơn.");
   },
 
+  async getInvoiceById(id: string | number) {
+    const response = await api.get<ApiResult<AdminInvoice>>(ENDPOINTS.ADMIN_INVOICES.GET_BY_ID(id));
+    return unwrap(response.data, "Không thể tải chi tiết hóa đơn.");
+  },
+
+  async updateInvoice(id: string | number, payload: { dueDate: string; notes: string }) {
+    const response = await api.put<ApiResult<AdminInvoice>>(ENDPOINTS.ADMIN_INVOICES.UPDATE(id), payload);
+    return unwrap(response.data, "Không thể cập nhật hóa đơn.");
+  },
+
+  async downloadInvoicePdf(id: string | number) {
+    const response = await api.get<Blob>(
+      ENDPOINTS.ADMIN_INVOICES.DOWNLOAD_PDF(id),
+      { responseType: "blob" },
+    );
+    return response.data;
+  },
+
+  async createInvoiceFromPaymentPlanItem(paymentPlanItemId: string | number) {
+    const response = await api.post<ApiResult<AdminInvoice>>(ENDPOINTS.ADMIN_INVOICES.CREATE_FROM_PAYMENT_PLAN_ITEM, {
+      paymentPlanItemId,
+    });
+    return unwrap(response.data, "Không thể tạo hóa đơn từ kỳ thu.");
+  },
+
+  async bulkCreateInvoicesFromPaymentPlanItems(payload: {
+    paymentPlanId: number;
+    paymentPlanItemIds: number[];
+    notes?: string | null;
+  }) {
+    const response = await api.post<ApiResult<AdminInvoice[]>>(
+      ENDPOINTS.ADMIN_INVOICES.BULK_CREATE_FROM_PAYMENT_PLAN_ITEMS,
+      payload,
+    );
+    return unwrap(response.data, "Không thể tạo nhiều hóa đơn từ các kỳ thu.");
+  },
+
   async getSummary(enrollmentId: string | number) {
     const response = await api.get<ApiResult<BillingSummary>>(ENDPOINTS.ADMIN_BILLING_SUMMARIES.GET, {
       params: { EnrollmentId: enrollmentId },
@@ -108,19 +145,23 @@ export const adminEnrollmentFinanceApi = {
   async createPayment(payload: {
     studentId: number;
     amount: number;
-    method: number;
+    method: string | number;
     referenceCode?: string | null;
     payerName?: string | null;
     payerPhone?: string | null;
     notes?: string | null;
     allocations: Array<{ invoiceId: number; amount: number }>;
   }) {
-    const response = await api.post<ApiResult<PaymentResult>>(ENDPOINTS.ADMIN_PAYMENTS.CREATE, {
-      ...payload,
-      paymentNo: null,
-      paidAt: null,
-    });
-    return unwrap(response.data, "Không thể ghi nhận thanh toán.");
+    const response = await api.post<Blob>(
+      ENDPOINTS.ADMIN_PAYMENTS.CREATE,
+      {
+        ...payload,
+        paymentNo: null,
+        paidAt: null,
+      },
+      { responseType: "blob" },
+    );
+    return response.data;
   },
 
   async getReceipts(paymentId: string | number) {

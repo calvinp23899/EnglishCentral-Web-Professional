@@ -249,12 +249,15 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
 
             var planRequest = request.PaymentPlan;
             List<CreateEnrollmentPaymentPlanItemRequest> items;
-            if (planRequest is not null)
+            if (planRequest?.Items is not null && planRequest.Items.Count > 0)
             {
                 items = planRequest.Items.ToList();
             }
             else
             {
+                if (planRequest is not null && billingPolicy is null)
+                    return Result<bool>.Failure("Custom payment plan items are required when billing policy is not selected.", 400);
+
                 var defaultPlanResult = BuildDefaultPaymentPlanItems(request, classroom, finalAmount, billingPolicy);
                 if (!defaultPlanResult.IsSuccess)
                     return Result<bool>.Failure(defaultPlanResult.Error!, defaultPlanResult.StatusCode);

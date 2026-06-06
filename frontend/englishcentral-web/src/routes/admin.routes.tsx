@@ -20,6 +20,8 @@ import { DiscountListPage } from "@/features/admin/discounts/pages/DiscountListP
 import { DiscountViewPage } from "@/features/admin/discounts/pages/DiscountViewPage";
 import { EnrollmentDetailPage } from "@/features/admin/enrollments/pages/EnrollmentDetailPage";
 import { PaymentCreatePage } from "@/features/admin/enrollments/pages/PaymentCreatePage";
+import { MyClassListPage } from "@/features/admin/my-classes/pages/MyClassListPage";
+import { MyClassViewPage } from "@/features/admin/my-classes/pages/MyClassViewPage";
 import { AdminChangePasswordPage } from "@/features/admin/profile/pages/AdminChangePasswordPage";
 import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePage";
 import { IeltsHubPage } from "@/features/admin/practice-bank/ielts/pages/IeltsHubPage";
@@ -29,6 +31,9 @@ import { IeltsReadingViewPage } from "@/features/admin/practice-bank/ielts/readi
 import { PaymentPlanFormPage } from "@/features/admin/payment-plans/pages/PaymentPlanFormPage";
 import { PaymentPlanListPage } from "@/features/admin/payment-plans/pages/PaymentPlanListPage";
 import { PaymentPlanViewPage } from "@/features/admin/payment-plans/pages/PaymentPlanViewPage";
+import { RoomFormPage } from "@/features/admin/rooms/pages/RoomFormPage";
+import { RoomListPage } from "@/features/admin/rooms/pages/RoomListPage";
+import { RoomViewPage } from "@/features/admin/rooms/pages/RoomViewPage";
 import { AdminSchedulePage } from "@/features/admin/schedule/pages/AdminSchedulePage";
 import { AdminSettingsPage } from "@/features/admin/settings/pages/AdminSettingsPage";
 import { AdminPlaceholderPage } from "@/features/admin/shared/pages/AdminPlaceholderPage";
@@ -160,6 +165,25 @@ const lmsRoutes = [
   { path: "lms/progress", title: "Tiến độ học tập" },
 ];
 
+const crmSalesRoutes = [
+  { path: "crm-sales/leads", title: "Lead" },
+  { path: "crm-sales/lead-sources", title: "LeadSource" },
+  { path: "crm-sales/lead-activities", title: "LeadActivity" },
+  { path: "crm-sales/lead-conversions", title: "LeadConversion" },
+];
+
+const costExpenseRoutes = [
+  { path: "cost-expense/teacher-session-payrolls", title: "TeacherSessionPayroll" },
+  { path: "cost-expense/class-expenses", title: "ClassExpense" },
+  { path: "cost-expense/marketing-campaigns", title: "MarketingCampaign" },
+  { path: "cost-expense/marketing-costs", title: "MarketingCost" },
+];
+
+const hrmRoutes = [
+  { path: "hrm/attendance", title: "Chấm Công" },
+  { path: "hrm/leave-requests", title: "Nghỉ Phép" },
+];
+
 export const adminRoutes = [
   {
     path: "/admin/login",
@@ -196,7 +220,19 @@ export const adminRoutes = [
       },
       {
         path: "schedule",
+        element: <Navigate to="/admin/my-classes/schedule" replace />,
+      },
+      {
+        path: "my-classes",
+        element: <MyClassListPage />,
+      },
+      {
+        path: "my-classes/schedule",
         element: <AdminSchedulePage />,
+      },
+      {
+        path: "my-classes/:classId/view",
+        element: <MyClassViewPage />,
       },
       {
         path: "practice-bank",
@@ -257,6 +293,45 @@ export const adminRoutes = [
         path: "lms",
         element: <Navigate to="/admin/lms/programs" replace />,
       },
+      {
+        path: "crm-sales",
+        element: <Navigate to="/admin/crm-sales/leads" replace />,
+      },
+      ...crmSalesRoutes.map((route) => ({
+        path: route.path,
+        element: (
+          <AdminPlaceholderPage
+            title={route.title}
+            description="Chức năng CRM / Sales đang được xây dựng."
+          />
+        ),
+      })),
+      {
+        path: "cost-expense",
+        element: <Navigate to="/admin/cost-expense/teacher-session-payrolls" replace />,
+      },
+      ...costExpenseRoutes.map((route) => ({
+        path: route.path,
+        element: (
+          <AdminPlaceholderPage
+            title={route.title}
+            description="Chức năng Cost / Expense đang được xây dựng."
+          />
+        ),
+      })),
+      {
+        path: "hrm",
+        element: <Navigate to="/admin/hrm/attendance" replace />,
+      },
+      ...hrmRoutes.map((route) => ({
+        path: route.path,
+        element: (
+          <AdminPlaceholderPage
+            title={route.title}
+            description="Chức năng HRM đang được xây dựng."
+          />
+        ),
+      })),
       ...lmsRoutes.map((route) => ({
         path: route.path,
         element: (
@@ -410,6 +485,22 @@ export const adminRoutes = [
       {
         path: "classes/:recordId/edit",
         element: <ClassFormPage mode="edit" />,
+      },
+      {
+        path: "rooms",
+        element: <RoomListPage />,
+      },
+      {
+        path: "rooms/create",
+        element: <RoomFormPage mode="create" />,
+      },
+      {
+        path: "rooms/:recordId/view",
+        element: <RoomViewPage />,
+      },
+      {
+        path: "rooms/:recordId/edit",
+        element: <RoomFormPage mode="edit" />,
       },
       {
         path: "enrollments/:recordId/view",

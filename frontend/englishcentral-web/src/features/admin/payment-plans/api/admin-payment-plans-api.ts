@@ -79,7 +79,7 @@ export const adminPaymentPlansApi = {
         params: {
           Page: params.page,
           PageSize: params.pageSize,
-          EnrollmentId: params.enrollmentId,
+          enrollmentId: params.enrollmentId,
           Type: params.type,
           Status: params.status,
           IsDescending: params.isDescending,
@@ -95,6 +95,14 @@ export const adminPaymentPlansApi = {
       ENDPOINTS.ADMIN_PAYMENT_PLANS.GET_BY_ID(id),
     );
     return unwrap(response.data, "Không thể tải thông tin kế hoạch thanh toán.");
+  },
+
+  async downloadStatementPdf(id: string | number) {
+    const response = await api.get<Blob>(
+      ENDPOINTS.ADMIN_PAYMENT_PLANS.STATEMENT_PDF(id),
+      { responseType: "blob" },
+    );
+    return response.data;
   },
 
   async create(payload: PaymentPlanFormPayload) {

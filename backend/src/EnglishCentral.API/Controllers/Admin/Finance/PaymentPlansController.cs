@@ -1,8 +1,10 @@
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.CreatePaymentPlan;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.DeletePaymentPlan;
+using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.SettleRemainingPaymentPlan;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.UpdatePaymentPlan;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPaymentPlanById;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPaymentPlans;
+using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Shared.Constants;
 using MediatR;
@@ -15,8 +17,13 @@ namespace EnglishCentral.API.Controllers.Admin.Finance
     public class PaymentPlansController : AdminBaseController
     {
         private readonly IMediator _mediator;
+        private readonly IBillingPdfService _billingPdfService;
 
-        public PaymentPlansController(IMediator mediator) => _mediator = mediator;
+        public PaymentPlansController(IMediator mediator, IBillingPdfService billingPdfService)
+        {
+            _mediator = mediator;
+            _billingPdfService = billingPdfService;
+        }
 
         [HttpGet("get-list")]
         [HasPermission(SystemPermissions.BillingRead)]
@@ -34,6 +41,17 @@ namespace EnglishCentral.API.Controllers.Admin.Finance
             return StatusCode(result.StatusCode, result);
         }
 
+        [HttpGet("{id:long}/statement-pdf")]
+        [HasPermission(SystemPermissions.BillingRead)]
+        public async Task<IActionResult> DownloadStatementPdf(long id, CancellationToken ct)
+        {
+            var result = await _billingPdfService.GeneratePaymentPlanStatementPdfAsync(id, ct);
+            if (!result.IsSuccess || result.Data is null)
+                return StatusCode(result.StatusCode, result);
+
+            return File(result.Data.Content, result.Data.ContentType, result.Data.FileName);
+        }
+
         [HttpPost("insert")]
         [HasPermission(SystemPermissions.BillingCreate)]
         public async Task<IActionResult> Create(CreatePaymentPlanCommand command, CancellationToken ct)
@@ -45,6 +63,14 @@ namespace EnglishCentral.API.Controllers.Admin.Finance
         [HttpPut("{id:long}/update")]
         [HasPermission(SystemPermissions.BillingUpdate)]
         public async Task<IActionResult> Update(long id, UpdatePaymentPlanCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command with { Id = id }, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPost("{id:long}/settle-remaining")]
+        [HasPermission(SystemPermissions.BillingPaymentCreate)]
+        public async Task<IActionResult> SettleRemaining(long id, SettleRemainingPaymentPlanCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command with { Id = id }, ct);
             return StatusCode(result.StatusCode, result);

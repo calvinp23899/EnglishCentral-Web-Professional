@@ -4,6 +4,7 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  CalendarDays,
   ChevronDown,
   GraduationCap,
   LayoutDashboard,
@@ -11,12 +12,14 @@ import {
   LogOut,
   MessageSquareText,
   PanelLeft,
+  ReceiptText,
   ScrollText,
   Settings,
   ShieldCheck,
   SlidersHorizontal,
   SquareStack,
   UserRound,
+  UsersRound,
   WalletCards,
 } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
@@ -50,10 +53,19 @@ const navigationItems: NavigationItem[] = [
     children: [
       { label: "Học viên", path: "/admin/students" },
       { label: "Nhân Viên", path: "/admin/teachers" },
-      { label: "Lịch học", path: "/admin/schedule" },
+      { label: "Phòng Học", path: "/admin/rooms" },
       { label: "Danh Mục Khóa Học", path: "/admin/course-categories" },
       { label: "Khóa học", path: "/admin/courses" },
       { label: "Lớp học", path: "/admin/classes" },
+    ],
+  },
+  {
+    label: "Lớp của tôi",
+    path: "/admin/my-classes",
+    icon: CalendarDays,
+    children: [
+      { label: "Danh Sách Lớp", path: "/admin/my-classes" },
+      { label: "Lịch Học", path: "/admin/my-classes/schedule" },
     ],
   },
   {
@@ -110,6 +122,37 @@ const navigationItems: NavigationItem[] = [
       { label: "Tác vụ nền", path: "/admin/finance/background-jobs" },
     ],
   },
+  {
+    label: "CRM / Sales",
+    path: "/admin/crm-sales",
+    icon: UsersRound,
+    children: [
+      { label: "Lead", path: "/admin/crm-sales/leads" },
+      { label: "LeadSource", path: "/admin/crm-sales/lead-sources" },
+      { label: "LeadActivity", path: "/admin/crm-sales/lead-activities" },
+      { label: "LeadConversion", path: "/admin/crm-sales/lead-conversions" },
+    ],
+  },
+  {
+    label: "Cost / Expense",
+    path: "/admin/cost-expense",
+    icon: ReceiptText,
+    children: [
+      { label: "TeacherSessionPayroll", path: "/admin/cost-expense/teacher-session-payrolls" },
+      { label: "ClassExpense", path: "/admin/cost-expense/class-expenses" },
+      { label: "MarketingCampaign", path: "/admin/cost-expense/marketing-campaigns" },
+      { label: "MarketingCost", path: "/admin/cost-expense/marketing-costs" },
+    ],
+  },
+  {
+    label: "HRM",
+    path: "/admin/hrm",
+    icon: UserRound,
+    children: [
+      { label: "Chấm Công", path: "/admin/hrm/attendance" },
+      { label: "Nghỉ Phép", path: "/admin/hrm/leave-requests" },
+    ],
+  },
   { label: "Báo cáo", path: "/admin/reports", icon: BarChart3 },
   { label: "Tin nhắn", path: "/admin/messages", icon: MessageSquareText },
 ];
@@ -121,6 +164,7 @@ const breadcrumbLabels: Record<string, string> = {
   components: "Components",
   config: "Cấu Hình",
   content: "Nội Dung Quản Lý",
+  "cost-expense": "Cost / Expense",
   courses: "Khóa học",
   "change-password": "Đổi mật khẩu",
   dropdown: "Dropdown",
@@ -128,6 +172,8 @@ const breadcrumbLabels: Record<string, string> = {
   finance: "Quản Lý Tài Chính",
   "background-jobs": "Tác vụ nền",
   "credit-notes": "Phiếu ghi có",
+  "class-expenses": "ClassExpense",
+  "crm-sales": "CRM / Sales",
   discounts: "Giảm giá",
   logs: "Nhật Ký Hệ Thống",
   invoices: "Hóa đơn",
@@ -136,11 +182,17 @@ const breadcrumbLabels: Record<string, string> = {
   lms: "LMS",
   messages: "Tin nhắn",
   modules: "Module học",
+  "my-classes": "Lớp của tôi",
   navbar: "Navbar",
   overview: "Tổng quan",
   payments: "Thanh toán",
   "payment-plans": "Kế hoạch thanh toán",
   ielts: "IELTS",
+  "lead-activities": "LeadActivity",
+  "lead-conversions": "LeadConversion",
+  "lead-sources": "LeadSource",
+  leads: "Lead",
+  "leave-requests": "Nghỉ Phép",
   permissions: "Phân Quyền",
   "practice-bank": "Ngân hàng bài tập",
   profile: "Hồ sơ",
@@ -150,11 +202,17 @@ const breadcrumbLabels: Record<string, string> = {
   receipts: "Biên lai",
   reports: "Báo cáo",
   refunds: "Hoàn tiền",
+  rooms: "Phòng Học",
   schedule: "Lịch",
   settings: "Cài đặt",
   slider: "Slider",
   students: "Học viên",
   teachers: "Giáo viên",
+  "teacher-session-payrolls": "TeacherSessionPayroll",
+  "marketing-campaigns": "MarketingCampaign",
+  "marketing-costs": "MarketingCost",
+  hrm: "HRM",
+  attendance: "Chấm Công",
   "tuition-policies": "Chính sách học phí",
   toeic: "TOEIC",
   videos: "Video",
@@ -167,11 +225,12 @@ const getBreadcrumbItems = (pathname: string) => {
   const visibleSegments = segments
     .map((segment, index) => ({ originalIndex: index, segment }))
     .filter((item) => {
-      const { originalIndex } = item;
+      const { originalIndex, segment } = item;
       const previousSegment = segments[originalIndex - 1];
       const nextSegment = segments[originalIndex + 1];
+      const isNumericSegment = /^\d+$/.test(segment);
 
-      return !(previousSegment === "students" && nextSegment === "edit");
+      return !isNumericSegment && !(previousSegment === "students" && nextSegment === "edit");
     });
 
   return visibleSegments.map(({ originalIndex, segment }) => {

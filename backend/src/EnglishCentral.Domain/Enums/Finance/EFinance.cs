@@ -60,8 +60,8 @@
     {
         Cash = 1,
         BankTransfer = 2,
-        Card = 3,
-        EWallet = 4
+        //Card = 3,
+        //EWallet = 4
     }
 
     public enum EPaymentStatus

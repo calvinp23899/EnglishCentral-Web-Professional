@@ -62,18 +62,24 @@ export const ENDPOINTS = {
 
   ADMIN_ROOMS: {
     GET_LIST: "/admin/academic/rooms/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/academic/rooms/${id}/get-by-id`,
+    CREATE: "/admin/academic/rooms/insert",
+    UPDATE: (id: string | number) => `/admin/academic/rooms/${id}/update`,
+    DELETE: (id: string | number) => `/admin/academic/rooms/${id}/delete`,
   },
 
   ADMIN_ENROLLMENTS: {
     GET_LIST: "/admin/academic/enrollments/get-list",
     GET_BY_ID: (id: string | number) => `/admin/academic/enrollments/${id}/get-by-id`,
     CREATE: "/admin/academic/enrollments/insert",
+    CANCEL: (id: string | number) => `/admin/academic/enrollments/${id}/cancel`,
     DELETE: (id: string | number) => `/admin/academic/enrollments/${id}/delete`,
   },
 
   ADMIN_PAYMENT_PLANS: {
     GET_LIST: "/admin/billing/payment-plans/get-list",
     GET_BY_ID: (id: string | number) => `/admin/billing/payment-plans/${id}/get-by-id`,
+    STATEMENT_PDF: (id: string | number) => `/admin/billing/payment-plans/${id}/statement-pdf`,
     CREATE: "/admin/billing/payment-plans/insert",
     UPDATE: (id: string | number) => `/admin/billing/payment-plans/${id}/update`,
     DELETE: (id: string | number) => `/admin/billing/payment-plans/${id}/delete`,
@@ -98,6 +104,10 @@ export const ENDPOINTS = {
   ADMIN_INVOICES: {
     GET_LIST: "/admin/billing/invoices/get-list",
     GET_BY_ID: (id: string | number) => `/admin/billing/invoices/${id}/get-by-id`,
+    UPDATE: (id: string | number) => `/admin/billing/invoices/${id}/update`,
+    DOWNLOAD_PDF: (id: string | number) => `/admin/billing/invoices/${id}/download-pdf`,
+    CREATE_FROM_PAYMENT_PLAN_ITEM: "/admin/billing/invoices/create-from-payment-plan-item",
+    BULK_CREATE_FROM_PAYMENT_PLAN_ITEMS: "/admin/billing/invoices/bulk-create-from-payment-plan-items",
   },
 
   ADMIN_BILLING_JOBS: {
