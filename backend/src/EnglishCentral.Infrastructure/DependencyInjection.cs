@@ -82,6 +82,7 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped(typeof(IFinanceRepository<>), typeof(FinanceRepository<>));
             services.AddScoped<IPdfGenerator, PdfGenerator>();
             services.AddScoped<IPaymentPdfService, PaymentPdfService>();
+            services.AddScoped<IBillingPdfService, BillingPdfService>();
             #endregion
 
             #region JWT Setting

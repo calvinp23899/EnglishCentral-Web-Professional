@@ -2,7 +2,9 @@ namespace EnglishCentral.Application.Interfaces.Documents
 {
     public enum PdfTemplate
     {
-        PaymentInvoice = 1
+        PaymentInvoice = 1,
+        Invoice = 2,
+        PaymentPlanStatement = 3
     }
 
     public record PdfGenerationRequest(

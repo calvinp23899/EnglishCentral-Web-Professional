@@ -97,6 +97,14 @@ export const adminPaymentPlansApi = {
     return unwrap(response.data, "Không thể tải thông tin kế hoạch thanh toán.");
   },
 
+  async downloadStatementPdf(id: string | number) {
+    const response = await api.get<Blob>(
+      ENDPOINTS.ADMIN_PAYMENT_PLANS.STATEMENT_PDF(id),
+      { responseType: "blob" },
+    );
+    return response.data;
+  },
+
   async create(payload: PaymentPlanFormPayload) {
     const response = await api.post<ApiResult<AdminPaymentPlan>>(
       ENDPOINTS.ADMIN_PAYMENT_PLANS.CREATE,

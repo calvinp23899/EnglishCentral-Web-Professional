@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeft, CloudDownload, Eye, Plus, Send, Search, UserRoundPlus, UserX, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CloudDownload, Eye, Pencil, Plus, Send, Search, UserRoundPlus, UserX, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
 import { SidePanel, toastDanger, toastSuccess } from "@/components/ui";
@@ -110,6 +110,16 @@ const toPaymentPlanType = (value: string) => {
   return "Installment";
 };
 const toEnrollmentDiscountType = (value: string) => value === "2" || value === "Percentage" ? "Percentage" : "FixedAmount";
+const downloadPdfBlob = (blob: Blob, fileName: string) => {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 500);
+};
 
 export function ClassViewPage() {
   const { recordId } = useParams();
@@ -135,7 +145,13 @@ export function ClassViewPage() {
   const [bulkInvoiceStep, setBulkInvoiceStep] = useState<1 | 2 | 3>(1);
   const [isBulkInvoiceCreated, setIsBulkInvoiceCreated] = useState(false);
   const [isCreatingBulkInvoices, setIsCreatingBulkInvoices] = useState(false);
-  const [selectedBulkInvoicePeriods, setSelectedBulkInvoicePeriods] = useState<string[]>([]);
+  const [isSubmittingBulkPayment, setIsSubmittingBulkPayment] = useState(false);
+  const [isOpeningBulkInvoicePanel, setIsOpeningBulkInvoicePanel] = useState(false);
+  const [downloadingStatementPlanId, setDownloadingStatementPlanId] = useState<number | null>(null);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<number | null>(null);
+  const [bulkCreatedInvoices, setBulkCreatedInvoices] = useState<AdminInvoice[]>([]);
+  const [collapsedBulkInvoiceSections, setCollapsedBulkInvoiceSections] = useState<Record<number, boolean>>({});
+  const [selectedBulkInvoiceItemIds, setSelectedBulkInvoiceItemIds] = useState<number[]>([]);
   const [selectedInvoiceItem, setSelectedInvoiceItem] = useState<{
     paymentPlanItemId: number;
     invoiceId?: number | null;
@@ -146,6 +162,21 @@ export function ClassViewPage() {
     status: string;
     invoiceCode: string;
   } | null>(null);
+  const [editingInvoiceItem, setEditingInvoiceItem] = useState<{
+    paymentPlanItemId: number;
+    invoiceId?: number | null;
+    invoice?: AdminInvoice | null;
+    period: string;
+    dueDate: string;
+    amount: number;
+    status: string;
+    invoiceCode: string;
+  } | null>(null);
+  const [editInvoiceDueDate, setEditInvoiceDueDate] = useState("");
+  const [editInvoiceNotes, setEditInvoiceNotes] = useState("");
+  const [editInvoiceErrors, setEditInvoiceErrors] = useState<{ dueDate?: string; notes?: string }>({});
+  const [isLoadingEditInvoice, setIsLoadingEditInvoice] = useState(false);
+  const [isUpdatingInvoice, setIsUpdatingInvoice] = useState(false);
   const [isLoadingInvoiceDetail, setIsLoadingInvoiceDetail] = useState(false);
   const [creatingInvoiceItemId, setCreatingInvoiceItemId] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -383,7 +414,20 @@ export function ClassViewPage() {
     if (normalizedStatus === "paid" || normalizedStatus === "3") return styles.installmentStatusPaid;
     if (normalizedStatus === "invoiced" || normalizedStatus === "2") return styles.installmentStatusInvoiced;
     if (normalizedStatus === "pending" || normalizedStatus === "1") return styles.installmentStatusPending;
+    if (normalizedStatus === "overdue" || normalizedStatus === "4") return styles.installmentStatusOverdue;
     return styles.installmentStatusDefault;
+  };
+  const isPaidInstallmentStatus = (status: string) => {
+    const normalizedStatus = status.toLowerCase();
+    return normalizedStatus === "paid" || normalizedStatus === "3";
+  };
+  const isCompletedPlanStatus = (status: string | number) => {
+    const normalizedStatus = String(status).toLowerCase();
+    return normalizedStatus === "completed" || normalizedStatus === "3";
+  };
+  const isOverdueInstallmentStatus = (status: string) => {
+    const normalizedStatus = status.toLowerCase();
+    return normalizedStatus === "overdue" || normalizedStatus === "4";
   };
   const getPlanInstallments = (plan: AdminPaymentPlan | null) => (plan?.items ?? []).map((item) => ({
     paymentPlanItemId: item.id,
@@ -395,7 +439,8 @@ export function ClassViewPage() {
     invoiceCode: item.invoiceId ? `INV-${String(item.invoiceId).padStart(4, "0")}` : "Chưa tạo",
   }));
   const selectedTuitionPlan = tuitionPaymentPlans.find((plan) => plan.id === selectedTuitionPlanId) ?? tuitionPaymentPlans[0] ?? null;
-  const tuitionInstallments = getPlanInstallments(selectedTuitionPlan);
+  const selectedTuitionPlanForActions = selectedTuitionPlanDetail?.id === selectedTuitionPlanId ? selectedTuitionPlanDetail : selectedTuitionPlan;
+  const tuitionInstallments = getPlanInstallments(selectedTuitionPlanForActions);
   const bulkInvoiceSteps: Array<{ step: 1 | 2 | 3; label: string }> = [
     { step: 1, label: "Chọn đợt" },
     { step: 2, label: "Thanh toán" },
@@ -404,13 +449,34 @@ export function ClassViewPage() {
   const resetBulkInvoiceFlow = (items = tuitionInstallments) => {
     setBulkInvoiceStep(1);
     setIsBulkInvoiceCreated(false);
-    setSelectedBulkInvoicePeriods(items.filter((item) => item.invoiceCode === "Chưa tạo").map((item) => item.period));
+    setBulkCreatedInvoices([]);
+    setCollapsedBulkInvoiceSections({});
+    setSelectedBulkInvoiceItemIds(items.filter((item) => !item.invoiceId && !isPaidInstallmentStatus(item.status)).map((item) => item.paymentPlanItemId));
   };
-  const openBulkInvoicePanel = (planId?: number) => {
+  const openBulkInvoicePanel = async (planId?: number) => {
     const targetPlan = tuitionPaymentPlans.find((plan) => plan.id === planId) ?? selectedTuitionPlan;
-    if (targetPlan) setSelectedTuitionPlanId(targetPlan.id);
-    resetBulkInvoiceFlow(getPlanInstallments(targetPlan));
-    setIsBulkInvoicePanelOpen(true);
+    if (!targetPlan || isOpeningBulkInvoicePanel) return;
+    setIsOpeningBulkInvoicePanel(true);
+    try {
+      setSelectedTuitionPlanId(targetPlan.id);
+      const freshPlan = await adminPaymentPlansApi.getById(targetPlan.id);
+      setSelectedTuitionPlanDetail(freshPlan);
+      resetBulkInvoiceFlow(getPlanInstallments(freshPlan));
+      setIsBulkInvoicePanelOpen(true);
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsOpeningBulkInvoicePanel(false);
+    }
+  };
+  const toggleBulkInvoiceSection = (step: 1 | 2 | 3) => {
+    if (bulkInvoiceStep !== step) {
+      setBulkInvoiceStep(step);
+      setCollapsedBulkInvoiceSections((current) => ({ ...current, [step]: false }));
+      return;
+    }
+
+    setCollapsedBulkInvoiceSections((current) => ({ ...current, [step]: !current[step] }));
   };
   const toggleTuitionPlanDetail = async (planId: number) => {
     if (isTuitionDetailOpen && selectedTuitionPlanId === planId) {
@@ -434,6 +500,30 @@ export function ClassViewPage() {
   const refreshSelectedTuitionPlanDetail = async () => {
     if (!selectedTuitionPlanId) return;
     setSelectedTuitionPlanDetail(await adminPaymentPlansApi.getById(selectedTuitionPlanId));
+  };
+  const downloadPaymentPlanStatement = async (plan: AdminPaymentPlan) => {
+    if (!isCompletedPlanStatus(plan.status) || downloadingStatementPlanId) return;
+    setDownloadingStatementPlanId(plan.id);
+    try {
+      const statementPdf = await adminPaymentPlansApi.downloadStatementPdf(plan.id);
+      downloadPdfBlob(statementPdf, `payment-plan-${plan.id}-statement.pdf`);
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setDownloadingStatementPlanId(null);
+    }
+  };
+  const downloadInvoicePdf = async (invoiceId: number) => {
+    if (downloadingInvoiceId) return;
+    setDownloadingInvoiceId(invoiceId);
+    try {
+      const invoicePdf = await adminEnrollmentFinanceApi.downloadInvoicePdf(invoiceId);
+      downloadPdfBlob(invoicePdf, `invoice-${invoiceId}.pdf`);
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setDownloadingInvoiceId(null);
+    }
   };
   const createInvoiceForPlanItem = async (paymentPlanItemId: number) => {
     if (creatingInvoiceItemId) return;
@@ -469,6 +559,68 @@ export function ClassViewPage() {
       setIsLoadingInvoiceDetail(false);
     }
   };
+  const openEditInvoicePanel = async (item: {
+    paymentPlanItemId: number;
+    invoiceId?: number | null;
+    period: string;
+    dueDate: string;
+    amount: number;
+    status: string;
+    invoiceCode: string;
+  }) => {
+    if (!item.invoiceId || !isOverdueInstallmentStatus(item.status)) return;
+    setEditInvoiceErrors({});
+    setEditingInvoiceItem({ ...item, invoice: null });
+    setEditInvoiceDueDate(item.dueDate === "Chưa cập nhật" ? "" : item.dueDate);
+    setEditInvoiceNotes("");
+    setIsLoadingEditInvoice(true);
+    try {
+      const invoice = await adminEnrollmentFinanceApi.getInvoiceById(item.invoiceId);
+      setEditingInvoiceItem({ ...item, invoice, invoiceCode: invoice.invoiceNo || item.invoiceCode });
+      setEditInvoiceDueDate(invoice.dueDate?.split("T")[0] ?? "");
+      setEditInvoiceNotes(invoice.notes ?? "");
+    } catch (error) {
+      setEditingInvoiceItem(null);
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsLoadingEditInvoice(false);
+    }
+  };
+  const closeEditInvoicePanel = () => {
+    setEditingInvoiceItem(null);
+    setEditInvoiceDueDate("");
+    setEditInvoiceNotes("");
+    setEditInvoiceErrors({});
+  };
+  const updateInvoice = async () => {
+    if (!editingInvoiceItem?.invoiceId || isUpdatingInvoice) return;
+    const nextErrors = {
+      dueDate: editInvoiceDueDate ? "" : "Vui lòng chọn hạn thanh toán.",
+      notes: editInvoiceNotes.trim() ? "" : "Vui lòng nhập ghi chú.",
+    };
+    if (nextErrors.dueDate || nextErrors.notes) {
+      setEditInvoiceErrors(nextErrors);
+      return;
+    }
+
+    setIsUpdatingInvoice(true);
+    try {
+      await adminEnrollmentFinanceApi.updateInvoice(editingInvoiceItem.invoiceId, {
+        dueDate: editInvoiceDueDate,
+        notes: editInvoiceNotes.trim(),
+      });
+      await refreshSelectedTuitionPlanDetail();
+      if (selectedTuitionStudent?.enrollmentId) {
+        await loadTuitionPaymentPlans(selectedTuitionStudent.enrollmentId, selectedTuitionPlanId);
+      }
+      closeEditInvoicePanel();
+      toastSuccess("Cập nhật hóa đơn thành công.");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsUpdatingInvoice(false);
+    }
+  };
   const getSelectedInvoiceOutstandingAmount = () =>
     selectedInvoiceItem?.invoice?.outstandingAmount ?? selectedInvoiceItem?.amount ?? 0;
   const canPaySelectedInvoice = () => {
@@ -498,9 +650,7 @@ export function ClassViewPage() {
       }
       setIsConfirmPaymentOpen(false);
       setSelectedInvoiceItem(null);
-      const pdfUrl = window.URL.createObjectURL(paymentPdf);
-      window.open(pdfUrl, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => window.URL.revokeObjectURL(pdfUrl), 60_000);
+      downloadPdfBlob(paymentPdf, `payment-${selectedInvoiceItem.invoice.id}.pdf`);
       toastSuccess("Thu tiền thành công.");
     } catch (error) {
       toastDanger(getAuthErrorMessage(error));
@@ -512,25 +662,95 @@ export function ClassViewPage() {
     setIsBulkInvoicePanelOpen(false);
     resetBulkInvoiceFlow();
   };
-  const toggleBulkInvoicePeriod = (period: string) => {
+  const toggleBulkInvoiceItem = (paymentPlanItemId: number) => {
     setIsBulkInvoiceCreated(false);
-    setSelectedBulkInvoicePeriods((current) =>
-      current.includes(period) ? current.filter((item) => item !== period) : [...current, period],
+    setSelectedBulkInvoiceItemIds((current) =>
+      current.includes(paymentPlanItemId) ? current.filter((item) => item !== paymentPlanItemId) : [...current, paymentPlanItemId],
     );
   };
   const createBulkInvoices = async () => {
-    if (selectedBulkInvoicePeriods.length === 0) return;
-    const selectedItems = tuitionInstallments.filter((item) => selectedBulkInvoicePeriods.includes(item.period));
+    if (!selectedTuitionPlanId || selectedBulkInvoiceItemIds.length === 0) return;
+    const selectedItems = tuitionInstallments.filter((item) => selectedBulkInvoiceItemIds.includes(item.paymentPlanItemId));
+    const alreadyInvoicedItems = selectedItems.filter((item) => item.invoiceId);
+    if (alreadyInvoicedItems.length > 0) {
+      toastDanger(`${alreadyInvoicedItems.map((item) => item.period).join(", ")} đã được tạo hóa đơn. Vui lòng bỏ chọn.`);
+      return;
+    }
+
     setIsCreatingBulkInvoices(true);
     try {
-      await Promise.all(selectedItems.map((item) => adminEnrollmentFinanceApi.createInvoiceFromPaymentPlanItem(item.paymentPlanItemId)));
+      const createdInvoices = await adminEnrollmentFinanceApi.bulkCreateInvoicesFromPaymentPlanItems({
+        paymentPlanId: selectedTuitionPlanId,
+        paymentPlanItemIds: selectedItems.map((item) => item.paymentPlanItemId),
+        notes: "Tạo hóa đơn nhiều kỳ",
+      });
       await refreshSelectedTuitionPlanDetail();
+      setBulkCreatedInvoices(createdInvoices);
       setIsBulkInvoiceCreated(true);
       toastSuccess("Tạo hóa đơn thành công.");
     } catch (error) {
       toastDanger(getAuthErrorMessage(error));
     } finally {
       setIsCreatingBulkInvoices(false);
+    }
+  };
+  const goToBulkPaymentStep = () => {
+    if (selectedBulkInvoiceItemIds.length === 0) return;
+    if (getBulkPaymentInvoices().length === 0) {
+      toastDanger("Vui lòng tạo hóa đơn trước khi tiếp tục.");
+      return;
+    }
+    setBulkInvoiceStep(2);
+  };
+  const getBulkPaymentInvoices = () => {
+    const invoiceByItemId = new Map<number, AdminInvoice>();
+    bulkCreatedInvoices.forEach((invoice) => {
+      if (invoice.paymentPlanItemId) invoiceByItemId.set(invoice.paymentPlanItemId, invoice);
+    });
+
+    return tuitionInstallments
+      .filter((item) => selectedBulkInvoiceItemIds.includes(item.paymentPlanItemId))
+      .map((item) => {
+        const createdInvoice = invoiceByItemId.get(item.paymentPlanItemId);
+        const invoiceId = createdInvoice?.id ?? item.invoiceId;
+        const amount = createdInvoice?.outstandingAmount ?? item.amount;
+        return invoiceId ? { invoiceId, amount } : null;
+      })
+      .filter((item): item is { invoiceId: number; amount: number } => Boolean(item));
+  };
+  const payBulkInvoices = async () => {
+    if (!selectedTuitionStudent?.studentId || !paymentMethod || isSubmittingBulkPayment) return;
+    const allocations = getBulkPaymentInvoices();
+    if (allocations.length === 0) {
+      toastDanger("Không có hóa đơn hợp lệ để thanh toán.");
+      return;
+    }
+    const amount = allocations.reduce((sum, allocation) => sum + allocation.amount, 0);
+    setIsSubmittingBulkPayment(true);
+    try {
+      const paymentPdf = await adminEnrollmentFinanceApi.createPayment({
+        studentId: selectedTuitionStudent.studentId,
+        amount,
+        method: paymentMethod,
+        referenceCode: null,
+        payerName: null,
+        payerPhone: null,
+        notes: paymentNote.trim() || null,
+        allocations,
+      });
+      if (selectedTuitionPlanId) {
+        await refreshSelectedTuitionPlanDetail();
+      }
+      if (selectedTuitionStudent.enrollmentId) {
+        await loadTuitionPaymentPlans(selectedTuitionStudent.enrollmentId, selectedTuitionPlanId);
+      }
+      closeBulkInvoicePanel();
+      downloadPdfBlob(paymentPdf, `payment-${Date.now()}.pdf`);
+      toastSuccess("Thanh toán thành công.");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsSubmittingBulkPayment(false);
     }
   };
   const selectedDiscount = discountOptions.find((discount) => discount.id === Number(discountId));
@@ -885,6 +1105,8 @@ export function ClassViewPage() {
                     {field("Mã học viên", selectedTuitionStudent.studentCode)}
                     {field("SĐT", selectedTuitionStudent.phoneNumber ?? "Chưa cập nhật")}
                     {field("Email", selectedTuitionStudent.email ?? "Chưa cập nhật")}
+                    {field("Ngày bắt đầu", formatDate(record.startDate))}
+                    {field("Ngày kết thúc", formatDate(record.endDate))}
                   </div>
                   <div className={styles.tableWrap}>
                     <table className={styles.table}>
@@ -899,6 +1121,7 @@ export function ClassViewPage() {
                           const outstandingAmount = getPlanOutstandingAmount(plan);
                           const debtStatus = getPlanDebtStatus(plan);
                           const canCreateInvoices = debtStatus === "Đang nợ";
+                          const canDownloadStatement = isCompletedPlanStatus(plan.status);
                           const isExpanded = isTuitionDetailOpen && selectedTuitionPlanId === plan.id;
                           const planItems = getPlanInstallments(isExpanded ? selectedTuitionPlanDetail : null);
                           return (
@@ -911,8 +1134,9 @@ export function ClassViewPage() {
                                 <td><span className={`${listStyles.statusBadge} ${debtStatus === "Đang nợ" ? styles.debtStatusBadge : listStyles.active}`}>{debtStatus}</span></td>
                                 <td>
                                   <div className={styles.studentActions}>
-                                    <button aria-label="Tạo nhiều hóa đơn" className={styles.iconActionButton} disabled={!canCreateInvoices} title={canCreateInvoices ? "Tạo nhiều hóa đơn" : "Chỉ tạo hóa đơn khi trạng thái đang nợ"} type="button" onClick={() => openBulkInvoicePanel(plan.id)}><Plus size={16} /></button>
+                                    <button aria-label="Thanh toán nhiều hóa đơn" className={styles.iconActionButton} disabled={!canCreateInvoices || isOpeningBulkInvoicePanel} title={canCreateInvoices ? "Thanh toán nhiều hóa đơn" : "Chỉ thanh toán nhiều hóa đơn khi trạng thái đang nợ"} type="button" onClick={() => void openBulkInvoicePanel(plan.id)}><Plus size={16} /></button>
                                     <button aria-label="Xem chi tiết kỳ thu" className={styles.iconActionButton} title="Xem chi tiết kỳ thu" type="button" onClick={() => void toggleTuitionPlanDetail(plan.id)}><Eye size={16} /></button>
+                                    <button aria-label="Download statement" className={styles.iconActionButton} disabled={!canDownloadStatement || downloadingStatementPlanId === plan.id} title={canDownloadStatement ? "Download statement" : "Chỉ download khi trạng thái Completed"} type="button" onClick={() => void downloadPaymentPlanStatement(plan)}><CloudDownload size={16} /></button>
                                   </div>
                                 </td>
                               </tr>
@@ -940,9 +1164,19 @@ export function ClassViewPage() {
                                                     <Plus size={16} />
                                                   </button>
                                                 ) : (
-                                                  <button className={styles.iconActionButton} disabled={isLoadingInvoiceDetail} title="Xem chi tiết hóa đơn" type="button" onClick={() => void openInvoiceDetail(item)}>
-                                                    <Eye size={16} />
-                                                  </button>
+                                                  <div className={styles.studentActions}>
+                                                    <button className={styles.iconActionButton} disabled={isLoadingInvoiceDetail} title="Xem chi tiết hóa đơn" type="button" onClick={() => void openInvoiceDetail(item)}>
+                                                      <Eye size={16} />
+                                                    </button>
+                                                    <button className={styles.iconActionButton} disabled={!item.invoiceId || !isPaidInstallmentStatus(item.status) || downloadingInvoiceId === item.invoiceId} title={isPaidInstallmentStatus(item.status) ? "Download invoice" : "Chỉ download khi trạng thái Paid"} type="button" onClick={() => item.invoiceId && void downloadInvoicePdf(item.invoiceId)}>
+                                                      <CloudDownload size={16} />
+                                                    </button>
+                                                    {isOverdueInstallmentStatus(item.status) && (
+                                                      <button className={styles.iconActionButton} disabled={isLoadingEditInvoice || isUpdatingInvoice} title="Chỉnh sửa hóa đơn" type="button" onClick={() => void openEditInvoicePanel(item)}>
+                                                        <Pencil size={16} />
+                                                      </button>
+                                                    )}
+                                                  </div>
                                                 )}
                                               </td>
                                             </tr>
@@ -1038,34 +1272,36 @@ export function ClassViewPage() {
       <SidePanel
         description="Chọn các kỳ thu cần tạo hóa đơn cho học viên đang nợ."
         footer={<div className={styles.panelActions}>
-          {bulkInvoiceStep === 1 && <><button disabled={isCreatingBulkInvoices} type="button" onClick={closeBulkInvoicePanel}>Hủy</button>{isBulkInvoiceCreated ? <button type="button" onClick={() => setBulkInvoiceStep(2)}>Tiếp tục</button> : <button disabled={selectedBulkInvoicePeriods.length === 0 || isCreatingBulkInvoices} type="button" onClick={() => void createBulkInvoices()}>{isCreatingBulkInvoices ? "Đang tạo..." : "Tạo hóa đơn"}</button>}</>}
+          {bulkInvoiceStep === 1 && <><button disabled={isCreatingBulkInvoices} type="button" onClick={closeBulkInvoicePanel}>Hủy</button><button disabled={selectedBulkInvoiceItemIds.length === 0 || isCreatingBulkInvoices} type="button" onClick={() => void createBulkInvoices()}>{isCreatingBulkInvoices ? "Đang tạo..." : "Tạo hóa đơn"}</button>{selectedBulkInvoiceItemIds.length > 0 && <button disabled={isCreatingBulkInvoices} type="button" onClick={goToBulkPaymentStep}>Tiếp tục</button>}</>}
           {bulkInvoiceStep === 2 && <><button type="button" onClick={() => setBulkInvoiceStep(1)}>Quay lại</button><button type="button" onClick={() => setBulkInvoiceStep(3)}>Tiếp tục</button></>}
-          {bulkInvoiceStep === 3 && <><button type="button" onClick={() => setBulkInvoiceStep(2)}>Quay lại</button><button type="button" onClick={() => { closeBulkInvoicePanel(); toastSuccess("Thanh toán thành công."); }}>Thanh toán</button></>}
+          {bulkInvoiceStep === 3 && <><button disabled={isSubmittingBulkPayment} type="button" onClick={() => setBulkInvoiceStep(2)}>Quay lại</button><button disabled={!paymentMethod || getBulkPaymentInvoices().length === 0 || isSubmittingBulkPayment} type="button" onClick={() => void payBulkInvoices()}>{isSubmittingBulkPayment ? "Đang thanh toán..." : "Thanh toán"}</button></>}
         </div>}
         isOpen={isBulkInvoicePanelOpen}
         title="Tạo nhiều hóa đơn"
         width="lg"
         onClose={closeBulkInvoicePanel}
       >
-        <div className={styles.bulkInvoiceStepper}>
+        <div className={styles.bulkInvoiceSections}>
           {bulkInvoiceSteps.map((item) => {
             const isDone = item.step < bulkInvoiceStep || (item.step === 1 && isBulkInvoiceCreated);
             const isActive = item.step === bulkInvoiceStep;
+            const isOpen = isActive && !collapsedBulkInvoiceSections[item.step];
             return (
-              <div className={`${styles.bulkInvoiceStep} ${isActive ? styles.activeBulkInvoiceStep : ""} ${isDone ? styles.doneBulkInvoiceStep : ""}`} key={item.step}>
+              <button className={`${styles.bulkInvoiceSectionHeader} ${isActive ? styles.activeBulkInvoiceSection : ""} ${isDone ? styles.doneBulkInvoiceSection : ""}`} key={item.step} type="button" onClick={() => toggleBulkInvoiceSection(item.step)}>
                 <span>{isDone ? "✓" : item.step}</span>
                 <strong>{item.label}</strong>
-              </div>
+                <small>{isOpen ? "Thu gọn" : "Mở"}</small>
+              </button>
             );
           })}
         </div>
-        {bulkInvoiceStep === 1 && <div className={styles.bulkInvoiceList}>
+        {bulkInvoiceStep === 1 && !collapsedBulkInvoiceSections[1] && <div className={styles.bulkInvoiceList}>
           {tuitionInstallments.map((item) => {
-            const canCreateInvoice = item.invoiceCode === "Chưa tạo";
-            const isChecked = selectedBulkInvoicePeriods.includes(item.period);
+            const canSelectInvoice = !isPaidInstallmentStatus(item.status);
+            const isChecked = selectedBulkInvoiceItemIds.includes(item.paymentPlanItemId);
             return (
-              <label className={!canCreateInvoice ? styles.disabledBulkInvoiceItem : undefined} key={item.period}>
-                <input checked={isChecked} disabled={!canCreateInvoice || isBulkInvoiceCreated} type="checkbox" onChange={() => toggleBulkInvoicePeriod(item.period)} />
+              <label className={!canSelectInvoice ? styles.disabledBulkInvoiceItem : undefined} key={item.period}>
+                <input checked={isChecked} disabled={!canSelectInvoice || isBulkInvoiceCreated} type="checkbox" onChange={() => toggleBulkInvoiceItem(item.paymentPlanItemId)} />
                 <span>
                   <strong>{item.period}</strong>
                   <small>{item.dueDate} · {formatMoney(item.amount)} · {item.invoiceCode}</small>
@@ -1075,7 +1311,7 @@ export function ClassViewPage() {
           })}
           {isBulkInvoiceCreated && <p className={styles.bulkInvoiceSuccess}>Tạo hóa đơn thành công. Bạn có thể chuyển sang bước tiếp theo.</p>}
         </div>}
-        {bulkInvoiceStep === 2 && <div className={styles.paymentFormBox}>
+        {bulkInvoiceStep === 2 && !collapsedBulkInvoiceSections[2] && <div className={styles.paymentFormBox}>
           <label>
             <span>Phương thức thanh toán</span>
             <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
@@ -1088,7 +1324,7 @@ export function ClassViewPage() {
             <textarea placeholder="Nhập ghi chú thanh toán" rows={4} value={paymentNote} onChange={(event) => setPaymentNote(event.target.value)} />
           </label>
         </div>}
-        {bulkInvoiceStep === 3 && <div className={styles.bulkInvoicePreview}>
+        {bulkInvoiceStep === 3 && !collapsedBulkInvoiceSections[3] && <div className={styles.bulkInvoicePreview}>
           <div className={styles.invoicePreviewHeader}>
             <div>
               <h2>English Central</h2>
@@ -1097,13 +1333,13 @@ export function ClassViewPage() {
             </div>
             <div>
               <span>Amount Due:</span>
-              <strong>{formatMoney(tuitionInstallments.filter((item) => selectedBulkInvoicePeriods.includes(item.period)).reduce((sum, item) => sum + item.amount, 0))}</strong>
+              <strong>{formatMoney(tuitionInstallments.filter((item) => selectedBulkInvoiceItemIds.includes(item.paymentPlanItemId)).reduce((sum, item) => sum + item.amount, 0))}</strong>
             </div>
           </div>
           <table className={styles.invoicePreviewTable}>
             <thead><tr><th>QTY</th><th>DESCRIPTION</th><th>PRICE</th><th>AMOUNT</th></tr></thead>
             <tbody>
-              {tuitionInstallments.filter((item) => selectedBulkInvoicePeriods.includes(item.period)).map((item) => (
+              {tuitionInstallments.filter((item) => selectedBulkInvoiceItemIds.includes(item.paymentPlanItemId)).map((item) => (
                 <tr key={item.period}><td>1</td><td>{item.period} - Học phí lớp</td><td>{formatMoney(item.amount)}</td><td>{formatMoney(item.amount)}</td></tr>
               ))}
             </tbody>
@@ -1147,6 +1383,36 @@ export function ClassViewPage() {
               <textarea placeholder="Nhập ghi chú thanh toán" rows={4} value={paymentNote} onChange={(event) => setPaymentNote(event.target.value)} />
             </label>
           </div>
+        )}
+      </SidePanel>
+      <SidePanel
+        description="Cập nhật hạn thanh toán và ghi chú cho hóa đơn quá hạn."
+        footer={<div className={styles.panelActions}><button disabled={isUpdatingInvoice} type="button" onClick={closeEditInvoicePanel}>Hủy</button><button disabled={isLoadingEditInvoice || isUpdatingInvoice} type="button" onClick={() => void updateInvoice()}>{isUpdatingInvoice ? "Đang lưu..." : "Lưu hóa đơn"}</button></div>}
+        isOpen={Boolean(editingInvoiceItem)}
+        title="Chỉnh sửa hóa đơn"
+        width="lg"
+        onClose={closeEditInvoicePanel}
+      >
+        {editingInvoiceItem && (
+          <>
+            <div className={styles.invoiceInfoBox}>
+              <div><span>Hóa đơn</span><strong>{editingInvoiceItem.invoiceCode}</strong></div>
+              <div><span>Kỳ thu</span><strong>{editingInvoiceItem.period}</strong></div>
+              <div><span>Trạng thái</span><strong>{editingInvoiceItem.status}</strong></div>
+            </div>
+            <div className={styles.paymentFormBox}>
+              <label>
+                <span>Hạn thanh toán <em>*</em></span>
+                <input disabled={isLoadingEditInvoice || isUpdatingInvoice} type="date" value={editInvoiceDueDate} onChange={(event) => { setEditInvoiceDueDate(event.target.value); setEditInvoiceErrors((current) => ({ ...current, dueDate: "" })); }} />
+                {editInvoiceErrors.dueDate && <small className={styles.fieldError}>{editInvoiceErrors.dueDate}</small>}
+              </label>
+              <label>
+                <span>Ghi chú <em>*</em></span>
+                <textarea disabled={isLoadingEditInvoice || isUpdatingInvoice} placeholder="Nhập ghi chú hóa đơn" rows={4} value={editInvoiceNotes} onChange={(event) => { setEditInvoiceNotes(event.target.value); setEditInvoiceErrors((current) => ({ ...current, notes: "" })); }} />
+                {editInvoiceErrors.notes && <small className={styles.fieldError}>{editInvoiceErrors.notes}</small>}
+              </label>
+            </div>
+          </>
         )}
       </SidePanel>
       {isConfirmPaymentOpen && selectedInvoiceItem && canPaySelectedInvoice() && <div className={styles.invoicePreviewBackdrop} role="presentation" onMouseDown={() => setIsConfirmPaymentOpen(false)}>

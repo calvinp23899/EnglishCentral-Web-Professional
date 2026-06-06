@@ -4,6 +4,7 @@ using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.SettleRe
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Commands.UpdatePaymentPlan;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPaymentPlanById;
 using EnglishCentral.Application.Features.Finance.PaymentPlans.Queries.GetPaymentPlans;
+using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Shared.Constants;
 using MediatR;
@@ -16,8 +17,13 @@ namespace EnglishCentral.API.Controllers.Admin.Finance
     public class PaymentPlansController : AdminBaseController
     {
         private readonly IMediator _mediator;
+        private readonly IBillingPdfService _billingPdfService;
 
-        public PaymentPlansController(IMediator mediator) => _mediator = mediator;
+        public PaymentPlansController(IMediator mediator, IBillingPdfService billingPdfService)
+        {
+            _mediator = mediator;
+            _billingPdfService = billingPdfService;
+        }
 
         [HttpGet("get-list")]
         [HasPermission(SystemPermissions.BillingRead)]
@@ -33,6 +39,17 @@ namespace EnglishCentral.API.Controllers.Admin.Finance
         {
             var result = await _mediator.Send(new GetPaymentPlanByIdQuery(id), ct);
             return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpGet("{id:long}/statement-pdf")]
+        [HasPermission(SystemPermissions.BillingRead)]
+        public async Task<IActionResult> DownloadStatementPdf(long id, CancellationToken ct)
+        {
+            var result = await _billingPdfService.GeneratePaymentPlanStatementPdfAsync(id, ct);
+            if (!result.IsSuccess || result.Data is null)
+                return StatusCode(result.StatusCode, result);
+
+            return File(result.Data.Content, result.Data.ContentType, result.Data.FileName);
         }
 
         [HttpPost("insert")]

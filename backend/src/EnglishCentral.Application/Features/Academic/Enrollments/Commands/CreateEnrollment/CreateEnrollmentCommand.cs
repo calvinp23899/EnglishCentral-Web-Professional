@@ -40,7 +40,7 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
         EPaymentPlanType Type,
         int? NumberOfInstallments,
         string? Notes,
-        IReadOnlyCollection<CreateEnrollmentPaymentPlanItemRequest> Items);
+        IReadOnlyCollection<CreateEnrollmentPaymentPlanItemRequest>? Items = null);
 
     public record CreateEnrollmentPaymentPlanItemRequest(
         int SequenceNumber,
@@ -73,13 +73,12 @@ namespace EnglishCentral.Application.Features.Academic.Enrollments.Commands.Crea
                 discount.RuleFor(x => x.Reason).MaximumLength(1000);
             }).When(x => x.Discounts is not null);
             RuleFor(x => x.PaymentPlan!.Type).IsInEnum().When(x => x.PaymentPlan is not null);
-            RuleFor(x => x.PaymentPlan!.Items).NotEmpty().When(x => x.PaymentPlan is not null);
             RuleForEach(x => x.PaymentPlan!.Items).ChildRules(item =>
             {
                 item.RuleFor(x => x.SequenceNumber).GreaterThan(0);
                 item.RuleFor(x => x.Name).NotEmpty().MaximumLength(255);
                 item.RuleFor(x => x.Amount).GreaterThan(0);
-            }).When(x => x.PaymentPlan is not null);
+            }).When(x => x.PaymentPlan?.Items is not null);
         }
     }
 }

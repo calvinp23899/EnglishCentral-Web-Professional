@@ -237,6 +237,10 @@
   background: #fef3c7;
   color: #b45309;
 }
+.installmentStatusOverdue {
+  background: #ffedd5;
+  color: #ea580c;
+}
 .installmentStatusDefault {
   background: #f1f5f9;
   color: #475569;
@@ -317,6 +321,70 @@
 }
 .disabledBulkInvoiceItem {
   opacity: 0.6;
+}
+.bulkInvoiceSections {
+  display: grid;
+  gap: 8px;
+}
+.bulkInvoiceSectionHeader {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid #dbe5f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #64748b;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+
+  > span {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #64748b;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  > strong {
+    min-width: 0;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  > small {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 800;
+  }
+}
+.activeBulkInvoiceSection {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #2563eb;
+
+  > span {
+    background: #2563eb;
+    color: #ffffff;
+  }
+}
+.doneBulkInvoiceSection {
+  border-color: #bbf7d0;
+  color: #16a34a;
+
+  > span {
+    background: #dcfce7;
+    color: #15803d;
+  }
 }
 .bulkInvoiceStepper {
   display: grid;
@@ -430,9 +498,15 @@
       color: #334155;
       font-size: 13px;
       font-weight: 800;
+
+      em {
+        color: #dc2626;
+        font-style: normal;
+      }
     }
   }
 
+  input,
   select,
   textarea {
     width: 100%;
@@ -449,6 +523,19 @@
   textarea {
     resize: vertical;
   }
+
+  input:disabled,
+  textarea:disabled {
+    background: #f8fafc;
+    color: #64748b;
+    cursor: not-allowed;
+  }
+}
+.fieldError {
+  margin-top: -2px;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 700;
 }
 .paymentConfirmSummary {
   border: 1px solid #dbe5f0;
