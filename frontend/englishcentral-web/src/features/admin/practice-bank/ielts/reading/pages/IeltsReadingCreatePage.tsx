@@ -55,6 +55,12 @@ type QuestionOption = {
   option: string;
 };
 
+type GroupSharedOption = {
+  content: string;
+  id: string;
+  label: string;
+};
+
 type QuestionItem = {
   correctAnswer: string;
   explanation: string;
@@ -67,10 +73,15 @@ type QuestionItem = {
 };
 
 type QuestionGroup = {
+  answerLimit?: string;
+  displayType: string;
   groupLabel: string;
   id: string;
   instruction: string;
+  interaction: "select" | "drag_drop" | "text_input";
+  optionsReusable?: boolean;
   questions: QuestionItem[];
+  sharedOptions: GroupSharedOption[];
   title: string;
   type: string;
 };
@@ -95,6 +106,81 @@ const fallbackQuestionTypeOptions: MetadataOption[] = [
   { label: "ShortAnswer", value: "ShortAnswer", code: 7 },
 ];
 
+type ReadingQuestionSubtype = {
+  answerLimit?: string;
+  description: string;
+  displayType: string;
+  interaction: "select" | "drag_drop" | "text_input";
+  label: string;
+  optionsReusable?: boolean;
+  questionType: string;
+};
+
+const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
+  {
+    label: "Multiple Choice - One Answer",
+    questionType: "MultipleChoiceSingle",
+    displayType: "multiple_choice_single",
+    interaction: "select",
+    description: "Chọn một đáp án đúng cho mỗi câu hỏi.",
+  },
+  {
+    label: "Matching Headings",
+    questionType: "Matching",
+    displayType: "matching_headings",
+    interaction: "drag_drop",
+    optionsReusable: false,
+    description: "Tạo danh sách headings dùng chung và chọn heading đúng cho từng đoạn/câu.",
+  },
+  {
+    label: "Matching Information",
+    questionType: "Matching",
+    displayType: "matching_information",
+    interaction: "drag_drop",
+    optionsReusable: true,
+    description: "Matching thông tin; một lựa chọn có thể dùng lại nhiều lần.",
+  },
+  {
+    label: "Matching Features",
+    questionType: "Matching",
+    displayType: "matching_features",
+    interaction: "drag_drop",
+    optionsReusable: true,
+    description: "Matching features/names/statements trong passage.",
+  },
+  {
+    label: "Matching Sentence Endings",
+    questionType: "Matching",
+    displayType: "matching_sentence_endings",
+    interaction: "drag_drop",
+    optionsReusable: false,
+    description: "Ghép nửa câu với ending phù hợp.",
+  },
+  {
+    label: "True / False / Not Given",
+    questionType: "TrueFalseNotGiven",
+    displayType: "true_false_not_given",
+    interaction: "select",
+    description: "FE tự tạo 3 lựa chọn True, False, Not Given.",
+  },
+  {
+    label: "Yes / No / Not Given",
+    questionType: "YesNoNotGiven",
+    displayType: "yes_no_not_given",
+    interaction: "select",
+    description: "FE tự tạo 3 lựa chọn Yes, No, Not Given.",
+  },
+  {
+    label: "Sentence / Summary / Table Completion",
+    questionType: "GapFill",
+    displayType: "gap_fill",
+    interaction: "text_input",
+    answerLimit: "1-3 words",
+    description: "Nhập đáp án text. Có thể nhập nhiều đáp án đúng cách nhau bằng dấu |.",
+  },
+];
+
+const fallbackReadingQuestionSubtype = readingQuestionSubtypes[0];
 const maxReadingQuestions = 40;
 const passageCountOptions = [1, 2, 3];
 
@@ -118,6 +204,48 @@ const isChoiceType = (type: string | number) =>
   isMultipleChoiceType(type) || isTrueFalseType(type) || isYesNoType(type);
 
 const canAddOptionsForType = (type: string | number) => isMultipleChoiceType(type);
+
+const isMatchingType = (type: string | number) => normalizeQuestionType(type) === "matching";
+
+const isTextInputType = (type: string | number) =>
+  normalizeQuestionType(type) === "gapfill" || normalizeQuestionType(type) === "shortanswer";
+
+const findQuestionSubtype = (
+  questionType?: string | number | null,
+  displayType?: string | null,
+) =>
+  readingQuestionSubtypes.find(
+    (subtype) =>
+      subtype.questionType === questionType &&
+      (!displayType || subtype.displayType === displayType),
+  ) ??
+  readingQuestionSubtypes.find((subtype) => subtype.displayType === displayType) ??
+  readingQuestionSubtypes.find((subtype) => subtype.questionType === questionType) ??
+  fallbackReadingQuestionSubtype;
+
+const getQuestionRange = (group: Pick<QuestionGroup, "questions">) => {
+  const numbers = group.questions.map((question) => question.number).filter(Number.isFinite);
+  if (!numbers.length) return "";
+  const min = Math.min(...numbers);
+  const max = Math.max(...numbers);
+  return min === max ? `${min}` : `${min}-${max}`;
+};
+
+const createSharedOption = (label: string, content = ""): GroupSharedOption => ({
+  content,
+  id: crypto.randomUUID(),
+  label,
+});
+
+const createDefaultSharedOptions = (subtype: ReadingQuestionSubtype): GroupSharedOption[] => {
+  if (!isMatchingType(subtype.questionType)) return [];
+
+  if (subtype.displayType === "matching_headings") {
+    return ["i", "ii", "iii", "iv"].map((label) => createSharedOption(label));
+  }
+
+  return ["A", "B", "C", "D"].map((label) => createSharedOption(label));
+};
 
 const toQuestionTypeValue = (type: string | number, configJson?: string | null): string => {
   if (configJson) {
@@ -193,6 +321,22 @@ const createQuestionOptions = (type: string): QuestionOption[] => {
   return [];
 };
 
+const getGroupSubtype = (group: QuestionGroup) => findQuestionSubtype(group.type, group.displayType);
+
+const getGroupAnswerLabel = (group: QuestionGroup, question: QuestionItem) => {
+  if (isChoiceType(group.type)) return question.correctAnswer || "No answer key";
+  if (isMatchingType(group.type)) {
+    const option = group.sharedOptions.find(
+      (item) =>
+        item.id === question.correctAnswer ||
+        item.label === question.correctAnswer ||
+        item.content === question.correctAnswer,
+    );
+    return option ? `${option.label}${option.content ? ` - ${option.content}` : ""}` : "No matching key";
+  }
+  return question.correctAnswer || "No answer key";
+};
+
 const shouldUseQuestionOptions = (type: string) => isChoiceType(type);
 
 const getCorrectAnswerFromOptions = (questionOptions: QuestionOption[]) =>
@@ -215,13 +359,20 @@ const createQuestion = (
 });
 
 const createQuestionGroup = (order: number, questionNumber: number): QuestionGroup => {
+  const subtype = fallbackReadingQuestionSubtype;
+
   return {
     id: crypto.randomUUID(),
+    answerLimit: subtype.answerLimit,
+    displayType: subtype.displayType,
     groupLabel: `Group ${order}`,
     instruction: "",
+    interaction: subtype.interaction,
+    optionsReusable: subtype.optionsReusable,
     questions: [createQuestion(questionNumber, "MultipleChoiceSingle")],
+    sharedOptions: createDefaultSharedOptions(subtype),
     title: `Questions ${questionNumber}-${questionNumber}`,
-    type: "MultipleChoiceSingle",
+    type: subtype.questionType,
   };
 };
 
@@ -295,10 +446,27 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
       title: stimulus?.title ?? part.name,
       questionGroups: part.questionGroups.map((group, groupIndex) => {
         const questionType = toQuestionTypeValue(group.questionType, group.configJson);
+        const groupConfig = parseJson<{
+          answerLimit?: string;
+          displayType?: string;
+          interaction?: "select" | "drag_drop" | "text_input";
+          optionsReusable?: boolean;
+          sharedOptions?: Array<{ content?: string; label?: string }>;
+        }>(group.configJson, {});
+        const subtype = findQuestionSubtype(questionType, groupConfig.displayType);
+        const sharedOptions = groupConfig.sharedOptions?.length
+          ? groupConfig.sharedOptions.map((option) =>
+              createSharedOption(option.label ?? "", option.content ?? ""),
+            )
+          : createDefaultSharedOptions(subtype);
         return {
           id: group.publicId ?? crypto.randomUUID(),
+          answerLimit: groupConfig.answerLimit ?? subtype.answerLimit,
+          displayType: groupConfig.displayType ?? subtype.displayType,
           groupLabel: group.code || `Group ${groupIndex + 1}`,
           instruction: group.instructions ?? "",
+          interaction: groupConfig.interaction ?? subtype.interaction,
+          optionsReusable: groupConfig.optionsReusable ?? subtype.optionsReusable,
           questions: group.questions.map((question) => ({
             id: question.publicId ?? crypto.randomUUID(),
             number: Number(question.code.replace(/\D/g, "")) || question.orderIndex,
@@ -313,6 +481,7 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
               isCorrectAnswer: question.answerKeys.some((answer) => answer.correctValue === option.label),
             })),
           })),
+          sharedOptions,
           title: group.title ?? `Questions ${groupIndex + 1}`,
           type: questionType,
         };
@@ -346,7 +515,21 @@ export function IeltsReadingCreatePage() {
     [activePassageId, passages],
   );
   const activeGroup = activePassage?.questionGroups.find((group) => group.id === activeGroupId);
-  const availableQuestionTypeOptions = questionTypeOptions;
+  const activeGroupSubtype = activeGroup ? getGroupSubtype(activeGroup) : fallbackReadingQuestionSubtype;
+  const activeGroupIsMatching = activeGroup ? isMatchingType(activeGroup.type) : false;
+  const activeGroupIsTextInput = activeGroup ? isTextInputType(activeGroup.type) : false;
+  const activeGroupHasFixedChoices = activeGroup
+    ? isTrueFalseType(activeGroup.type) || isYesNoType(activeGroup.type)
+    : false;
+  const availableQuestionSubtypes = useMemo(() => {
+    const metadataValues = new Set(questionTypeOptions.map((option) => String(option.value)));
+    if (!metadataValues.size) return readingQuestionSubtypes;
+
+    const subtypes = readingQuestionSubtypes.filter((subtype) =>
+      metadataValues.has(subtype.questionType),
+    );
+    return subtypes.length ? subtypes : readingQuestionSubtypes;
+  }, [questionTypeOptions]);
   const totalQuestions = getQuestionCount(passages);
   const hasReachedQuestionLimit = totalQuestions >= maxReadingQuestions;
 
@@ -408,6 +591,77 @@ export function IeltsReadingCreatePage() {
 
   const buildVersionPayload = (templateId: number) => {
     const nextVersionNumber = currentVersionNumber + 1 || 1;
+    const buildAnswerOptions = (group: QuestionGroup, question: QuestionItem) => {
+      if (isChoiceType(group.type)) {
+        return question.questionOptions.map((option, optionIndex) => ({
+          clientKey: option.id,
+          label: option.option,
+          content: option.option,
+          orderIndex: optionIndex + 1,
+          metadataJson: JSON.stringify({ explanation: option.explanation }),
+        }));
+      }
+
+      if (isMatchingType(group.type)) {
+        return group.sharedOptions.map((option, optionIndex) => ({
+          clientKey: `${question.id}-${option.id}`,
+          label: option.label,
+          content: option.content || option.label,
+          orderIndex: optionIndex + 1,
+          metadataJson: JSON.stringify({ reusable: group.optionsReusable ?? false }),
+        }));
+      }
+
+      return null;
+    };
+    const buildAnswerKeys = (group: QuestionGroup, question: QuestionItem) => {
+      if (isChoiceType(group.type)) {
+        return question.questionOptions
+          .filter((option) => option.isCorrectAnswer)
+          .map((option, optionIndex) => ({
+            answerOptionClientKey: option.id,
+            correctValue: option.option,
+            matchPattern: null,
+            score: 1,
+            caseSensitive: false,
+            orderIndex: optionIndex + 1,
+          }));
+      }
+
+      if (isMatchingType(group.type)) {
+        const matchedOption = group.sharedOptions.find(
+          (option) =>
+            option.id === question.correctAnswer ||
+            option.label === question.correctAnswer ||
+            option.content === question.correctAnswer,
+        );
+
+        return matchedOption
+          ? [{
+              answerOptionClientKey: `${question.id}-${matchedOption.id}`,
+              correctValue: matchedOption.label,
+              matchPattern: null,
+              score: 1,
+              caseSensitive: false,
+              orderIndex: 1,
+            }]
+          : [];
+      }
+
+      return (question.correctAnswer || "")
+        .split("|")
+        .map((answer) => answer.trim())
+        .filter(Boolean)
+        .map((answer, answerIndex) => ({
+          answerOptionClientKey: null,
+          correctValue: answer,
+          matchPattern: null,
+          score: answerIndex === 0 ? 1 : 0,
+          caseSensitive: false,
+          orderIndex: answerIndex + 1,
+        }));
+    };
+
     return {
       examTemplateId: templateId,
       versionCode: `${setup.testCode.trim() || "IELTS-RD"}-V${nextVersionNumber}`,
@@ -417,25 +671,34 @@ export function IeltsReadingCreatePage() {
       durationMinutes: Number(setup.durationMinutes) || 60,
       totalScore: 40,
       scoringMode: "Auto" as const,
-      runtimeConfigJson: JSON.stringify({ level: setup.level, sourceLabel: setup.sourceLabel, note: setup.note }),
-      scoringConfigJson: null,
+      runtimeConfigJson: JSON.stringify({
+        exam: "IELTS",
+        module: "Reading",
+        level: setup.level,
+        mode: "CBT",
+        note: setup.note,
+        numberOfPassages: setup.numberPassages,
+        sourceLabel: setup.sourceLabel,
+        subDescription: setup.subDescriptions.filter(Boolean).join("\n"),
+      }),
+      scoringConfigJson: JSON.stringify({ scorePerCorrect: 1 }),
       sections: [{
         code: "READING",
-        name: "IELTS Reading",
+        name: "Reading",
         skill: "Reading" as const,
         orderIndex: 1,
         durationMinutes: Number(setup.durationMinutes) || 60,
         maxScore: 40,
         instructions: setup.description,
-        runtimeConfigJson: null,
+        runtimeConfigJson: JSON.stringify({ expectedQuestionCount: maxReadingQuestions, module: "Reading" }),
         parts: passages.map((passage, passageIndex) => ({
-          code: `READING-P${passageIndex + 1}`,
+          code: `PASSAGE_${passageIndex + 1}`,
           name: passage.title || `Reading Passage ${passageIndex + 1}`,
           orderIndex: passageIndex + 1,
           instructions: passage.instruction || null,
-          layoutConfigJson: JSON.stringify({ part: passage.part }),
+          layoutConfigJson: JSON.stringify({ layout: "split_reading_question", part: passage.part }),
           stimuli: [{
-            clientKey: passage.id,
+            clientKey: `passage_${passageIndex + 1}_text`,
             type: "Text" as const,
             title: passage.title,
             content: getPassageContent(passage),
@@ -444,17 +707,28 @@ export function IeltsReadingCreatePage() {
             orderIndex: 1,
             metadataJson: JSON.stringify({ paragraphs: passage.paragraphs }),
           }],
-          questionGroups: passage.questionGroups.map((group, groupIndex) => ({
-            code: group.groupLabel || `GROUP-${passageIndex + 1}-${groupIndex + 1}`,
-            stimulusClientKey: passage.id,
-            title: group.title,
-            instructions: group.instruction || null,
-            questionType: group.type,
-            orderIndex: groupIndex + 1,
-            configJson: JSON.stringify({ questionType: group.type }),
-            questions: group.questions.map((question, questionIndex) => {
-              const hasOptions = shouldUseQuestionOptions(group.type);
-              return {
+          questionGroups: passage.questionGroups.map((group, groupIndex) => {
+            const subtype = getGroupSubtype(group);
+
+            return {
+              code: group.groupLabel || `GROUP-${passageIndex + 1}-${groupIndex + 1}`,
+              stimulusClientKey: `passage_${passageIndex + 1}_text`,
+              title: group.title,
+              instructions: group.instruction || null,
+              questionType: group.type,
+              orderIndex: groupIndex + 1,
+              configJson: JSON.stringify({
+                answerLimit: group.answerLimit || subtype.answerLimit,
+                displayType: group.displayType || subtype.displayType,
+                interaction: group.interaction || subtype.interaction,
+                optionsReusable: group.optionsReusable ?? subtype.optionsReusable ?? false,
+                range: getQuestionRange(group),
+                sharedOptions: group.sharedOptions.map((option) => ({
+                  content: option.content || option.label,
+                  label: option.label,
+                })),
+              }),
+              questions: group.questions.map((question, questionIndex) => ({
                 code: `Q${question.number}`,
                 prompt: question.text || null,
                 questionType: group.type,
@@ -462,37 +736,27 @@ export function IeltsReadingCreatePage() {
                 points: 1,
                 isRequired: true,
                 explanation: question.explanation || null,
-                metadataJson: JSON.stringify({ number: question.number, passageRef: question.passageRef }),
-                answerOptions: hasOptions ? question.questionOptions.map((option, optionIndex) => ({
-                  clientKey: option.id,
-                  label: option.option,
-                  content: option.option,
-                  orderIndex: optionIndex + 1,
-                  metadataJson: JSON.stringify({ explanation: option.explanation }),
-                })) : null,
-                answerKeys: hasOptions
-                  ? question.questionOptions.filter((option) => option.isCorrectAnswer).map((option, optionIndex) => ({
-                    answerOptionClientKey: option.id,
-                    correctValue: option.option,
-                    matchPattern: null,
-                    score: 1,
-                    caseSensitive: false,
-                    orderIndex: optionIndex + 1,
-                  }))
-                  : [{
-                    answerOptionClientKey: null,
-                    correctValue: question.correctAnswer || null,
-                    matchPattern: null,
-                    score: 1,
-                    caseSensitive: false,
-                    orderIndex: 1,
-                  }],
-              };
-            }),
-          })),
+                metadataJson: JSON.stringify({
+                  displayType: group.displayType || subtype.displayType,
+                  number: question.number,
+                  passageRef: question.passageRef,
+                  wordLimit: question.wordLimit ?? null,
+                }),
+                answerOptions: buildAnswerOptions(group, question),
+                answerKeys: buildAnswerKeys(group, question),
+              })),
+            };
+          }),
         })),
       }],
-      scoringRules: null,
+      scoringRules: [{
+        ruleCode: "IELTS_READING_DEFAULT",
+        name: "IELTS Reading objective scoring",
+        skill: "Reading",
+        questionType: null,
+        maxScore: 40,
+        configJson: JSON.stringify({ scorePerCorrect: 1 }),
+      }],
     };
   };
 
@@ -607,6 +871,10 @@ export function IeltsReadingCreatePage() {
     toastDanger("Đã xóa paragraph.");
   };
 
+  void updateParagraph;
+  void addParagraph;
+  void removeParagraph;
+
   const updatePassageContent = (passageId: string, value: string) => {
     setPassages((currentPassages) =>
       currentPassages.map((passage) => {
@@ -695,10 +963,14 @@ export function IeltsReadingCreatePage() {
     );
   };
 
-  const updateQuestionGroupType = (
+  const updateQuestionGroupSubtype = (
     groupId: string,
-    type: string,
+    displayType: string,
   ) => {
+    const subtype =
+      availableQuestionSubtypes.find((option) => option.displayType === displayType) ??
+      fallbackReadingQuestionSubtype;
+
     setPassages((currentPassages) =>
       currentPassages.map((passage) => ({
         ...passage,
@@ -709,10 +981,15 @@ export function IeltsReadingCreatePage() {
 
           return {
             ...group,
-            type,
+            answerLimit: subtype.answerLimit,
+            displayType: subtype.displayType,
+            interaction: subtype.interaction,
+            optionsReusable: subtype.optionsReusable,
+            sharedOptions: createDefaultSharedOptions(subtype),
+            type: subtype.questionType,
             questions: group.questions.map((question) => {
-              const questionOptions = shouldUseQuestionOptions(type)
-                ? createQuestionOptions(type)
+              const questionOptions = shouldUseQuestionOptions(subtype.questionType)
+                ? createQuestionOptions(subtype.questionType)
                 : [];
 
               return {
@@ -723,6 +1000,70 @@ export function IeltsReadingCreatePage() {
             }),
           };
         }),
+      })),
+    );
+  };
+
+  const addSharedOption = (groupId: string) => {
+    setPassages((currentPassages) =>
+      currentPassages.map((passage) => ({
+        ...passage,
+        questionGroups: passage.questionGroups.map((group) => {
+          if (group.id !== groupId) return group;
+
+          const nextLabel = group.displayType === "matching_headings"
+            ? `${group.sharedOptions.length + 1}`
+            : String.fromCharCode(65 + group.sharedOptions.length);
+
+          return {
+            ...group,
+            sharedOptions: [...group.sharedOptions, createSharedOption(nextLabel)],
+          };
+        }),
+      })),
+    );
+  };
+
+  const updateSharedOption = (
+    groupId: string,
+    optionId: string,
+    key: keyof GroupSharedOption,
+    value: string,
+  ) => {
+    setPassages((currentPassages) =>
+      currentPassages.map((passage) => ({
+        ...passage,
+        questionGroups: passage.questionGroups.map((group) =>
+          group.id === groupId
+            ? {
+                ...group,
+                sharedOptions: group.sharedOptions.map((option) =>
+                  option.id === optionId ? { ...option, [key]: value } : option,
+                ),
+              }
+            : group,
+        ),
+      })),
+    );
+  };
+
+  const removeSharedOption = (groupId: string, optionId: string) => {
+    setPassages((currentPassages) =>
+      currentPassages.map((passage) => ({
+        ...passage,
+        questionGroups: passage.questionGroups.map((group) =>
+          group.id === groupId
+            ? {
+                ...group,
+                questions: group.questions.map((question) =>
+                  question.correctAnswer === optionId
+                    ? { ...question, correctAnswer: "" }
+                    : question,
+                ),
+                sharedOptions: group.sharedOptions.filter((option) => option.id !== optionId),
+              }
+            : group,
+        ),
       })),
     );
   };
@@ -1187,22 +1528,6 @@ export function IeltsReadingCreatePage() {
                       }
                     />
                   </label>
-                  <label>
-                    <span>Drag heading mode</span>
-                    <select
-                      value={activePassage.isDragHeadingOnParagraph ? "yes" : "no"}
-                      onChange={(event) =>
-                        updatePassage(
-                          activePassage.id,
-                          "isDragHeadingOnParagraph",
-                          event.target.value === "yes",
-                        )
-                      }
-                    >
-                      <option value="no">Off</option>
-                      <option value="yes">On</option>
-                    </select>
-                  </label>
                   <label className={styles.fullField}>
                     <span>Passage instruction</span>
                     <textarea
@@ -1215,70 +1540,14 @@ export function IeltsReadingCreatePage() {
                   </label>
                 </div>
 
-                {activePassage.isDragHeadingOnParagraph ? (
-                  <>
-                    <div className={styles.listHeader}>
-                      <strong>Paragraphs</strong>
-                      <button type="button" onClick={() => addParagraph(activePassage.id)}>
-                        <Plus aria-hidden="true" size={15} />
-                        Add paragraph
-                      </button>
-                    </div>
-
-                    <div className={styles.paragraphList}>
-                      {activePassage.paragraphs.map((paragraph) => (
-                        <article className={styles.paragraphCard} key={paragraph.id}>
-                          <div className={styles.paragraphHeader}>
-                            <label>
-                              <span>Label</span>
-                              <input
-                                value={paragraph.label}
-                                onChange={(event) =>
-                                  updateParagraph(
-                                    activePassage.id,
-                                    paragraph.id,
-                                    "label",
-                                    event.target.value,
-                                  )
-                                }
-                              />
-                            </label>
-                            <button
-                              aria-label="Remove paragraph"
-                              title="Remove paragraph"
-                              className={styles.iconButton}
-                              type="button"
-                              onClick={() => removeParagraph(activePassage.id, paragraph.id)}
-                            >
-                              <Trash2 aria-hidden="true" size={16} />
-                            </button>
-                          </div>
-                          <RichTextEditor
-                            label="Content"
-                            value={paragraph.content}
-                            onChange={(value) =>
-                              updateParagraph(
-                                activePassage.id,
-                                paragraph.id,
-                                "content",
-                                value,
-                              )
-                            }
-                          />
-                        </article>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className={styles.singleContentEditor}>
-                    <RichTextEditor
-                      label="Content"
-                      minHeight={260}
-                      value={activePassage.paragraphs[0]?.content ?? ""}
-                      onChange={(value) => updatePassageContent(activePassage.id, value)}
-                    />
-                  </div>
-                )}
+                <div className={styles.singleContentEditor}>
+                  <RichTextEditor
+                    label="Content"
+                    minHeight={260}
+                    value={activePassage.paragraphs[0]?.content ?? ""}
+                    onChange={(value) => updatePassageContent(activePassage.id, value)}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -1333,7 +1602,7 @@ export function IeltsReadingCreatePage() {
                       >
                         <strong>{group.groupLabel}</strong>
                         <span>{group.title}</span>
-                        <small>{group.type}</small>
+                        <small>{getGroupSubtype(group).label}</small>
                       </button>
                     ))}
                   </div>
@@ -1397,23 +1666,31 @@ export function IeltsReadingCreatePage() {
                             />
                           </label>
                           <label>
-                            <span>Group Question Type</span>
+                            <span>Question subtype</span>
                             <select
-                              value={activeGroup.type}
+                              value={activeGroup.displayType}
                               onChange={(event) =>
-                                updateQuestionGroupType(
+                                updateQuestionGroupSubtype(
                                   activeGroup.id,
                                   event.target.value,
                                 )
                               }
                             >
-                              {availableQuestionTypeOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.value}
+                              {availableQuestionSubtypes.map((subtype) => (
+                                <option key={subtype.displayType} value={subtype.displayType}>
+                                  {subtype.label}
                                 </option>
                               ))}
                             </select>
                           </label>
+                          <div className={styles.subtypeHint}>
+                            <div className={styles.badgeRow}>
+                              <span>BE type: {activeGroup.type}</span>
+                              <span>{activeGroup.interaction}</span>
+                              <span>{getQuestionRange(activeGroup) ? `Questions ${getQuestionRange(activeGroup)}` : "No range"}</span>
+                            </div>
+                            <p>{activeGroupSubtype.description}</p>
+                          </div>
                           <div className={styles.fullField}>
                             <RichTextEditor
                               label="Instruction"
@@ -1424,6 +1701,65 @@ export function IeltsReadingCreatePage() {
                               }
                             />
                           </div>
+                          {activeGroupIsMatching && (
+                            <div className={styles.sharedOptionsPanel}>
+                              <div className={styles.questionOptionsHeader}>
+                                <div>
+                                  <strong>Shared answer options</strong>
+                                  <p>
+                                    Dùng chung cho toàn bộ câu trong group. FE sẽ duplicate options
+                                    vào từng question khi gửi payload.
+                                  </p>
+                                </div>
+                                <button type="button" onClick={() => addSharedOption(activeGroup.id)}>
+                                  <Plus aria-hidden="true" size={15} />
+                                  Add option
+                                </button>
+                              </div>
+                              {activeGroup.sharedOptions.map((option) => (
+                                <div className={styles.sharedOptionCard} key={option.id}>
+                                  <label>
+                                    <span>Label</span>
+                                    <input
+                                      value={option.label}
+                                      onChange={(event) =>
+                                        updateSharedOption(
+                                          activeGroup.id,
+                                          option.id,
+                                          "label",
+                                          event.target.value,
+                                        )
+                                      }
+                                    />
+                                  </label>
+                                  <label>
+                                    <span>Content</span>
+                                    <input
+                                      placeholder="Heading / feature / ending"
+                                      value={option.content}
+                                      onChange={(event) =>
+                                        updateSharedOption(
+                                          activeGroup.id,
+                                          option.id,
+                                          "content",
+                                          event.target.value,
+                                        )
+                                      }
+                                    />
+                                  </label>
+                                  <button
+                                    aria-label="Remove shared option"
+                                    title="Remove shared option"
+                                    className={styles.iconButton}
+                                    type="button"
+                                    onClick={() => removeSharedOption(activeGroup.id, option.id)}
+                                  >
+                                    <Trash2 aria-hidden="true" size={16} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1443,6 +1779,11 @@ export function IeltsReadingCreatePage() {
                         {activeGroup.questions.map((question) => {
                           const isQuestionOpen = Boolean(openQuestionIds[question.id]);
                           const questionHasOptions = shouldUseQuestionOptions(activeGroup.type);
+                          const fixedChoiceOptions = isTrueFalseType(activeGroup.type)
+                            ? ["True", "False", "Not Given"]
+                            : isYesNoType(activeGroup.type)
+                              ? ["Yes", "No", "Not Given"]
+                              : [];
 
                           return (
                             <article className={styles.questionCard} key={question.id}>
@@ -1464,7 +1805,7 @@ export function IeltsReadingCreatePage() {
                                   />
                                   <span>{`Question ${question.number}`}</span>
                                 </button>
-                                <strong>{question.correctAnswer || "No answer key"}</strong>
+                                <strong>{getGroupAnswerLabel(activeGroup, question)}</strong>
                                 <button
                                   aria-label="Remove question"
                                   title="Remove question"
@@ -1511,10 +1852,103 @@ export function IeltsReadingCreatePage() {
                                       }
                                     />
                                   </label>
-                                  {questionHasOptions ? (
+                                  {activeGroupIsMatching ? (
+                                    <>
+                                      <label>
+                                        <span>Correct shared option</span>
+                                        <select
+                                          className={styles.answerSelect}
+                                          value={question.correctAnswer}
+                                          onChange={(event) =>
+                                            updateQuestionItem(
+                                              activeGroup.id,
+                                              question.id,
+                                              "correctAnswer",
+                                              event.target.value,
+                                            )
+                                          }
+                                        >
+                                          <option value="">Select answer</option>
+                                          {activeGroup.sharedOptions.map((option) => (
+                                            <option key={option.id} value={option.id}>
+                                              {option.label}
+                                              {option.content ? ` - ${option.content}` : ""}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <label>
+                                        <span>Explanation</span>
+                                        <textarea
+                                          rows={2}
+                                          value={question.explanation}
+                                          onChange={(event) =>
+                                            updateQuestionItem(
+                                              activeGroup.id,
+                                              question.id,
+                                              "explanation",
+                                              event.target.value,
+                                            )
+                                          }
+                                        />
+                                      </label>
+                                    </>
+                                  ) : activeGroupHasFixedChoices ? (
+                                    <>
+                                      <label>
+                                        <span>Correct answer</span>
+                                        <select
+                                          className={styles.answerSelect}
+                                          value={question.correctAnswer}
+                                          onChange={(event) => {
+                                            updateQuestionItem(
+                                              activeGroup.id,
+                                              question.id,
+                                              "correctAnswer",
+                                              event.target.value,
+                                            );
+                                            question.questionOptions.forEach((option) =>
+                                              updateQuestionOption(
+                                                activeGroup.id,
+                                                question.id,
+                                                option.id,
+                                                "isCorrectAnswer",
+                                                option.option === event.target.value,
+                                              ),
+                                            );
+                                          }}
+                                        >
+                                          <option value="">Select answer</option>
+                                          {fixedChoiceOptions.map((option) => (
+                                            <option key={option} value={option}>
+                                              {option}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <div className={styles.helperText}>
+                                        Options are generated automatically for this IELTS subtype.
+                                      </div>
+                                      <label>
+                                        <span>Explanation</span>
+                                        <textarea
+                                          rows={2}
+                                          value={question.explanation}
+                                          onChange={(event) =>
+                                            updateQuestionItem(
+                                              activeGroup.id,
+                                              question.id,
+                                              "explanation",
+                                              event.target.value,
+                                            )
+                                          }
+                                        />
+                                      </label>
+                                    </>
+                                  ) : questionHasOptions ? (
                                     <div className={styles.questionOptions}>
                                       <div className={styles.questionOptionsHeader}>
-                                        <strong>QuestionOptions</strong>
+                                        <strong>Answer options</strong>
                                         {canAddOptionsForType(activeGroup.type) && (
                                           <button
                                             type="button"
@@ -1606,6 +2040,11 @@ export function IeltsReadingCreatePage() {
                                       <label>
                                         <span>Correct answer</span>
                                         <input
+                                          placeholder={
+                                            activeGroupIsTextInput
+                                              ? "Answer text. Use | for alternative answers"
+                                              : undefined
+                                          }
                                           value={question.correctAnswer}
                                           onChange={(event) =>
                                             updateQuestionItem(
