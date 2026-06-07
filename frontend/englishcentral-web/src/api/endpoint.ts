@@ -127,6 +127,29 @@ export const ENDPOINTS = {
     GET_BY_ID: (id: string | number) => `/admin/billing/receipts/${id}/get-by-id`,
   },
 
+  ADMIN_EXAM_TYPES: {
+    GET_LIST: "/admin/exam/types/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/exam/types/${id}/get-by-id`,
+    CREATE: "/admin/exam/types/insert",
+    UPDATE: (id: string | number) => `/admin/exam/types/${id}/update`,
+    DELETE: (id: string | number) => `/admin/exam/types/${id}/delete`,
+  },
+
+  ADMIN_EXAM_TEMPLATES: {
+    GET_LIST: "/admin/exam/templates/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/exam/templates/${id}/get-by-id`,
+    CREATE: "/admin/exam/templates/insert",
+    UPDATE: (id: string | number) => `/admin/exam/templates/${id}/update`,
+    DELETE: (id: string | number) => `/admin/exam/templates/${id}/delete`,
+  },
+
+  ADMIN_EXAM_VERSIONS: {
+    GET_LIST: "/admin/exam/versions/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/exam/versions/${id}/get-by-id`,
+    CREATE: "/admin/exam/versions/insert",
+    PUBLISH: (id: string | number) => `/admin/exam/versions/${id}/publish`,
+  },
+
   ADMIN_ACCOUNT: {
     GET_STUDENT_ACCOUNT: "/admin/account/get-student-account",
     GET_TEACHER_ACCOUNT: "/admin/account/get-teacher-account",
@@ -141,6 +164,12 @@ export const ENDPOINTS = {
     BILLING_POLICY_TYPE: "/admin/metadata/get-billing-policy-type",
     DISCOUNT_TYPE: "/admin/metadata/get-discount-type",
     PAYMENT_METHOD: "/admin/metadata/get-payment-method",
+    EXAM_QUESTION_TYPE: "/admin/metadata/get-exam-question-type",
+    EXAM_SKILL: "/admin/metadata/get-exam-skill",
+    EXAM_STIMULUS_TYPE: "/admin/metadata/get-exam-stimulus-type",
+    EXAM_SCORING_MODE: "/admin/metadata/get-exam-scoring-mode",
+    EXAM_TEMPLATE_STATUS: "/admin/metadata/get-exam-template-status",
+    EXAM_VERSION_STATUS: "/admin/metadata/get-exam-version-status",
     ROLE: "/admin/metadata/role-dropdown",
   },
 };

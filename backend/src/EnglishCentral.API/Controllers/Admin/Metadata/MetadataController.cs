@@ -1,6 +1,7 @@
 ﻿using EnglishCentral.Application.Features.Identity.Queries.GetRoles;
 using EnglishCentral.Contracts.Responses.Metadata;
 using EnglishCentral.Domain.Enums.Academic;
+using EnglishCentral.Domain.Enums.Exam;
 using EnglishCentral.Domain.Enums.Finance;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -122,6 +123,30 @@ namespace EnglishCentral.API.Controllers.Admin.Metadata
 
         [HttpGet("get-billing-ledger-entry-type")]
         public IActionResult GetMetadataBillingLedgerEntryType() => Ok(GetEnumMetadata<EBillingLedgerEntryType>());
+
+        [HttpGet("get-exam-family")]
+        public IActionResult GetMetadataExamFamily() => Ok(GetEnumMetadata<EExamFamily>());
+
+        [HttpGet("get-exam-template-status")]
+        public IActionResult GetMetadataExamTemplateStatus() => Ok(GetEnumMetadata<EExamTemplateStatus>());
+
+        [HttpGet("get-exam-skill")]
+        public IActionResult GetMetadataExamSkill() => Ok(GetEnumMetadata<EExamSkill>());
+
+        [HttpGet("get-exam-stimulus-type")]
+        public IActionResult GetMetadataExamStimulusType() => Ok(GetEnumMetadata<EExamStimulusType>());
+
+        [HttpGet("get-exam-question-type")]
+        public IActionResult GetMetadataExamQuestionType() => Ok(GetEnumMetadata<EExamQuestionType>());
+
+        [HttpGet("get-exam-attempt-status")]
+        public IActionResult GetMetadataExamAttemptStatus() => Ok(GetEnumMetadata<EExamAttemptStatus>());
+
+        [HttpGet("get-exam-scoring-mode")]
+        public IActionResult GetMetadataExamScoringMode() => Ok(GetEnumMetadata<EExamScoringMode>());
+
+        [HttpGet("get-exam-review-status")]
+        public IActionResult GetMetadataExamReviewStatus() => Ok(GetEnumMetadata<EExamReviewStatus>());
 
         [HttpGet("role-dropdown")]
         public async Task<IActionResult> GetRoleDropdown(CancellationToken ct)

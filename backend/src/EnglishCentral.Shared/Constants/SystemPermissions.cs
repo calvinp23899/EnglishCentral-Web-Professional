@@ -81,5 +81,13 @@
         public const string BillingPaymentCreate = "billing.payment.create";
         #endregion
 
+        #region Exam Permissions
+        public const string ExamRead = "exam.read";
+        public const string ExamCreate = "exam.create";
+        public const string ExamUpdate = "exam.update";
+        public const string ExamDelete = "exam.delete";
+        public const string ExamReview = "exam.review";
+        #endregion
+
     }
 }

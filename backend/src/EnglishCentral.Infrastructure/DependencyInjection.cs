@@ -2,6 +2,7 @@ using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Academic;
 using EnglishCentral.Application.Interfaces.Academic.ITeacher;
 using EnglishCentral.Application.Interfaces.Documents;
+using EnglishCentral.Application.Interfaces.Exam;
 using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Infrastructure.Authorization;
@@ -9,6 +10,7 @@ using EnglishCentral.Infrastructure.Persistence;
 using EnglishCentral.Infrastructure.Persistence.Context;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Academic;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Academic.TeacherRepo;
+using EnglishCentral.Infrastructure.Persistence.Repositories.Exam;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Finance;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Identity;
 using EnglishCentral.Infrastructure.Services.CodeGenerator;
@@ -80,6 +82,8 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped<ITeacherRepository, TeacherRepository>();
             services.AddScoped(typeof(IAcademicRepository<>), typeof(AcademicRepository<>));
             services.AddScoped(typeof(IFinanceRepository<>), typeof(FinanceRepository<>));
+            services.AddScoped(typeof(IExamRepository<>), typeof(ExamRepository<>));
+            services.AddScoped<IExamReadRepository, ExamReadRepository>();
             services.AddScoped<IPdfGenerator, PdfGenerator>();
             services.AddScoped<IPaymentPdfService, PaymentPdfService>();
             services.AddScoped<IBillingPdfService, BillingPdfService>();
@@ -163,6 +167,12 @@ namespace EnglishCentral.Infrastructure
                 SystemPermissions.BillingUpdate,
                 SystemPermissions.BillingDelete,
                 SystemPermissions.BillingPaymentCreate,
+
+                SystemPermissions.ExamRead,
+                SystemPermissions.ExamCreate,
+                SystemPermissions.ExamUpdate,
+                SystemPermissions.ExamDelete,
+                SystemPermissions.ExamReview,
             ];
         }
     }
