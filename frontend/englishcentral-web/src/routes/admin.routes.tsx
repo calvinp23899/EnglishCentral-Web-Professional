@@ -19,6 +19,8 @@ import { DiscountFormPage } from "@/features/admin/discounts/pages/DiscountFormP
 import { DiscountListPage } from "@/features/admin/discounts/pages/DiscountListPage";
 import { DiscountViewPage } from "@/features/admin/discounts/pages/DiscountViewPage";
 import { EnrollmentDetailPage } from "@/features/admin/enrollments/pages/EnrollmentDetailPage";
+import { ExamTemplateFormPage } from "@/features/admin/exam-templates/pages/ExamTemplateFormPage";
+import { ExamTemplateListPage } from "@/features/admin/exam-templates/pages/ExamTemplateListPage";
 import { PaymentCreatePage } from "@/features/admin/enrollments/pages/PaymentCreatePage";
 import { MyClassListPage } from "@/features/admin/my-classes/pages/MyClassListPage";
 import { MyClassViewPage } from "@/features/admin/my-classes/pages/MyClassViewPage";
@@ -236,7 +238,19 @@ export const adminRoutes = [
       },
       {
         path: "practice-bank",
-        element: <Navigate to="/admin/practice-bank/ielts" replace />,
+        element: <Navigate to="/admin/exams" replace />,
+      },
+      {
+        path: "exams",
+        element: <ExamTemplateListPage />,
+      },
+      {
+        path: "exams/create",
+        element: <ExamTemplateFormPage mode="create" />,
+      },
+      {
+        path: "exams/:recordId/edit",
+        element: <ExamTemplateFormPage mode="edit" />,
       },
       {
         path: "practice-bank/ielts",

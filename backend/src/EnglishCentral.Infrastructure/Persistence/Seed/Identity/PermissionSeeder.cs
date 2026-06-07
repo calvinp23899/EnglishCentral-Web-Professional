@@ -68,7 +68,13 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Identity
                 new() { Name = SystemPermissions.BillingCreate, Description = "Create billing records", CreatedBy = SystemDefault.DefaultSystemNumber },
                 new() { Name = SystemPermissions.BillingUpdate, Description = "Update billing records", CreatedBy = SystemDefault.DefaultSystemNumber },
                 new() { Name = SystemPermissions.BillingDelete, Description = "Delete billing records", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = SystemPermissions.BillingPaymentCreate, Description = "Create billing payments", CreatedBy = SystemDefault.DefaultSystemNumber }
+                new() { Name = SystemPermissions.BillingPaymentCreate, Description = "Create billing payments", CreatedBy = SystemDefault.DefaultSystemNumber },
+
+                new() { Name = SystemPermissions.ExamRead, Description = "View exams", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ExamCreate, Description = "Create exams", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ExamUpdate, Description = "Update exams", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ExamDelete, Description = "Delete exams", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.ExamReview, Description = "Review exam attempts", CreatedBy = SystemDefault.DefaultSystemNumber }
             };
 
             var existingPermissionNames = await context.Permissions

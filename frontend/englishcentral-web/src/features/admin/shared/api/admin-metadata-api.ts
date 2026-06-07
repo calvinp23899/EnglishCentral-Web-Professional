@@ -77,6 +77,54 @@ export const adminMetadataApi = {
     return response.data;
   },
 
+  async getExamQuestionTypeOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.EXAM_QUESTION_TYPE
+    );
+
+    return response.data;
+  },
+
+  async getExamSkillOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.EXAM_SKILL
+    );
+
+    return response.data;
+  },
+
+  async getExamStimulusTypeOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.EXAM_STIMULUS_TYPE
+    );
+
+    return response.data;
+  },
+
+  async getExamScoringModeOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.EXAM_SCORING_MODE
+    );
+
+    return response.data;
+  },
+
+  async getExamTemplateStatusOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.EXAM_TEMPLATE_STATUS
+    );
+
+    return response.data;
+  },
+
+  async getExamVersionStatusOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.EXAM_VERSION_STATUS
+    );
+
+    return response.data;
+  },
+
   async getRoleOptions() {
     const response = await api.get<RoleMetadataOption[]>(
       ENDPOINTS.ADMIN_METADATA.ROLE

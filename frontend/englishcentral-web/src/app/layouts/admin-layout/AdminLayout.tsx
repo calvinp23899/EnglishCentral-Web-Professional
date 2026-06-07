@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
@@ -88,6 +88,7 @@ const navigationItems: NavigationItem[] = [
     path: "/admin/practice-bank",
     icon: BookOpen,
     children: [
+      { label: "Mẫu Đề Kiểm Tra", path: "/admin/exams" },
       { label: "IELTS", path: "/admin/practice-bank/ielts" },
       { label: "TOEIC", path: "/admin/practice-bank/toeic" },
     ],
@@ -207,7 +208,7 @@ const breadcrumbLabels: Record<string, string> = {
   settings: "Cài đặt",
   slider: "Slider",
   students: "Học viên",
-  teachers: "Giáo viên",
+  teachers: "Nhân Viên",
   "teacher-session-payrolls": "TeacherSessionPayroll",
   "marketing-campaigns": "MarketingCampaign",
   "marketing-costs": "MarketingCost",
@@ -217,6 +218,7 @@ const breadcrumbLabels: Record<string, string> = {
   toeic: "TOEIC",
   videos: "Video",
   documents: "Tài liệu",
+  exams: "Mẫu Đề Kiểm Tra",
   exercises: "Bài tập",
 };
 

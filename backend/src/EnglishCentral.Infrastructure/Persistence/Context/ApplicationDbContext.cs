@@ -1,6 +1,7 @@
 using EnglishCentral.Domain.Common;
 using EnglishCentral.Domain.Entities.Academic;
 using EnglishCentral.Domain.Entities.Authentication;
+using EnglishCentral.Domain.Entities.Exam;
 using EnglishCentral.Domain.Entities.Finance;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -83,6 +84,40 @@ namespace EnglishCentral.Infrastructure.Persistence.Context
         public DbSet<CreditNoteApplication> CreditNoteApplications => Set<CreditNoteApplication>();
 
         public DbSet<BillingLedgerEntry> BillingLedgerEntries => Set<BillingLedgerEntry>();
+
+        #endregion
+
+        #region ---- Exam Module ----
+
+        public DbSet<ExamType> ExamTypes => Set<ExamType>();
+
+        public DbSet<ExamTemplate> ExamTemplates => Set<ExamTemplate>();
+
+        public DbSet<ExamVersion> ExamVersions => Set<ExamVersion>();
+
+        public DbSet<ExamSection> ExamSections => Set<ExamSection>();
+
+        public DbSet<ExamPart> ExamParts => Set<ExamPart>();
+
+        public DbSet<ExamStimulus> ExamStimuli => Set<ExamStimulus>();
+
+        public DbSet<ExamQuestionGroup> ExamQuestionGroups => Set<ExamQuestionGroup>();
+
+        public DbSet<ExamQuestion> ExamQuestions => Set<ExamQuestion>();
+
+        public DbSet<ExamAnswerOption> ExamAnswerOptions => Set<ExamAnswerOption>();
+
+        public DbSet<ExamAnswerKey> ExamAnswerKeys => Set<ExamAnswerKey>();
+
+        public DbSet<ExamScoringRule> ExamScoringRules => Set<ExamScoringRule>();
+
+        public DbSet<ExamAttempt> ExamAttempts => Set<ExamAttempt>();
+
+        public DbSet<ExamSectionAttempt> ExamSectionAttempts => Set<ExamSectionAttempt>();
+
+        public DbSet<ExamQuestionResponse> ExamQuestionResponses => Set<ExamQuestionResponse>();
+
+        public DbSet<ExamReview> ExamReviews => Set<ExamReview>();
 
         #endregion
 

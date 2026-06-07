@@ -648,6 +648,86 @@
   gap: 16px;
 }
 
+.subtypeHint,
+.sharedOptionsPanel {
+  grid-column: 1 / -1;
+}
+
+.subtypeHint {
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #eff6ff;
+  display: grid;
+  gap: 8px;
+
+  p {
+    margin: 0;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  span {
+    min-height: 24px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #1d4ed8;
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+.helperText {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.answerSelect {
+  width: 100%;
+}
+
+.sharedOptionsPanel {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  display: grid;
+  gap: 12px;
+
+  p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+}
+
+.sharedOptionCard {
+  padding: 12px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  display: grid;
+  grid-template-columns: minmax(86px, 120px) minmax(0, 1fr) 38px;
+  gap: 12px;
+  align-items: end;
+}
+
 .questionState {
   min-height: 360px;
   padding: 40px 20px;
@@ -751,6 +831,7 @@
   .paragraphHeader,
   .questionCardHeader,
   .questionOptionCard,
+  .sharedOptionCard,
   .subDescriptionGrid {
     grid-template-columns: 1fr;
   }
