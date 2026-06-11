@@ -1,13 +1,22 @@
+using System.ComponentModel;
+
 namespace EnglishCentral.Domain.Enums.Exam
 {
     public enum EExamFamily
     {
+        [Description("IELTS")]
         IELTS = 1,
+        [Description("TOEIC")]
         TOEIC = 2,
+        [Description("PTE")]
         PTE = 3,
+        [Description("KET")]
         KET = 4,
+        [Description("PET")]
         PET = 5,
+        [Description("VSTEP")]
         VSTEP = 6,
+        [Description("Custom")]
         Custom = 99
     }
 
@@ -44,13 +53,15 @@ namespace EnglishCentral.Domain.Enums.Exam
         MultipleChoiceMultiple = 2,
         TrueFalseNotGiven = 3,
         YesNoNotGiven = 4,
-        Matching = 5,
-        GapFill = 6,
-        ShortAnswer = 7,
-        Essay = 8,
-        SpeakingPrompt = 9,
-        Ordering = 10,
-        DragDrop = 11
+        MatchingHeadingDragDrop = 5,
+        MatchingNameDragDrop = 6,
+        MatchingInformationTableSelectGrid = 7,
+        GapFill = 8,
+        ShortAnswer = 9,
+        Essay = 10,
+        SpeakingPrompt = 11,
+        Ordering = 12,
+        //TableOptions = 13
     }
 
     public enum EExamAttemptStatus

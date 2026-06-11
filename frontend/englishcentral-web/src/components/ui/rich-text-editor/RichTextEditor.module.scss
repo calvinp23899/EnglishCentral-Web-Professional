@@ -11,8 +11,11 @@
 }
 
 .editor {
+  min-width: 0;
+  max-width: 100%;
   border-radius: 8px;
   background: #ffffff;
+  overflow: hidden;
 
   :global(.ql-toolbar.ql-snow) {
     min-height: 42px;
@@ -21,11 +24,15 @@
     border-radius: 8px 8px 0 0;
     background: #ffffff;
     font-family: inherit;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
   }
 
   :global(.ql-container.ql-snow) {
     height: auto;
     min-height: inherit;
+    max-width: 100%;
     border-color: #dbe5f0;
     border-radius: 0 0 8px 8px;
     background: #f8fafc;
@@ -40,6 +47,15 @@
     font-size: 14px;
     font-weight: 500;
     line-height: 1.6;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+
+  :global(.ql-editor p),
+  :global(.ql-editor li) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   :global(.ql-font-arial) {

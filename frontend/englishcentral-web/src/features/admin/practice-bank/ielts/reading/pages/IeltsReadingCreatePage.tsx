@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Check,
@@ -19,7 +19,7 @@ import {
 } from "@/features/admin/shared/api/admin-metadata-api";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
-import { adminIeltsReadingApi, type ExamVersion } from "../api/admin-ielts-reading-api";
+import { adminIeltsReadingApi, type ExamTemplate, type ExamVersion } from "../api/admin-ielts-reading-api";
 import styles from "./IeltsReadingCreatePage.module.scss";
 
 const steps = [
@@ -62,12 +62,15 @@ type GroupSharedOption = {
 };
 
 type QuestionItem = {
+  blankLabel?: string;
+  caseSensitive: boolean;
   correctAnswer: string;
   explanation: string;
   id: string;
   number: number;
   passageRef: string;
   questionOptions: QuestionOption[];
+  sectionTitle?: string;
   text: string;
   wordLimit?: number;
 };
@@ -76,6 +79,7 @@ type QuestionGroup = {
   answerLimit?: string;
   displayType: string;
   groupLabel: string;
+  heading?: string;
   id: string;
   instruction: string;
   interaction: "select" | "drag_drop" | "text_input";
@@ -125,6 +129,21 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
     description: "Chọn một đáp án đúng cho mỗi câu hỏi.",
   },
   {
+    label: "Multiple Choice - Multiple Answers",
+    questionType: "MultipleChoiceMultiple",
+    displayType: "multiple_choice_multiple",
+    interaction: "select",
+    description: "Chọn nhiều đáp án đúng cho mỗi câu hỏi.",
+  },
+  {
+    label: "Matching Information Table Select Grid",
+    questionType: "MatchingInformationTableSelectGrid",
+    displayType: "matching_information_table_select_grid",
+    interaction: "select",
+    optionsReusable: true,
+    description: "Chọn đáp án trong bảng matching information. Có thể bật reuse để dùng lại option nhiều lần.",
+  },
+  {
     label: "Matching Headings",
     questionType: "Matching",
     displayType: "matching_headings",
@@ -171,11 +190,19 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
     description: "FE tự tạo 3 lựa chọn Yes, No, Not Given.",
   },
   {
+    label: "Short Answer",
+    questionType: "ShortAnswer",
+    displayType: "short_answer",
+    interaction: "text_input",
+    answerLimit: "NO_MORE_THAN_THREE_WORDS",
+    description: "Nhập đáp án ngắn. Có thể nhập nhiều đáp án đúng cách nhau bằng dấu |.",
+  },
+  {
     label: "Sentence / Summary / Table Completion",
     questionType: "GapFill",
     displayType: "gap_fill",
     interaction: "text_input",
-    answerLimit: "1-3 words",
+    answerLimit: "ONE_WORD_ONLY",
     description: "Nhập đáp án text. Có thể nhập nhiều đáp án đúng cách nhau bằng dấu |.",
   },
 ];
@@ -183,6 +210,12 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
 const fallbackReadingQuestionSubtype = readingQuestionSubtypes[0];
 const maxReadingQuestions = 40;
 const passageCountOptions = [1, 2, 3];
+const gapFillAnswerLimitOptions = [
+  { label: "ONE WORD ONLY", value: "ONE_WORD_ONLY" },
+  { label: "NO MORE THAN TWO WORDS", value: "NO_MORE_THAN_TWO_WORDS" },
+  { label: "NO MORE THAN THREE WORDS", value: "NO_MORE_THAN_THREE_WORDS" },
+  { label: "ONE WORD AND/OR A NUMBER", value: "ONE_WORD_AND_OR_A_NUMBER" },
+];
 
 const normalizeQuestionType = (type: string | number | null | undefined) =>
   String(type ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
@@ -200,27 +233,83 @@ const isTrueFalseType = (type: string | number) =>
 const isYesNoType = (type: string | number) =>
   normalizeQuestionType(type) === "yesnonotgiven";
 
+const isDraftStatus = (status: string | number | null | undefined) => {
+  const normalizedStatus = normalizeQuestionType(status);
+  return normalizedStatus === "draft" || normalizedStatus === "1";
+};
+
 const isChoiceType = (type: string | number) =>
   isMultipleChoiceType(type) || isTrueFalseType(type) || isYesNoType(type);
 
 const canAddOptionsForType = (type: string | number) => isMultipleChoiceType(type);
 
-const isMatchingType = (type: string | number) => normalizeQuestionType(type) === "matching";
+const isMatchingInformationTableSelectGrid = (type: string | number) => {
+  const normalizedType = normalizeQuestionType(type);
+  return (
+    normalizedType.includes("matchinginformationtable") ||
+    normalizedType.includes("matchinginformationselectgrid") ||
+    normalizedType.includes("matchinginformationtableselectgrid")
+  );
+};
+
+const isMatchingType = (type: string | number) =>
+  normalizeQuestionType(type) === "matching" || normalizeQuestionType(type).startsWith("matching");
 
 const isTextInputType = (type: string | number) =>
-  normalizeQuestionType(type) === "gapfill" || normalizeQuestionType(type) === "shortanswer";
+  !isMatchingType(type) &&
+  (
+    normalizeQuestionType(type) === "gapfill" ||
+    normalizeQuestionType(type) === "shortanswer" ||
+    normalizeQuestionType(type).includes("completion") ||
+    normalizeQuestionType(type).includes("summary") ||
+    normalizeQuestionType(type).includes("table")
+  );
+
+const getDefaultDisplayTypeForQuestionType = (type: string | number | null | undefined) => {
+  const normalizedType = normalizeQuestionType(type);
+
+  if (normalizedType.includes("multiplechoice") && normalizedType.includes("multiple")) {
+    return "multiple_choice_multiple";
+  }
+  if (normalizedType.includes("multiplechoice")) return "multiple_choice_single";
+  if (normalizedType.includes("truefalsenotgiven")) return "true_false_not_given";
+  if (normalizedType.includes("yesnonotgiven")) return "yes_no_not_given";
+  if (
+    normalizedType.includes("matchinginformationtable") ||
+    normalizedType.includes("matchinginformationselectgrid") ||
+    normalizedType.includes("matchinginformationtableselectgrid")
+  ) {
+    return "matching_information_table_select_grid";
+  }
+  if (normalizedType.includes("matchingheading")) return "matching_headings";
+  if (normalizedType.includes("matchinginformation")) return "matching_information";
+  if (normalizedType.includes("matchingfeature")) return "matching_features";
+  if (normalizedType.includes("matchingsentence")) return "matching_sentence_endings";
+  if (normalizedType.includes("matching")) return "matching_headings";
+  if (normalizedType.includes("shortanswer")) return "short_answer";
+  if (
+    normalizedType.includes("gapfill") ||
+    normalizedType.includes("completion") ||
+    normalizedType.includes("summary") ||
+    normalizedType.includes("table")
+  ) {
+    return "gap_fill";
+  }
+
+  return null;
+};
 
 const findQuestionSubtype = (
   questionType?: string | number | null,
   displayType?: string | null,
 ) =>
-  readingQuestionSubtypes.find(
-    (subtype) =>
-      subtype.questionType === questionType &&
-      (!displayType || subtype.displayType === displayType),
-  ) ??
   readingQuestionSubtypes.find((subtype) => subtype.displayType === displayType) ??
-  readingQuestionSubtypes.find((subtype) => subtype.questionType === questionType) ??
+  readingQuestionSubtypes.find(
+    (subtype) => normalizeQuestionType(subtype.questionType) === normalizeQuestionType(questionType),
+  ) ??
+  readingQuestionSubtypes.find(
+    (subtype) => subtype.displayType === getDefaultDisplayTypeForQuestionType(questionType),
+  ) ??
   fallbackReadingQuestionSubtype;
 
 const getQuestionRange = (group: Pick<QuestionGroup, "questions">) => {
@@ -337,6 +426,32 @@ const getGroupAnswerLabel = (group: QuestionGroup, question: QuestionItem) => {
   return question.correctAnswer || "No answer key";
 };
 
+const renderBlankPreview = (question: QuestionItem) => {
+  const blankLabel = question.blankLabel || String(question.number);
+  const blankMarkup = `[ ${blankLabel} ]`;
+  const prompt = (question.text || "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;/g, "'")
+    .trim();
+
+  if (prompt.includes("{blank}")) {
+    return prompt.replaceAll("{blank}", blankMarkup);
+  }
+
+  if (prompt.includes("____")) {
+    return prompt.replace(/_+/g, blankMarkup);
+  }
+
+  return `${prompt} ${blankMarkup}`.trim();
+};
+
 const shouldUseQuestionOptions = (type: string) => isChoiceType(type);
 
 const getCorrectAnswerFromOptions = (questionOptions: QuestionOption[]) =>
@@ -349,12 +464,15 @@ const createQuestion = (
   number: number,
   type = "MultipleChoiceSingle",
 ): QuestionItem => ({
+  blankLabel: String(number),
+  caseSensitive: false,
   correctAnswer: "",
   explanation: "",
   id: crypto.randomUUID(),
   number,
   passageRef: "",
   questionOptions: createQuestionOptions(type),
+  sectionTitle: "",
   text: `Question ${number}`,
 });
 
@@ -449,6 +567,7 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
         const groupConfig = parseJson<{
           answerLimit?: string;
           displayType?: string;
+          heading?: string;
           interaction?: "select" | "drag_drop" | "text_input";
           optionsReusable?: boolean;
           sharedOptions?: Array<{ content?: string; label?: string }>;
@@ -464,23 +583,39 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
           answerLimit: groupConfig.answerLimit ?? subtype.answerLimit,
           displayType: groupConfig.displayType ?? subtype.displayType,
           groupLabel: group.code || `Group ${groupIndex + 1}`,
+          heading: groupConfig.heading ?? "",
           instruction: group.instructions ?? "",
           interaction: groupConfig.interaction ?? subtype.interaction,
           optionsReusable: groupConfig.optionsReusable ?? subtype.optionsReusable,
-          questions: group.questions.map((question) => ({
-            id: question.publicId ?? crypto.randomUUID(),
-            number: Number(question.code.replace(/\D/g, "")) || question.orderIndex,
-            text: question.prompt ?? "",
-            correctAnswer: question.answerKeys.map((answer) => answer.correctValue).filter(Boolean).join(", "),
-            explanation: question.explanation ?? "",
-            passageRef: "",
-            questionOptions: question.answerOptions.map((option) => ({
-              id: option.publicId ?? crypto.randomUUID(),
-              option: option.label,
-              explanation: option.metadataJson ? parseJson<{ explanation?: string }>(option.metadataJson, {}).explanation ?? "" : "",
-              isCorrectAnswer: question.answerKeys.some((answer) => answer.correctValue === option.label),
-            })),
-          })),
+          questions: group.questions.map((question) => {
+            const questionMetadata = parseJson<{
+              blankLabel?: string;
+              caseSensitive?: boolean;
+              passageRef?: string;
+              promptTemplate?: string;
+              sectionTitle?: string;
+              wordLimit?: number | null;
+            }>(question.metadataJson, {});
+
+            return {
+              id: question.publicId ?? crypto.randomUUID(),
+              blankLabel: questionMetadata.blankLabel ?? String(Number(question.code.replace(/\D/g, "")) || question.orderIndex),
+              caseSensitive: questionMetadata.caseSensitive ?? question.answerKeys.some((answer) => answer.caseSensitive),
+              number: Number(question.code.replace(/\D/g, "")) || question.orderIndex,
+              text: questionMetadata.promptTemplate ?? question.prompt ?? "",
+              correctAnswer: question.answerKeys.map((answer) => answer.correctValue).filter(Boolean).join(" | "),
+              explanation: question.explanation ?? "",
+              passageRef: questionMetadata.passageRef ?? "",
+              questionOptions: question.answerOptions.map((option) => ({
+                id: option.publicId ?? crypto.randomUUID(),
+                option: option.label,
+                explanation: option.metadataJson ? parseJson<{ explanation?: string }>(option.metadataJson, {}).explanation ?? "" : "",
+                isCorrectAnswer: question.answerKeys.some((answer) => answer.correctValue === option.label),
+              })),
+              sectionTitle: questionMetadata.sectionTitle ?? "",
+              wordLimit: questionMetadata.wordLimit ?? undefined,
+            };
+          }),
           sharedOptions,
           title: group.title ?? `Questions ${groupIndex + 1}`,
           type: questionType,
@@ -504,9 +639,10 @@ export function IeltsReadingCreatePage() {
   const [activeGroupId, setActiveGroupId] = useState(() => passages[0].questionGroups[0].id);
   const [isGroupEditorOpen, setGroupEditorOpen] = useState(true);
   const [openQuestionIds, setOpenQuestionIds] = useState<Record<string, boolean>>({});
-  const [examTypeId, setExamTypeId] = useState<number | null>(null);
+  const [readingTemplate, setReadingTemplate] = useState<ExamTemplate | null>(null);
   const [questionTypeOptions, setQuestionTypeOptions] = useState<MetadataOption[]>(fallbackQuestionTypeOptions);
   const [currentVersionNumber, setCurrentVersionNumber] = useState(0);
+  const [editingVersion, setEditingVersion] = useState<ExamVersion | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(recordId));
   const [isSaving, setIsSaving] = useState(false);
 
@@ -517,19 +653,31 @@ export function IeltsReadingCreatePage() {
   const activeGroup = activePassage?.questionGroups.find((group) => group.id === activeGroupId);
   const activeGroupSubtype = activeGroup ? getGroupSubtype(activeGroup) : fallbackReadingQuestionSubtype;
   const activeGroupIsMatching = activeGroup ? isMatchingType(activeGroup.type) : false;
+  const activeGroupIsMatchingInformationTable = activeGroup
+    ? isMatchingInformationTableSelectGrid(activeGroup.type)
+    : false;
   const activeGroupIsTextInput = activeGroup ? isTextInputType(activeGroup.type) : false;
   const activeGroupHasFixedChoices = activeGroup
     ? isTrueFalseType(activeGroup.type) || isYesNoType(activeGroup.type)
     : false;
-  const availableQuestionSubtypes = useMemo(() => {
-    const metadataValues = new Set(questionTypeOptions.map((option) => String(option.value)));
-    if (!metadataValues.size) return readingQuestionSubtypes;
+  const questionTypeSelectOptions = useMemo(() => {
+    const options = questionTypeOptions.length ? questionTypeOptions : fallbackQuestionTypeOptions;
+    if (!activeGroup?.type) return options;
 
-    const subtypes = readingQuestionSubtypes.filter((subtype) =>
-      metadataValues.has(subtype.questionType),
+    const hasActiveType = options.some(
+      (option) => normalizeQuestionType(option.value) === normalizeQuestionType(activeGroup.type),
     );
-    return subtypes.length ? subtypes : readingQuestionSubtypes;
-  }, [questionTypeOptions]);
+    if (hasActiveType) return options;
+
+    return [
+      ...options,
+      {
+        code: 0,
+        label: String(activeGroup.type),
+        value: String(activeGroup.type),
+      },
+    ];
+  }, [activeGroup?.type, questionTypeOptions]);
   const totalQuestions = getQuestionCount(passages);
   const hasReachedQuestionLimit = totalQuestions >= maxReadingQuestions;
 
@@ -540,36 +688,67 @@ export function IeltsReadingCreatePage() {
       setIsLoading(Boolean(recordId));
       try {
         const [readingType, questionTypes] = await Promise.all([
-          adminIeltsReadingApi.getReadingExamType(),
+          adminIeltsReadingApi.getReadingTemplate(),
           adminMetadataApi.getExamQuestionTypeOptions().catch(() => fallbackQuestionTypeOptions),
         ]);
         if (!isMounted) return;
-        setExamTypeId(readingType?.id ?? null);
+        setReadingTemplate(readingType);
         setQuestionTypeOptions(questionTypes.length ? questionTypes : fallbackQuestionTypeOptions);
 
         if (!recordId) {
+          if (readingType) {
+            setSetup((current) => ({
+              ...current,
+              description: readingType.description ?? current.description,
+              durationMinutes: readingType.durationMinutes ?? current.durationMinutes,
+              testCode: readingType.code || current.testCode,
+              title: readingType.name || current.title,
+            }));
+            const latestVersion = (await adminIeltsReadingApi.getVersions({
+              examTemplateId: readingType.id,
+              pageSize: 1,
+            })).items[0];
+            if (isMounted) setCurrentVersionNumber(latestVersion?.versionNumber ?? 0);
+          }
           setIsLoading(false);
           return;
         }
 
-        const template = await adminIeltsReadingApi.getTemplateById(recordId);
+        const version = await adminIeltsReadingApi.getVersionById(recordId);
         if (!isMounted) return;
+
+        if (!isDraftStatus(version.status)) {
+          const shouldClone = window.confirm(
+            "Đề đã published/archived không thể sửa trực tiếp. Bạn có muốn tạo bản draft mới từ đề này không?",
+          );
+
+          if (shouldClone) {
+            const draftVersion = await adminIeltsReadingApi.cloneDraftVersion(version.id);
+            if (isMounted) {
+              toastSuccess("Đã tạo bản draft mới từ đề hiện tại.");
+              navigate(`/admin/practice-bank/ielts/reading/${draftVersion.id}/edit`, { replace: true });
+            }
+          } else if (isMounted) {
+            navigate(`/admin/practice-bank/ielts/reading/${version.id}/view`, { replace: true });
+          }
+          return;
+        }
+
+        const template = readingType ?? await adminIeltsReadingApi.getTemplateById(version.examTemplateId);
+        setReadingTemplate(template);
+        setEditingVersion(version);
+        setCurrentVersionNumber(version.versionNumber);
         setSetup((current) => ({
           ...current,
-          description: template.description ?? "",
-          durationMinutes: template.durationMinutes ?? 60,
+          description: version.description ?? template.description ?? "",
+          durationMinutes: version.durationMinutes ?? template.durationMinutes ?? 60,
           level: current.level,
-          status: String(template.status).toLowerCase() === "published" || String(template.status) === "2" ? "published" : "draft",
-          testCode: template.code,
-          title: template.name,
+          status: String(version.status).toLowerCase() === "published" || String(version.status) === "2" ? "published" : "draft",
+          testCode: version.versionCode || template.code,
+          title: version.name || template.name,
         }));
 
-        const versionResult = template.currentVersionId
-          ? { items: [await adminIeltsReadingApi.getVersionById(template.currentVersionId)] }
-          : await adminIeltsReadingApi.getVersions({ examTemplateId: template.id, pageSize: 1 });
-        const version = versionResult.items[0];
         if (version && isMounted) {
-          setCurrentVersionNumber(version.versionNumber);
           setPassages(toVersionPassages(version));
           const nextPassages = toVersionPassages(version);
           setActivePassageId(nextPassages[0]?.id ?? "");
@@ -589,8 +768,16 @@ export function IeltsReadingCreatePage() {
     };
   }, [recordId]);
 
-  const buildVersionPayload = (templateId: number) => {
-    const nextVersionNumber = currentVersionNumber + 1 || 1;
+  const buildVersionPayload = (templateId: number, preserveVersion = false) => {
+    const nextVersionNumber = preserveVersion ? currentVersionNumber || 1 : currentVersionNumber + 1 || 1;
+    const nextVersionCode = preserveVersion
+      ? setup.testCode.trim() || editingVersion?.versionCode || "IELTS-RD-DRAFT"
+      : `${setup.testCode.trim() || "IELTS-RD"}-V${nextVersionNumber}`;
+    const nextVersionName = preserveVersion
+      ? setup.title.trim() || editingVersion?.name || "IELTS Reading Draft"
+      : `${setup.title.trim() || "IELTS Reading"} v${nextVersionNumber}`;
+    const templateDurationMinutes = readingTemplate?.durationMinutes ?? setup.durationMinutes ?? 60;
+    const templateTotalScore = readingTemplate?.totalScore ?? 40;
     const buildAnswerOptions = (group: QuestionGroup, question: QuestionItem) => {
       if (isChoiceType(group.type)) {
         return question.questionOptions.map((option, optionIndex) => ({
@@ -657,19 +844,19 @@ export function IeltsReadingCreatePage() {
           correctValue: answer,
           matchPattern: null,
           score: answerIndex === 0 ? 1 : 0,
-          caseSensitive: false,
+          caseSensitive: question.caseSensitive,
           orderIndex: answerIndex + 1,
         }));
     };
 
     return {
       examTemplateId: templateId,
-      versionCode: `${setup.testCode.trim() || "IELTS-RD"}-V${nextVersionNumber}`,
+      versionCode: nextVersionCode,
       versionNumber: nextVersionNumber,
-      name: `${setup.title.trim() || "IELTS Reading"} v${nextVersionNumber}`,
+      name: nextVersionName,
       description: setup.description.trim() || null,
-      durationMinutes: Number(setup.durationMinutes) || 60,
-      totalScore: 40,
+      durationMinutes: templateDurationMinutes,
+      totalScore: templateTotalScore,
       scoringMode: "Auto" as const,
       runtimeConfigJson: JSON.stringify({
         exam: "IELTS",
@@ -687,8 +874,8 @@ export function IeltsReadingCreatePage() {
         name: "Reading",
         skill: "Reading" as const,
         orderIndex: 1,
-        durationMinutes: Number(setup.durationMinutes) || 60,
-        maxScore: 40,
+        durationMinutes: templateDurationMinutes,
+        maxScore: templateTotalScore,
         instructions: setup.description,
         runtimeConfigJson: JSON.stringify({ expectedQuestionCount: maxReadingQuestions, module: "Reading" }),
         parts: passages.map((passage, passageIndex) => ({
@@ -720,13 +907,18 @@ export function IeltsReadingCreatePage() {
               configJson: JSON.stringify({
                 answerLimit: group.answerLimit || subtype.answerLimit,
                 displayType: group.displayType || subtype.displayType,
+                heading: group.heading || null,
                 interaction: group.interaction || subtype.interaction,
                 optionsReusable: group.optionsReusable ?? subtype.optionsReusable ?? false,
                 range: getQuestionRange(group),
-                sharedOptions: group.sharedOptions.map((option) => ({
-                  content: option.content || option.label,
-                  label: option.label,
-                })),
+                sharedOptions: group.sharedOptions.map((option) =>
+                  isMatchingInformationTableSelectGrid(group.type)
+                    ? { label: option.label }
+                    : {
+                        content: option.content || option.label,
+                        label: option.label,
+                      },
+                ),
               }),
               questions: group.questions.map((question, questionIndex) => ({
                 code: `Q${question.number}`,
@@ -737,9 +929,13 @@ export function IeltsReadingCreatePage() {
                 isRequired: true,
                 explanation: question.explanation || null,
                 metadataJson: JSON.stringify({
+                  blankLabel: question.blankLabel || String(question.number),
+                  caseSensitive: question.caseSensitive,
                   displayType: group.displayType || subtype.displayType,
                   number: question.number,
                   passageRef: question.passageRef,
+                  promptTemplate: question.text,
+                  sectionTitle: question.sectionTitle || null,
                   wordLimit: question.wordLimit ?? null,
                 }),
                 answerOptions: buildAnswerOptions(group, question),
@@ -965,11 +1161,9 @@ export function IeltsReadingCreatePage() {
 
   const updateQuestionGroupSubtype = (
     groupId: string,
-    displayType: string,
+    questionType: string,
   ) => {
-    const subtype =
-      availableQuestionSubtypes.find((option) => option.displayType === displayType) ??
-      fallbackReadingQuestionSubtype;
+    const subtype = findQuestionSubtype(questionType);
 
     setPassages((currentPassages) =>
       currentPassages.map((passage) => ({
@@ -986,10 +1180,10 @@ export function IeltsReadingCreatePage() {
             interaction: subtype.interaction,
             optionsReusable: subtype.optionsReusable,
             sharedOptions: createDefaultSharedOptions(subtype),
-            type: subtype.questionType,
+            type: questionType,
             questions: group.questions.map((question) => {
-              const questionOptions = shouldUseQuestionOptions(subtype.questionType)
-                ? createQuestionOptions(subtype.questionType)
+              const questionOptions = shouldUseQuestionOptions(questionType)
+                ? createQuestionOptions(questionType)
                 : [];
 
               return {
@@ -1140,7 +1334,7 @@ export function IeltsReadingCreatePage() {
     groupId: string,
     questionId: string,
     key: keyof QuestionItem,
-    value: string | number,
+    value: QuestionItem[keyof QuestionItem],
   ) => {
     setPassages((currentPassages) =>
       currentPassages.map((passage) => ({
@@ -1311,8 +1505,8 @@ export function IeltsReadingCreatePage() {
 
   const handlePrimaryAction = async () => {
     if (currentStep === 3) {
-      if (!examTypeId) {
-        toastDanger("BE chưa có Exam Type IELTS Reading/IELTS đang hoạt động.");
+      if (!readingTemplate) {
+        toastDanger("Chưa có ExamTemplate IELTS Reading. Vui lòng tạo Dạng bài kiểm tra và Mẫu đề kiểm tra trước.");
         return;
       }
       if (!setup.testCode.trim() || !setup.title.trim()) {
@@ -1327,20 +1521,15 @@ export function IeltsReadingCreatePage() {
 
       setIsSaving(true);
       try {
-        const templatePayload = {
-          examTypeId,
-          code: setup.testCode.trim(),
-          name: setup.title.trim(),
-          description: setup.description.trim() || null,
-          durationMinutes: Number(setup.durationMinutes) || 60,
-          totalScore: 40,
-          isActive: true,
-        };
-        const template = recordId
-          ? await adminIeltsReadingApi.updateTemplate(recordId, templatePayload)
-          : await adminIeltsReadingApi.createTemplate(templatePayload);
-        await adminIeltsReadingApi.createVersion(buildVersionPayload(template.id));
-        toastSuccess(recordId ? "Cập nhật đề IELTS Reading thành công." : "Tạo đề IELTS Reading thành công.");
+        if (recordId) {
+          await adminIeltsReadingApi.updateDraftVersion(
+            recordId,
+            buildVersionPayload(readingTemplate.id, true),
+          );
+        } else {
+          await adminIeltsReadingApi.createVersion(buildVersionPayload(readingTemplate.id));
+        }
+        toastSuccess(recordId ? "Cập nhật draft IELTS Reading thành công." : "Tạo đề IELTS Reading thành công.");
         navigate("/admin/practice-bank/ielts/reading");
       } catch (error) {
         toastDanger(getAuthErrorMessage(error));
@@ -1374,6 +1563,21 @@ export function IeltsReadingCreatePage() {
             <p>FE đang lấy template và version hiện tại từ API Exam.</p>
           </div>
         </section>
+      ) : !readingTemplate ? (
+        <section className={styles.contentPanel}>
+          <div className={styles.questionState}>
+            <FileText aria-hidden="true" size={34} />
+            <h2>Chưa có template IELTS Reading</h2>
+            <p>
+              Vui lòng tạo ExamType IELTS ở “Dạng Bài Kiểm Tra”, sau đó tạo
+              ExamTemplate IELTS Academic Reading ở “Mẫu Đề Kiểm Tra” trước khi tạo đề.
+            </p>
+            <div className={styles.headerActions}>
+              <Link to="/admin/exam-types/create">Tạo dạng bài kiểm tra</Link>
+              <Link to="/admin/exams/create">Tạo mẫu đề kiểm tra</Link>
+            </div>
+          </div>
+        </section>
       ) : (
       <section className={styles.builder}>
         <div className={styles.contentPanel}>
@@ -1397,74 +1601,36 @@ export function IeltsReadingCreatePage() {
 
               <div className={styles.formGrid}>
                 <label>
-                  <span>Test title</span>
+                  <span>Tên Bài Test</span>
                   <input
                     value={setup.title}
                     onChange={(event) => updateSetup("title", event.target.value)}
                   />
                 </label>
                 <label>
-                  <span>Test code / slug</span>
+                  <span>Version code / slug</span>
                   <input
                     value={setup.testCode}
                     onChange={(event) => updateSetup("testCode", event.target.value)}
                   />
                 </label>
                 <label>
-                  <span>Source label</span>
-                  <input
-                    value={setup.sourceLabel}
-                    onChange={(event) => updateSetup("sourceLabel", event.target.value)}
-                  />
-                </label>
-                <label>
                   <span>Duration</span>
                   <input
+                    disabled
                     min={1}
                     type="number"
                     value={setup.durationMinutes}
-                    onChange={(event) =>
-                      updateSetup("durationMinutes", Number(event.target.value))
-                    }
+                    readOnly
                   />
                 </label>
                 <label>
-                  <span>Level</span>
-                  <select
-                    value={setup.level}
-                    onChange={(event) => updateSetup("level", event.target.value)}
-                  >
-                    <option>Academic</option>
-                    <option>Band 5.5-6.0</option>
-                    <option>Band 6.0-6.5</option>
-                    <option>Band 6.5-7.0</option>
-                    <option>Band 7.0+</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Status</span>
-                  <select
-                    value={setup.status}
-                    onChange={(event) =>
-                      updateSetup("status", event.target.value as TestSetup["status"])
-                    }
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                  </select>
-                </label>
-                <label>
-                  <span>NumberPassage</span>
-                  <select
-                    value={setup.numberPassages}
-                    onChange={(event) => updateNumberPassages(Number(event.target.value))}
-                  >
-                    {passageCountOptions.map((passageCount) => (
-                      <option key={passageCount} value={passageCount}>
-                        {passageCount}
-                      </option>
-                    ))}
-                  </select>
+                  <span>Score</span>
+                  <input
+                    disabled
+                    readOnly
+                    value={readingTemplate?.totalScore ?? 40}
+                  />
                 </label>
                 <label className={styles.fullField}>
                   <span>Description</span>
@@ -1474,22 +1640,61 @@ export function IeltsReadingCreatePage() {
                     onChange={(event) => updateSetup("description", event.target.value)}
                   />
                 </label>
-                <label className={styles.fullField}>
-                  <span>Sub description</span>
-                  <textarea
-                    rows={3}
-                    value={setup.subDescriptions[0] ?? ""}
-                    onChange={(event) => updateSubDescription(0, event.target.value)}
-                  />
-                </label>
-                <label className={styles.fullField}>
-                  <span>Note</span>
-                  <textarea
-                    rows={3}
-                    value={setup.note}
-                    onChange={(event) => updateSetup("note", event.target.value)}
-                  />
-                </label>
+                <section className={styles.runtimeSection}>
+                  <div className={styles.runtimeSectionTitle}>
+                    <h3>Cấu hình thực thi</h3>
+                    <p>Các thông tin này được lưu trong runtimeConfigJson của version.</p>
+                  </div>
+                  <label>
+                    <span>Source label</span>
+                    <input
+                      value={setup.sourceLabel}
+                      onChange={(event) => updateSetup("sourceLabel", event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    <span>Level</span>
+                    <select
+                      value={setup.level}
+                      onChange={(event) => updateSetup("level", event.target.value)}
+                    >
+                      <option>Academic</option>
+                      <option>Band 5.5-6.0</option>
+                      <option>Band 6.0-6.5</option>
+                      <option>Band 6.5-7.0</option>
+                      <option>Band 7.0+</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>NumberPassage</span>
+                    <select
+                      value={setup.numberPassages}
+                      onChange={(event) => updateNumberPassages(Number(event.target.value))}
+                    >
+                      {passageCountOptions.map((passageCount) => (
+                        <option key={passageCount} value={passageCount}>
+                          {passageCount}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className={styles.fullField}>
+                    <span>Sub description</span>
+                    <textarea
+                      rows={3}
+                      value={setup.subDescriptions[0] ?? ""}
+                      onChange={(event) => updateSubDescription(0, event.target.value)}
+                    />
+                  </label>
+                  <label className={styles.fullField}>
+                    <span>Note</span>
+                    <textarea
+                      rows={3}
+                      value={setup.note}
+                      onChange={(event) => updateSetup("note", event.target.value)}
+                    />
+                  </label>
+                </section>
               </div>
             </div>
           )}
@@ -1542,6 +1747,7 @@ export function IeltsReadingCreatePage() {
 
                 <div className={styles.singleContentEditor}>
                   <RichTextEditor
+                    key={`passage-content-${activePassage.id}`}
                     label="Content"
                     minHeight={260}
                     value={activePassage.paragraphs[0]?.content ?? ""}
@@ -1666,9 +1872,9 @@ export function IeltsReadingCreatePage() {
                             />
                           </label>
                           <label>
-                            <span>Question subtype</span>
+                            <span>Question type</span>
                             <select
-                              value={activeGroup.displayType}
+                              value={activeGroup.type}
                               onChange={(event) =>
                                 updateQuestionGroupSubtype(
                                   activeGroup.id,
@@ -1676,9 +1882,9 @@ export function IeltsReadingCreatePage() {
                                 )
                               }
                             >
-                              {availableQuestionSubtypes.map((subtype) => (
-                                <option key={subtype.displayType} value={subtype.displayType}>
-                                  {subtype.label}
+                              {questionTypeSelectOptions.map((option) => (
+                                <option key={`${option.code}-${option.value}`} value={option.value}>
+                                  {option.label || option.value}
                                 </option>
                               ))}
                             </select>
@@ -1691,6 +1897,52 @@ export function IeltsReadingCreatePage() {
                             </div>
                             <p>{activeGroupSubtype.description}</p>
                           </div>
+                          {activeGroupIsTextInput && (
+                            <>
+                              <label>
+                                <span>Group heading</span>
+                                <input
+                                  placeholder="The London underground railway"
+                                  value={activeGroup.heading ?? ""}
+                                  onChange={(event) =>
+                                    updateQuestionGroup(activeGroup.id, "heading", event.target.value)
+                                  }
+                                />
+                              </label>
+                              <label>
+                                <span>Answer rule</span>
+                                <select
+                                  value={activeGroup.answerLimit ?? activeGroupSubtype.answerLimit ?? ""}
+                                  onChange={(event) =>
+                                    updateQuestionGroup(activeGroup.id, "answerLimit", event.target.value)
+                                  }
+                                >
+                                  <option value="">No limit</option>
+                                  {gapFillAnswerLimitOptions.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                            </>
+                          )}
+                          {activeGroupIsMatchingInformationTable && (
+                            <label className={styles.checkboxField}>
+                              <input
+                                checked={activeGroup.optionsReusable ?? true}
+                                type="checkbox"
+                                onChange={(event) =>
+                                  updateQuestionGroup(
+                                    activeGroup.id,
+                                    "optionsReusable",
+                                    event.target.checked,
+                                  )
+                                }
+                              />
+                              <span>Option reuse</span>
+                            </label>
+                          )}
                           <div className={styles.fullField}>
                             <RichTextEditor
                               label="Instruction"
@@ -1717,7 +1969,12 @@ export function IeltsReadingCreatePage() {
                                 </button>
                               </div>
                               {activeGroup.sharedOptions.map((option) => (
-                                <div className={styles.sharedOptionCard} key={option.id}>
+                                <div
+                                  className={`${styles.sharedOptionCard} ${
+                                    activeGroupIsMatchingInformationTable ? styles.labelOnlySharedOption : ""
+                                  }`}
+                                  key={option.id}
+                                >
                                   <label>
                                     <span>Label</span>
                                     <input
@@ -1732,21 +1989,23 @@ export function IeltsReadingCreatePage() {
                                       }
                                     />
                                   </label>
-                                  <label>
-                                    <span>Content</span>
-                                    <input
-                                      placeholder="Heading / feature / ending"
-                                      value={option.content}
-                                      onChange={(event) =>
-                                        updateSharedOption(
-                                          activeGroup.id,
-                                          option.id,
-                                          "content",
-                                          event.target.value,
-                                        )
-                                      }
-                                    />
-                                  </label>
+                                  {!activeGroupIsMatchingInformationTable && (
+                                    <label>
+                                      <span>Content</span>
+                                      <input
+                                        placeholder="Heading / feature / ending"
+                                        value={option.content}
+                                        onChange={(event) =>
+                                          updateSharedOption(
+                                            activeGroup.id,
+                                            option.id,
+                                            "content",
+                                            event.target.value,
+                                          )
+                                        }
+                                      />
+                                    </label>
+                                  )}
                                   <button
                                     aria-label="Remove shared option"
                                     title="Remove shared option"
@@ -1836,22 +2095,79 @@ export function IeltsReadingCreatePage() {
                                         }
                                       />
                                     </label>
+                                    {activeGroupIsTextInput && (
+                                      <>
+                                        <label>
+                                          <span>Section title</span>
+                                          <input
+                                            placeholder="The problem"
+                                            value={question.sectionTitle ?? ""}
+                                            onChange={(event) =>
+                                              updateQuestionItem(
+                                                activeGroup.id,
+                                                question.id,
+                                                "sectionTitle",
+                                                event.target.value,
+                                              )
+                                            }
+                                          />
+                                        </label>
+                                        <label>
+                                          <span>Blank label</span>
+                                          <input
+                                            placeholder={String(question.number)}
+                                            value={question.blankLabel ?? ""}
+                                            onChange={(event) =>
+                                              updateQuestionItem(
+                                                activeGroup.id,
+                                                question.id,
+                                                "blankLabel",
+                                                event.target.value,
+                                              )
+                                            }
+                                          />
+                                        </label>
+                                      </>
+                                    )}
                                   </div>
-                                  <label>
-                                    <span>Question text</span>
-                                    <textarea
-                                      rows={3}
-                                      value={question.text}
-                                      onChange={(event) =>
-                                        updateQuestionItem(
-                                          activeGroup.id,
-                                          question.id,
-                                          "text",
-                                          event.target.value,
-                                        )
-                                      }
-                                    />
-                                  </label>
+                                  {activeGroupIsTextInput ? (
+                                    <div className={styles.fullField}>
+                                      <RichTextEditor
+                                        label="Prompt template"
+                                        minHeight={120}
+                                        value={question.text}
+                                        onChange={(value) =>
+                                          updateQuestionItem(
+                                            activeGroup.id,
+                                            question.id,
+                                            "text",
+                                            value,
+                                          )
+                                        }
+                                      />
+                                    </div>
+                                  ) : (
+                                    <label>
+                                      <span>Question text</span>
+                                      <textarea
+                                        rows={3}
+                                        value={question.text}
+                                        onChange={(event) =>
+                                          updateQuestionItem(
+                                            activeGroup.id,
+                                            question.id,
+                                            "text",
+                                            event.target.value,
+                                          )
+                                        }
+                                      />
+                                    </label>
+                                  )}
+                                  {activeGroupIsTextInput && (
+                                    <div className={styles.helperText}>
+                                      Preview: {renderBlankPreview(question)}
+                                    </div>
+                                  )}
                                   {activeGroupIsMatching ? (
                                     <>
                                       <label>
@@ -2038,11 +2354,11 @@ export function IeltsReadingCreatePage() {
                                   ) : (
                                     <>
                                       <label>
-                                        <span>Correct answer</span>
+                                        <span>{activeGroupIsTextInput ? "Correct answers" : "Correct answer"}</span>
                                         <input
                                           placeholder={
                                             activeGroupIsTextInput
-                                              ? "Answer text. Use | for alternative answers"
+                                              ? "population | inhabitants"
                                               : undefined
                                           }
                                           value={question.correctAnswer}
@@ -2056,6 +2372,23 @@ export function IeltsReadingCreatePage() {
                                           }
                                         />
                                       </label>
+                                      {activeGroupIsTextInput && (
+                                        <label className={styles.checkboxField}>
+                                          <input
+                                            checked={question.caseSensitive}
+                                            type="checkbox"
+                                            onChange={(event) =>
+                                              updateQuestionItem(
+                                                activeGroup.id,
+                                                question.id,
+                                                "caseSensitive",
+                                                event.target.checked,
+                                              )
+                                            }
+                                          />
+                                          <span>Case sensitive</span>
+                                        </label>
+                                      )}
                                       <label>
                                         <span>Explanation</span>
                                         <textarea
@@ -2134,3 +2467,4 @@ export function IeltsReadingCreatePage() {
     </div>
   );
 }
+

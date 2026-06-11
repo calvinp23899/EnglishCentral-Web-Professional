@@ -84,6 +84,7 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped(typeof(IFinanceRepository<>), typeof(FinanceRepository<>));
             services.AddScoped(typeof(IExamRepository<>), typeof(ExamRepository<>));
             services.AddScoped<IExamReadRepository, ExamReadRepository>();
+            services.AddScoped<IExamVersionDraftRepository, ExamVersionDraftRepository>();
             services.AddScoped<IPdfGenerator, PdfGenerator>();
             services.AddScoped<IPaymentPdfService, PaymentPdfService>();
             services.AddScoped<IBillingPdfService, BillingPdfService>();

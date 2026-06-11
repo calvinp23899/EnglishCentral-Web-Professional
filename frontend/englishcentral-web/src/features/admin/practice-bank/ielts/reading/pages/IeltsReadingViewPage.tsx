@@ -38,14 +38,12 @@ export function IeltsReadingViewPage() {
     if (!recordId) return;
     let isMounted = true;
     setIsLoading(true);
-    adminIeltsReadingApi.getTemplateById(recordId)
-      .then(async (nextTemplate) => {
+    adminIeltsReadingApi.getVersionById(recordId)
+      .then(async (nextVersion) => {
+        if (!isMounted) return;
+        const nextTemplate = await adminIeltsReadingApi.getTemplateById(nextVersion.examTemplateId);
         if (!isMounted) return;
         setTemplate(nextTemplate);
-        const nextVersion = nextTemplate.currentVersionId
-          ? await adminIeltsReadingApi.getVersionById(nextTemplate.currentVersionId)
-          : (await adminIeltsReadingApi.getVersions({ examTemplateId: nextTemplate.id, pageSize: 1 })).items[0] ?? null;
-        if (!isMounted) return;
         setVersion(nextVersion);
         const firstPart = nextVersion?.sections[0]?.parts[0];
         setActivePassageId(firstPart?.id ?? null);
