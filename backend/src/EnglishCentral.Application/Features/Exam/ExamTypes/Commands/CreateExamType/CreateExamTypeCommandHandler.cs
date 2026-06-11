@@ -1,6 +1,8 @@
 using EnglishCentral.Application.Features.Exam.DTOs;
 using EnglishCentral.Application.Interfaces.Exam;
 using EnglishCentral.Domain.Entities.Exam;
+using EnglishCentral.Domain.Enums.Exam;
+using EnglishCentral.Shared.Common.Helpers;
 using EnglishCentral.Shared.Results;
 using MediatR;
 
@@ -17,22 +19,61 @@ namespace EnglishCentral.Application.Features.Exam.ExamTypes.Commands.CreateExam
 
         public async Task<Result<ExamTypeResponse>> Handle(CreateExamTypeCommand request, CancellationToken ct)
         {
-            var code = request.Code.Trim().ToUpperInvariant();
+            string name = string.Empty;
+            if (this.GetListEnumFamily().Contains(request.Family))
+            {
+                name = this.GetDefaultEnumName(request.Family);
+            }
+            else
+            {
+                //FAMILY = CUSTOM
+                name = request.Name.Trim().ToUpperInvariant();
+            }
+            string code = request.Code.Trim().ToUpperInvariant();
             if (await _repository.ExistsAsync(x => x.Code == code, ct))
                 return Result<ExamTypeResponse>.Failure("Exam type code already exists.", 409);
 
             var entity = new ExamType
             {
                 Code = code,
-                Name = request.Name.Trim(),
+                Name = name,
                 Family = request.Family,
                 Description = request.Description?.Trim(),
                 IsActive = request.IsActive,
-                CreatedAt = DateTimeOffset.UtcNow
             };
 
             await _repository.AddAsync(entity, ct);
             return Result<ExamTypeResponse>.Success(entity.ToResponse(), 201);
+        }
+
+        private string GetDefaultEnumName(EExamFamily request)
+        {
+            string code = string.Empty;
+            code = request switch
+            {
+                EExamFamily.IELTS => EExamFamily.IELTS.ToDescription(),
+                EExamFamily.TOEIC => EExamFamily.TOEIC.ToDescription(),
+                EExamFamily.PTE => EExamFamily.PTE.ToDescription(),
+                EExamFamily.KET => EExamFamily.PTE.ToDescription(),
+                EExamFamily.PET => EExamFamily.PTE.ToDescription(),
+                EExamFamily.VSTEP => EExamFamily.PTE.ToDescription(),
+                _ => string.Empty
+            };
+            return code;
+        }
+
+        private List<EExamFamily> GetListEnumFamily()
+        {
+            var families = new List<EExamFamily>
+            {
+                EExamFamily.IELTS,
+                EExamFamily.TOEIC,
+                EExamFamily.VSTEP,
+                EExamFamily.PET,
+                EExamFamily.PTE,
+                EExamFamily.KET,
+            };
+            return families;
         }
     }
 }

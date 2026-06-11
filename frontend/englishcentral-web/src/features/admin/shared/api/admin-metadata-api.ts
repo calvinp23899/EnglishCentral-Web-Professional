@@ -109,6 +109,14 @@ export const adminMetadataApi = {
     return response.data;
   },
 
+  async getExamFamilyOptions() {
+    const response = await api.get<MetadataOption[]>(
+      ENDPOINTS.ADMIN_METADATA.EXAM_FAMILY
+    );
+
+    return response.data;
+  },
+
   async getExamTemplateStatusOptions() {
     const response = await api.get<MetadataOption[]>(
       ENDPOINTS.ADMIN_METADATA.EXAM_TEMPLATE_STATUS

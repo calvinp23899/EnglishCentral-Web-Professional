@@ -1,5 +1,7 @@
+using EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CloneExamVersionDraft;
 using EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CreateExamVersion;
 using EnglishCentral.Application.Features.Exam.ExamVersions.Commands.PublishExamVersion;
+using EnglishCentral.Application.Features.Exam.ExamVersions.Commands.UpdateExamVersionDraft;
 using EnglishCentral.Application.Features.Exam.ExamVersions.Queries.GetExamVersionById;
 using EnglishCentral.Application.Features.Exam.ExamVersions.Queries.GetExamVersions;
 using EnglishCentral.Infrastructure.Authorization;
@@ -41,6 +43,22 @@ namespace EnglishCentral.API.Controllers.Admin.Exam
         public async Task<IActionResult> Create(CreateExamVersionCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPut("{id:long}/update-draft")]
+        [HasPermission(SystemPermissions.ExamUpdate)]
+        public async Task<IActionResult> UpdateDraft(long id, UpdateExamVersionDraftCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command with { Id = id }, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPost("{id:long}/clone-draft")]
+        [HasPermission(SystemPermissions.ExamCreate)]
+        public async Task<IActionResult> CloneDraft(long id, CloneExamVersionDraftCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command with { SourceVersionId = id }, ct);
             return StatusCode(result.StatusCode, result);
         }
 

@@ -147,7 +147,9 @@ export const ENDPOINTS = {
     GET_LIST: "/admin/exam/versions/get-list",
     GET_BY_ID: (id: string | number) => `/admin/exam/versions/${id}/get-by-id`,
     CREATE: "/admin/exam/versions/insert",
+    UPDATE_DRAFT: (id: string | number) => `/admin/exam/versions/${id}/update-draft`,
     PUBLISH: (id: string | number) => `/admin/exam/versions/${id}/publish`,
+    CLONE_DRAFT: (id: string | number) => `/admin/exam/versions/${id}/clone-draft`,
   },
 
   ADMIN_ACCOUNT: {
@@ -168,6 +170,7 @@ export const ENDPOINTS = {
     EXAM_SKILL: "/admin/metadata/get-exam-skill",
     EXAM_STIMULUS_TYPE: "/admin/metadata/get-exam-stimulus-type",
     EXAM_SCORING_MODE: "/admin/metadata/get-exam-scoring-mode",
+    EXAM_FAMILY: "/admin/metadata/get-exam-family",
     EXAM_TEMPLATE_STATUS: "/admin/metadata/get-exam-template-status",
     EXAM_VERSION_STATUS: "/admin/metadata/get-exam-version-status",
     ROLE: "/admin/metadata/role-dropdown",

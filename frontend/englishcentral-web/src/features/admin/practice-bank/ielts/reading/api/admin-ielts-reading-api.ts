@@ -1,4 +1,4 @@
-import { api } from "@/api/axios";
+﻿import { api } from "@/api/axios";
 import { ENDPOINTS } from "@/api/endpoint";
 
 type ApiResult<T> = { isSuccess: boolean; data?: T; error?: string };
@@ -137,6 +137,8 @@ export type ExamVersion = {
   runtimeConfigJson?: string | null;
   scoringConfigJson?: string | null;
   publishedAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   sections: ExamSection[];
   scoringRules: unknown[];
 };
@@ -241,8 +243,41 @@ export const adminIeltsReadingApi = {
   },
 
   async getReadingExamType() {
-    const result = await this.getExamTypes({ family: "IELTS", isActive: true, pageSize: 50 });
-    return result.items.find((item) => `${item.code} ${item.name}`.toLowerCase().includes("reading")) ?? result.items[0] ?? null;
+    const result = await this.getExamTypes({ isActive: true, pageSize: 100 });
+    const readingType = result.items.find((item) => {
+      const haystack = `${item.code} ${item.name} ${item.family}`.toLowerCase();
+      return haystack.includes("ielts") && haystack.includes("reading");
+    });
+
+    return readingType ?? null;
+  },
+
+  async getReadingTemplate() {
+    const readingType = await this.getReadingExamType();
+
+    if (readingType) {
+      const result = await this.getTemplates({
+        examTypeId: readingType.id,
+        isActive: true,
+        pageSize: 100,
+      });
+
+      const matchedTemplate = result.items.find((item) =>
+        `${item.code} ${item.name}`.toLowerCase().includes("reading"),
+      );
+
+      if (matchedTemplate) return matchedTemplate;
+    }
+
+    const fallbackResult = await this.getTemplates({
+      isActive: true,
+      pageSize: 100,
+    });
+
+    return fallbackResult.items.find((item) =>
+      `${item.code} ${item.name}`.toLowerCase().includes("reading") &&
+      `${item.code} ${item.name}`.toLowerCase().includes("ielts"),
+    ) ?? null;
   },
 
   async getTemplates(params: { page?: number; pageSize?: number; keyword?: string; examTypeId?: number; status?: string | number; isActive?: boolean; isDescending?: boolean } = {}) {
@@ -303,8 +338,18 @@ export const adminIeltsReadingApi = {
     return unwrap(response.data, "Không thể lưu nội dung đề IELTS Reading.");
   },
 
+  async updateDraftVersion(id: string | number, payload: ExamVersionPayload) {
+    const response = await api.put<ApiResult<ExamVersion>>(ENDPOINTS.ADMIN_EXAM_VERSIONS.UPDATE_DRAFT(id), payload);
+    return unwrap(response.data, "Không thể cập nhật draft IELTS Reading.");
+  },
+
   async publishVersion(id: string | number) {
     const response = await api.post<ApiResult<ExamVersion>>(ENDPOINTS.ADMIN_EXAM_VERSIONS.PUBLISH(id));
     return unwrap(response.data, "Không thể publish đề IELTS Reading.");
   },
-};
+
+  async cloneDraftVersion(id: string | number) {
+    const response = await api.post<ApiResult<ExamVersion>>(ENDPOINTS.ADMIN_EXAM_VERSIONS.CLONE_DRAFT(id));
+    return unwrap(response.data, "Không thể clone đề IELTS Reading sang draft.");
+  },};
+

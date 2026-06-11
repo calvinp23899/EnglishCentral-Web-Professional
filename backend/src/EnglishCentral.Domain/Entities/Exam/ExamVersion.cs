@@ -23,8 +23,9 @@ namespace EnglishCentral.Domain.Entities.Exam
 
         public EExamScoringMode ScoringMode { get; set; } = EExamScoringMode.Auto;
 
+        //nhi?u rule không ?áng t?o thành c?t DB riêng => có th? custom trên FE thêm field => add vào ?ây
         public string? RuntimeConfigJson { get; set; }
-
+        //
         public string? ScoringConfigJson { get; set; }
 
         public DateTimeOffset? PublishedAt { get; set; }

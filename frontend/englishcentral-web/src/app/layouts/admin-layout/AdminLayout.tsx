@@ -35,6 +35,7 @@ type NavigationItem = {
 
 type NavigationChild =
   | {
+      children?: NavigationChild[];
       label: string;
       path: string;
       type?: "item";
@@ -88,6 +89,7 @@ const navigationItems: NavigationItem[] = [
     path: "/admin/practice-bank",
     icon: BookOpen,
     children: [
+      { label: "Dạng Bài Kiểm Tra", path: "/admin/exam-types" },
       { label: "Mẫu Đề Kiểm Tra", path: "/admin/exams" },
       { label: "IELTS", path: "/admin/practice-bank/ielts" },
       { label: "TOEIC", path: "/admin/practice-bank/toeic" },
@@ -196,6 +198,7 @@ const breadcrumbLabels: Record<string, string> = {
   "leave-requests": "Nghỉ Phép",
   permissions: "Phân Quyền",
   "practice-bank": "Ngân hàng bài tập",
+  reading: "Reading",
   profile: "Hồ sơ",
   programs: "Chương trình học",
   progress: "Tiến độ học tập",
@@ -218,6 +221,7 @@ const breadcrumbLabels: Record<string, string> = {
   toeic: "TOEIC",
   videos: "Video",
   documents: "Tài liệu",
+  "exam-types": "Dạng Bài Kiểm Tra",
   exams: "Mẫu Đề Kiểm Tra",
   exercises: "Bài tập",
 };
@@ -244,6 +248,11 @@ const getBreadcrumbItems = (pathname: string) => {
     };
   });
 };
+
+const isNavigationChildActive = (child: NavigationChild, pathname: string): boolean =>
+  child.type !== "section" &&
+  (pathname.startsWith(child.path) ||
+    child.children?.some((nestedChild) => isNavigationChildActive(nestedChild, pathname)) === true);
 
 export function AdminLayout() {
   const location = useLocation();
@@ -308,9 +317,7 @@ export function AdminLayout() {
             const Icon = item.icon;
             const isGroupActive =
               location.pathname.startsWith(item.path) ||
-              item.children?.some(
-                (child) => child.type !== "section" && location.pathname.startsWith(child.path),
-              ) === true;
+              item.children?.some((child) => isNavigationChildActive(child, location.pathname)) === true;
             const isGroupOpen = openNavGroups[item.path] ?? isGroupActive;
 
             return (
@@ -350,12 +357,80 @@ export function AdminLayout() {
 
                 {item.children && isGroupOpen && (
                   <div className={styles.subNav}>
-                    {item.children.map((child) =>
-                      child.type === "section" ? (
-                        <span className={styles.subNavSection} key={child.label}>
-                          {child.label}
-                        </span>
-                      ) : (
+                    {item.children.map((child) => {
+                      if (child.type === "section") {
+                        return (
+                          <span className={styles.subNavSection} key={child.label}>
+                            {child.label}
+                          </span>
+                        );
+                      }
+
+                      if (child.children?.length) {
+                        return (
+                          <div className={styles.subNavBranch} key={child.path}>
+                            <NavLink
+                              className={({ isActive }) =>
+                                `${styles.subNavItem} ${isActive ? styles.subActive : ""}`.trim()
+                              }
+                              to={child.path}
+                            >
+                              {child.label}
+                            </NavLink>
+                            <div className={styles.nestedSubNav}>
+                              {child.children.map((nestedChild) =>
+                                nestedChild.type === "section" ? (
+                                  <span className={styles.subNavSection} key={nestedChild.label}>
+                                    {nestedChild.label}
+                                  </span>
+                                ) : nestedChild.children?.length ? (
+                                  <div className={styles.subNavBranch} key={nestedChild.path}>
+                                    <NavLink
+                                      className={({ isActive }) =>
+                                        `${styles.subNavItem} ${isActive ? styles.subActive : ""}`.trim()
+                                      }
+                                      to={nestedChild.path}
+                                    >
+                                      {nestedChild.label}
+                                    </NavLink>
+                                    <div className={styles.nestedSubNav}>
+                                      {nestedChild.children.map((leafChild) =>
+                                        leafChild.type === "section" ? (
+                                          <span className={styles.subNavSection} key={leafChild.label}>
+                                            {leafChild.label}
+                                          </span>
+                                        ) : (
+                                          <NavLink
+                                            className={({ isActive }) =>
+                                              `${styles.subNavItem} ${isActive ? styles.subActive : ""}`.trim()
+                                            }
+                                            key={leafChild.path}
+                                            to={leafChild.path}
+                                          >
+                                            {leafChild.label}
+                                          </NavLink>
+                                        ),
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <NavLink
+                                    className={({ isActive }) =>
+                                      `${styles.subNavItem} ${isActive ? styles.subActive : ""}`.trim()
+                                    }
+                                    key={nestedChild.path}
+                                    to={nestedChild.path}
+                                  >
+                                    {nestedChild.label}
+                                  </NavLink>
+                                ),
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
                         <NavLink
                           className={({ isActive }) =>
                             `${styles.subNavItem} ${isActive ? styles.subActive : ""}`.trim()
@@ -365,8 +440,8 @@ export function AdminLayout() {
                         >
                           {child.label}
                         </NavLink>
-                      ),
-                    )}
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -19,6 +19,9 @@ import { DiscountFormPage } from "@/features/admin/discounts/pages/DiscountFormP
 import { DiscountListPage } from "@/features/admin/discounts/pages/DiscountListPage";
 import { DiscountViewPage } from "@/features/admin/discounts/pages/DiscountViewPage";
 import { EnrollmentDetailPage } from "@/features/admin/enrollments/pages/EnrollmentDetailPage";
+import { ExamTypeFormPage } from "@/features/admin/exam-types/pages/ExamTypeFormPage";
+import { ExamTypeListPage } from "@/features/admin/exam-types/pages/ExamTypeListPage";
+import { ExamTypeViewPage } from "@/features/admin/exam-types/pages/ExamTypeViewPage";
 import { ExamTemplateFormPage } from "@/features/admin/exam-templates/pages/ExamTemplateFormPage";
 import { ExamTemplateListPage } from "@/features/admin/exam-templates/pages/ExamTemplateListPage";
 import { PaymentCreatePage } from "@/features/admin/enrollments/pages/PaymentCreatePage";
@@ -238,7 +241,23 @@ export const adminRoutes = [
       },
       {
         path: "practice-bank",
-        element: <Navigate to="/admin/exams" replace />,
+        element: <Navigate to="/admin/practice-bank/ielts" replace />,
+      },
+      {
+        path: "exam-types",
+        element: <ExamTypeListPage />,
+      },
+      {
+        path: "exam-types/create",
+        element: <ExamTypeFormPage mode="create" />,
+      },
+      {
+        path: "exam-types/:recordId/view",
+        element: <ExamTypeViewPage />,
+      },
+      {
+        path: "exam-types/:recordId/edit",
+        element: <ExamTypeFormPage mode="edit" />,
       },
       {
         path: "exams",
@@ -287,6 +306,15 @@ export const adminRoutes = [
           <AdminPlaceholderPage
             title="IELTS Listening"
             description="Quản lý đề IELTS Listening theo audio sections, transcript, questions và đáp án."
+          />
+        ),
+      },
+      {
+        path: "practice-bank/ielts/speaking",
+        element: (
+          <AdminPlaceholderPage
+            title="IELTS Speaking"
+            description="Quản lý đề IELTS Speaking theo part, cue card, rubric và sample answers."
           />
         ),
       },

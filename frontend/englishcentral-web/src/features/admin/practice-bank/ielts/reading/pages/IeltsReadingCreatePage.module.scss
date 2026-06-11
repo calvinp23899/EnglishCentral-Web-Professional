@@ -188,6 +188,35 @@
   gap: 16px;
 }
 
+.runtimeSection {
+  grid-column: 1 / -1;
+  padding: 16px;
+  border: 1px solid #e5edf6;
+  border-radius: 10px;
+  background: #f8fafc;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.runtimeSectionTitle {
+  grid-column: 1 / -1;
+
+  h3 {
+    margin: 0 0 4px;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
 .formGrid label,
 .groupForm label,
 .paragraphCard label,
@@ -220,6 +249,12 @@
       border-color: #93c5fd;
       background: #ffffff;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    &:disabled {
+      background: #eef2f7;
+      color: #64748b;
+      cursor: not-allowed;
     }
   }
 
@@ -688,6 +723,7 @@
 }
 
 .helperText {
+  min-width: 0;
   padding: 10px 12px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -695,6 +731,10 @@
   color: #64748b;
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .answerSelect {
@@ -726,6 +766,10 @@
   grid-template-columns: minmax(86px, 120px) minmax(0, 1fr) 38px;
   gap: 12px;
   align-items: end;
+}
+
+.labelOnlySharedOption {
+  grid-template-columns: minmax(120px, 1fr) 38px;
 }
 
 .questionState {
@@ -826,6 +870,7 @@
 
 @media (max-width: $tablet) {
   .formGrid,
+  .runtimeSection,
   .groupForm,
   .cardHeader,
   .paragraphHeader,

@@ -133,6 +133,24 @@
   gap: 4px;
 }
 
+.subNavBranch {
+  display: grid;
+  gap: 4px;
+}
+
+.nestedSubNav {
+  margin-left: 12px;
+  padding-left: 10px;
+  border-left: 1px solid #e5edf6;
+  display: grid;
+  gap: 4px;
+
+  .subNavItem {
+    min-height: 32px;
+    font-size: 12px;
+  }
+}
+
 .subNavItem {
   min-height: 34px;
   padding: 0 10px;
