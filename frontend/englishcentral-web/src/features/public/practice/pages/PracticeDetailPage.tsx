@@ -19,6 +19,8 @@ import { RealSubmitContinueView } from "../views/RealSubmitContinueView";
 import { RealSubmitLoadingView } from "../views/RealSubmitLoadingView";
 import { RealTestListeningView } from "../views/RealTestListeningView";
 import { RealTestReadingView } from "../views/RealTestReadingView";
+import { mapExamVersionToPracticeTest } from "../api/exam-version-to-practice-test";
+import { publicPracticeApi } from "../api/public-practice-api";
 import type { AnswerMap, ExamResult } from "../types/practice-test.type";
 import styles from "./PracticeDetailPage.module.scss";
 
@@ -33,19 +35,53 @@ export function PracticeDetailPage() {
   const [practiceSubmitStep, setPracticeSubmitStep] =
     useState<PracticeSubmitStep>("exam");
   const [answers, setAnswers] = useState<AnswerMap>({});
+  const [apiTest, setApiTest] = useState<ReturnType<typeof mapExamVersionToPracticeTest> | null>(null);
+  const [isLoadingApiTest, setIsLoadingApiTest] = useState(false);
   const [openResultModal, setOpenResultModal] = useState(false);
   const navigate = useNavigate();
   const { setPublicChromeVisible } =
     useOutletContext<PublicLayoutOutletContext>();
   const questionRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const test = useMemo(
+  const mockTest = useMemo(
     () =>
       mockPracticeTests.find(
         (item) => item.category === category && item.slug === slug
       ) ?? mockPracticeTests.find((item) => item.category === category),
     [category, slug]
   );
+  const test = apiTest ?? mockTest;
+
+  useEffect(() => {
+    if (!slug || category !== "ielts") return;
+    const versionIdMatch = slug.match(/^exam-version-(\d+)$/);
+
+    if (!versionIdMatch) return;
+
+    let isMounted = true;
+    setIsLoadingApiTest(true);
+    publicPracticeApi
+      .getVersionById(versionIdMatch[1])
+      .then((version) => {
+        if (isMounted) {
+          setApiTest(mapExamVersionToPracticeTest(version));
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setApiTest(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingApiTest(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [category, slug]);
 
   const handleBackToPractice = () => {
     navigate("/practice");
@@ -130,6 +166,14 @@ export function PracticeDetailPage() {
       bandScore,
     };
   };
+
+  if (isLoadingApiTest) {
+    return (
+      <div className={styles.notFound}>
+        <h1>Đang tải bài thi...</h1>
+      </div>
+    );
+  }
 
   if (!test) {
     return (

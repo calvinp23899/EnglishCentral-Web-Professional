@@ -5,7 +5,11 @@ import { RealExamPassagePanel } from "../components/RealExamPassagePanel";
 import type { PassageAnnotation } from "../components/RealExamPassagePanel";
 import { RealExamQuestionGroupBlock } from "../components/RealExamQuestionBlock";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
-import type { AnswerMap, IELTSMockTest } from "../types/practice-test.type";
+import type {
+  AnswerMap,
+  IELTSMockTest,
+  IELTSReadingQuestion,
+} from "../types/practice-test.type";
 import styles from "../pages/PracticeDetailPage.module.scss";
 
 type RealTestReadingViewProps = {
@@ -16,6 +20,9 @@ type RealTestReadingViewProps = {
   onScrollToQuestion: (questionId: string) => void;
   onSubmit: () => void;
 };
+
+const getQuestionLabel = (question: IELTSReadingQuestion) =>
+  question.numberLabel || String(question.number);
 
 export function RealTestReadingView({
   test,
@@ -294,7 +301,7 @@ export function RealTestReadingView({
                         onScrollToQuestion(question.id);
                       }}
                     >
-                      {question.number}
+                      {getQuestionLabel(question)}
                     </button>
                   );
                 })

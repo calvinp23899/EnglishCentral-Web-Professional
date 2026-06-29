@@ -49,14 +49,17 @@ namespace EnglishCentral.Domain.Enums.Exam
 
     public enum EExamQuestionType
     {
+        #region IELTS Type
         MultipleChoiceSingle = 1,
         MultipleChoiceMultiple = 2,
         TrueFalseNotGiven = 3,
         YesNoNotGiven = 4,
         MatchingHeadingDragDrop = 5,
-        MatchingNameDragDrop = 6,
+        SummaryCompletionWithOptions = 6,
         MatchingInformationTableSelectGrid = 7,
         GapFill = 8,
+        #endregion
+
         ShortAnswer = 9,
         Essay = 10,
         SpeakingPrompt = 11,

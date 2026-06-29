@@ -359,7 +359,7 @@
 
 .cardHeader {
   display: grid;
-  grid-template-columns: minmax(90px, 180px);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   align-items: end;
 }
@@ -512,6 +512,18 @@
     grid-column: 3;
     grid-row: 1;
     align-self: end;
+  }
+}
+
+.multiAnswerOptionCard {
+  grid-template-columns: minmax(70px, 110px) minmax(220px, 1fr) minmax(150px, 170px) 38px;
+
+  > label:last-of-type {
+    grid-column: 1 / -1;
+  }
+
+  > .iconButton {
+    grid-column: 4;
   }
 }
 
@@ -735,6 +747,81 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.labelWithInfo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.infoTooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.infoIcon {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: help;
+  user-select: none;
+}
+
+.infoIcon:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.infoTooltipContent {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 30;
+  width: min(340px, 72vw);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 18px 40px rgb(15 23 42 / 18%);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -4px);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+  visibility: hidden;
+  white-space: normal;
+}
+
+.infoTooltipContent::before {
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: #0f172a;
+  content: "";
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.infoTooltip:hover .infoTooltipContent,
+.infoTooltip:focus-within .infoTooltipContent {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+  visibility: visible;
 }
 
 .answerSelect {
