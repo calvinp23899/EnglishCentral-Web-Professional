@@ -1,0 +1,83 @@
+@use "../../../styles/abstracts/variables" as *;
+
+.button {
+  border: none;
+  border-radius: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: $transition;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.82;
+    transform: none;
+  }
+
+  &:disabled::before {
+    content: "";
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: buttonSpin 0.75s linear infinite;
+  }
+}
+
+@keyframes buttonSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+/* Sizes */
+.sm {
+  height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+.md {
+  height: 52px;
+  padding: 0 24px;
+  font-size: 15px;
+}
+
+.lg {
+  height: 58px;
+  padding: 0 32px;
+  font-size: 16px;
+}
+
+/* Variants */
+.primary {
+  background: $primary-color;
+  color: white;
+
+  &:hover {
+    opacity: 0.96;
+  }
+}
+
+.secondary {
+  background: $secondary-color;
+  color: white;
+}
+
+.outline {
+  background: transparent;
+  border: 1px solid $border-color;
+  color: $text-color;
+}

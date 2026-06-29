@@ -1,0 +1,178 @@
+export const ENDPOINTS = {
+  AUTH: {
+    REGISTER: "/Auth/register",
+    LOGIN: "/Auth/login",
+    LOGOUT: "/Auth/logout",
+    REFRESH: "/Auth/refresh",
+    ME: "/Auth/me",
+  },
+
+  ADMIN_AUTH: {
+    ME_PROFILE: "/admin/Auth/me-profile",
+  },
+
+  STUDENTS: {
+    GET_ALL: "/students",
+  },
+
+  ADMIN_STUDENTS: {
+    GET_LIST: "/admin/academic/students/get-list",
+    GET_LIST_ENROLLMENT: "/admin/academic/students/get-student-list-enrollment",
+    GET_BY_ID: (id: string | number) => `/admin/academic/students/${id}/get-by-id`,
+    CREATE: "/admin/academic/students/insert",
+    UPDATE: (id: string | number) => `/admin/academic/students/${id}/update`,
+    DELETE: (id: string | number) => `/admin/academic/students/${id}/delete`,
+  },
+
+  ADMIN_TEACHERS: {
+    GET_LIST: "/admin/academic/teachers/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/academic/teachers/${id}/get-by-id`,
+    CREATE: "/admin/academic/teachers/insert",
+    UPDATE: (id: string | number) => `/admin/academic/teachers/${id}/update`,
+    DELETE: (id: string | number) => `/admin/academic/teachers/${id}/delete`,
+  },
+
+  ADMIN_COURSE_CATEGORIES: {
+    GET_LIST: "/admin/academic/course-categories/get-list",
+    GET_BY_ID: (id: string | number) =>
+      `/admin/academic/course-categories/${id}/get-by-id`,
+    CREATE: "/admin/academic/course-categories/insert",
+    UPDATE: (id: string | number) =>
+      `/admin/academic/course-categories/${id}/update`,
+    DELETE: (id: string | number) =>
+      `/admin/academic/course-categories/${id}/delete`,
+  },
+
+  ADMIN_COURSES: {
+    GET_LIST: "/admin/academic/courses/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/academic/courses/${id}/get-by-id`,
+    CREATE: "/admin/academic/courses/insert",
+    UPDATE: (id: string | number) => `/admin/academic/courses/${id}/update`,
+    DELETE: (id: string | number) => `/admin/academic/courses/${id}/delete`,
+  },
+
+  ADMIN_CLASSES: {
+    GET_LIST: "/admin/academic/classes/get-list",
+    GET_CLASS_STUDENTS: "/admin/academic/classes/get-class-students",
+    GET_BY_ID: (id: string | number) => `/admin/academic/classes/${id}/get-by-id`,
+    CREATE: "/admin/academic/classes/insert",
+    UPDATE: (id: string | number) => `/admin/academic/classes/${id}/update`,
+    DELETE: (id: string | number) => `/admin/academic/classes/${id}/delete`,
+  },
+
+  ADMIN_ROOMS: {
+    GET_LIST: "/admin/academic/rooms/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/academic/rooms/${id}/get-by-id`,
+    CREATE: "/admin/academic/rooms/insert",
+    UPDATE: (id: string | number) => `/admin/academic/rooms/${id}/update`,
+    DELETE: (id: string | number) => `/admin/academic/rooms/${id}/delete`,
+  },
+
+  ADMIN_ENROLLMENTS: {
+    GET_LIST: "/admin/academic/enrollments/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/academic/enrollments/${id}/get-by-id`,
+    CREATE: "/admin/academic/enrollments/insert",
+    CANCEL: (id: string | number) => `/admin/academic/enrollments/${id}/cancel`,
+    DELETE: (id: string | number) => `/admin/academic/enrollments/${id}/delete`,
+  },
+
+  ADMIN_PAYMENT_PLANS: {
+    GET_LIST: "/admin/billing/payment-plans/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/billing/payment-plans/${id}/get-by-id`,
+    STATEMENT_PDF: (id: string | number) => `/admin/billing/payment-plans/${id}/statement-pdf`,
+    CREATE: "/admin/billing/payment-plans/insert",
+    UPDATE: (id: string | number) => `/admin/billing/payment-plans/${id}/update`,
+    DELETE: (id: string | number) => `/admin/billing/payment-plans/${id}/delete`,
+  },
+
+  ADMIN_BILLING_POLICIES: {
+    GET_LIST: "/admin/billing/policies/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/billing/policies/${id}/get-by-id`,
+    CREATE: "/admin/billing/policies/insert",
+    UPDATE: (id: string | number) => `/admin/billing/policies/${id}/update`,
+    DELETE: (id: string | number) => `/admin/billing/policies/${id}/delete`,
+  },
+
+  ADMIN_DISCOUNTS: {
+    GET_LIST: "/admin/billing/discounts/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/billing/discounts/${id}/get-by-id`,
+    CREATE: "/admin/billing/discounts/insert",
+    UPDATE: (id: string | number) => `/admin/billing/discounts/${id}/update`,
+    DELETE: (id: string | number) => `/admin/billing/discounts/${id}/delete`,
+  },
+
+  ADMIN_INVOICES: {
+    GET_LIST: "/admin/billing/invoices/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/billing/invoices/${id}/get-by-id`,
+    UPDATE: (id: string | number) => `/admin/billing/invoices/${id}/update`,
+    DOWNLOAD_PDF: (id: string | number) => `/admin/billing/invoices/${id}/download-pdf`,
+    CREATE_FROM_PAYMENT_PLAN_ITEM: "/admin/billing/invoices/create-from-payment-plan-item",
+    BULK_CREATE_FROM_PAYMENT_PLAN_ITEMS: "/admin/billing/invoices/bulk-create-from-payment-plan-items",
+  },
+
+  ADMIN_BILLING_JOBS: {
+    GENERATE_INVOICES: "/admin/billing/jobs/generate-invoices",
+  },
+
+  ADMIN_BILLING_SUMMARIES: {
+    GET: "/admin/billing/summaries/get",
+  },
+
+  ADMIN_PAYMENTS: {
+    CREATE: "/admin/billing/payments/insert",
+  },
+
+  ADMIN_RECEIPTS: {
+    GET_LIST: "/admin/billing/receipts/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/billing/receipts/${id}/get-by-id`,
+  },
+
+  ADMIN_EXAM_TYPES: {
+    GET_LIST: "/admin/exam/types/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/exam/types/${id}/get-by-id`,
+    CREATE: "/admin/exam/types/insert",
+    UPDATE: (id: string | number) => `/admin/exam/types/${id}/update`,
+    DELETE: (id: string | number) => `/admin/exam/types/${id}/delete`,
+  },
+
+  ADMIN_EXAM_TEMPLATES: {
+    GET_LIST: "/admin/exam/templates/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/exam/templates/${id}/get-by-id`,
+    CREATE: "/admin/exam/templates/insert",
+    UPDATE: (id: string | number) => `/admin/exam/templates/${id}/update`,
+    DELETE: (id: string | number) => `/admin/exam/templates/${id}/delete`,
+  },
+
+  ADMIN_EXAM_VERSIONS: {
+    GET_LIST: "/admin/exam/versions/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/exam/versions/${id}/get-by-id`,
+    CREATE: "/admin/exam/versions/insert",
+    UPDATE_DRAFT: (id: string | number) => `/admin/exam/versions/${id}/update-draft`,
+    PUBLISH: (id: string | number) => `/admin/exam/versions/${id}/publish`,
+    CLONE_DRAFT: (id: string | number) => `/admin/exam/versions/${id}/clone-draft`,
+  },
+
+  ADMIN_ACCOUNT: {
+    GET_STUDENT_ACCOUNT: "/admin/account/get-student-account",
+    GET_TEACHER_ACCOUNT: "/admin/account/get-teacher-account",
+  },
+
+  ADMIN_METADATA: {
+    STATUS: "/admin/metadata/status",
+    GENDER: "/admin/metadata/gender-status",
+    TEACHER_STATUS: "/admin/metadata/get-teacher-status",
+    CONTRACT_TYPE: "/admin/metadata/get-contract-type",
+    SALARY_TYPE: "/admin/metadata/get-salary-type",
+    BILLING_POLICY_TYPE: "/admin/metadata/get-billing-policy-type",
+    DISCOUNT_TYPE: "/admin/metadata/get-discount-type",
+    PAYMENT_METHOD: "/admin/metadata/get-payment-method",
+    EXAM_QUESTION_TYPE: "/admin/metadata/get-exam-question-type",
+    EXAM_SKILL: "/admin/metadata/get-exam-skill",
+    EXAM_STIMULUS_TYPE: "/admin/metadata/get-exam-stimulus-type",
+    EXAM_SCORING_MODE: "/admin/metadata/get-exam-scoring-mode",
+    EXAM_FAMILY: "/admin/metadata/get-exam-family",
+    EXAM_TEMPLATE_STATUS: "/admin/metadata/get-exam-template-status",
+    EXAM_VERSION_STATUS: "/admin/metadata/get-exam-version-status",
+    ROLE: "/admin/metadata/role-dropdown",
+  },
+};

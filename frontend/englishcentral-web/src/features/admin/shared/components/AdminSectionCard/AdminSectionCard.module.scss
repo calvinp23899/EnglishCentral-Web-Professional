@@ -1,0 +1,32 @@
+.card {
+  padding: 18px 20px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  display: grid;
+  gap: 18px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  span {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: grid;
+    place-items: center;
+  }
+
+  h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 16px;
+    line-height: 1.25;
+  }
+}

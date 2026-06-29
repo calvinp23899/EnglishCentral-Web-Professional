@@ -1,0 +1,344 @@
+@use "/src/styles/abstracts/breakpoints" as *;
+
+.page {
+  display: grid;
+  gap: 22px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+
+  h1 {
+    margin: 8px 0 8px;
+    color: #0f172a;
+    font-size: clamp(28px, 3vw, 42px);
+    line-height: 1.12;
+  }
+
+  p {
+    max-width: 720px;
+    margin: 0;
+    color: #64748b;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+}
+
+.eyebrow {
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.termCard {
+  min-width: 190px;
+  padding: 14px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  svg {
+    color: #2563eb;
+  }
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 13px;
+  }
+
+  span {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 12px;
+  }
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metricCard {
+  position: relative;
+  min-height: 132px;
+  padding: 18px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  display: grid;
+  align-content: space-between;
+  gap: 18px;
+
+  span,
+  strong {
+    display: block;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  strong {
+    margin-top: 6px;
+    color: #0f172a;
+    font-size: 30px;
+    line-height: 1;
+  }
+
+  em {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    color: #16a34a;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 700;
+  }
+}
+
+.metricIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+
+.blue .metricIcon {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.emerald .metricIcon {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.amber .metricIcon {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.cyan .metricIcon {
+  background: #ecfeff;
+  color: #0891b2;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 16px;
+}
+
+.panel {
+  padding: 20px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+
+  &:first-child {
+    grid-row: span 2;
+  }
+}
+
+.panelHeader {
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  h2 {
+    margin: 0 0 5px;
+    color: #0f172a;
+    font-size: 18px;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  svg {
+    color: #2563eb;
+  }
+}
+
+.courseList,
+.classList,
+.signalList {
+  display: grid;
+  gap: 12px;
+}
+
+.courseRow {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(140px, 0.8fr) 92px;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #eef2f7;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 14px;
+  }
+
+  span {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+  }
+}
+
+.progressTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5edf6;
+  overflow: hidden;
+
+  span {
+    height: 100%;
+    margin: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #2563eb, #06b6d4);
+  }
+}
+
+.status {
+  justify-self: end;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #334155 !important;
+  font-size: 11px !important;
+  font-weight: 700;
+}
+
+.classRow {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 12px;
+  align-items: center;
+
+  time {
+    padding: 8px 0;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 13px;
+  }
+
+  span {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 12px;
+  }
+}
+
+.signalRow {
+  display: grid;
+  grid-template-columns: 10px 52px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+
+  > span {
+    width: 10px;
+    height: 34px;
+    border-radius: 999px;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 22px;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: $desktop) {
+  .metricsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel:first-child {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: $tablet) {
+  .header {
+    flex-direction: column;
+  }
+
+  .termCard {
+    width: 100%;
+  }
+
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .courseRow {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .status {
+    justify-self: start;
+  }
+}

@@ -1,0 +1,117 @@
+.schedule {
+  padding: 0 20px 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.scheduleHeader,
+.itemCard {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scheduleHeader {
+  align-items: center;
+
+  h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 16px;
+  }
+
+  p {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+}
+
+.addButton,
+.removeButton {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.itemCard {
+  padding: 14px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  align-items: flex-start;
+}
+
+.itemFields {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 90px minmax(150px, 1fr) 150px 160px 150px;
+  gap: 12px;
+}
+
+.removeButton {
+  margin-top: 25px;
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.total {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.itemsTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e5edf6;
+    color: #334155;
+    text-align: left;
+    font-size: 13px;
+  }
+
+  th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+}
+
+@media (max-width: 1100px) {
+  .itemFields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .scheduleHeader,
+  .itemCard {
+    display: grid;
+  }
+
+  .itemFields {
+    grid-template-columns: 1fr;
+  }
+
+  .removeButton {
+    margin-top: 0;
+  }
+}

@@ -1,0 +1,70 @@
+.ant-message-notice.ec-toast {
+  padding-right: 8px;
+  text-align: right;
+  transform: translateY(28px);
+}
+
+.ant-message-notice.ec-toast .ant-message-notice-content {
+  min-width: min(380px, calc(100vw - 24px));
+  max-width: min(440px, calc(100vw - 24px));
+  padding: 13px 18px;
+  border: 1px solid var(--ec-toast-border);
+  border-radius: 8px;
+  background: var(--ec-toast-bg);
+  color: var(--ec-toast-text);
+  box-shadow: 0 14px 34px var(--ec-toast-shadow);
+  text-align: left;
+}
+
+.ant-message-notice.ec-toast .ant-message-custom-content {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+.ant-message-notice.ec-toast .ant-message-custom-content svg {
+  flex: 0 0 auto;
+  color: var(--ec-toast-icon);
+}
+
+.ant-message-notice.ec-toast-success {
+  --ec-toast-bg: #f0fdf4;
+  --ec-toast-border: #bbf7d0;
+  --ec-toast-icon: #16a34a;
+  --ec-toast-shadow: rgba(22, 101, 52, 0.12);
+  --ec-toast-text: #166534;
+}
+
+.ant-message-notice.ec-toast-danger {
+  --ec-toast-bg: #fff5f5;
+  --ec-toast-border: #f7b7b7;
+  --ec-toast-icon: #ef4444;
+  --ec-toast-shadow: rgba(127, 29, 29, 0.12);
+  --ec-toast-text: #b42318;
+}
+
+.ant-message-notice.ec-toast-warning {
+  --ec-toast-bg: #fffbeb;
+  --ec-toast-border: #fde68a;
+  --ec-toast-icon: #d97706;
+  --ec-toast-shadow: rgba(146, 64, 14, 0.12);
+  --ec-toast-text: #92400e;
+}
+
+.ant-message-notice.ec-toast-info {
+  --ec-toast-bg: #eff6ff;
+  --ec-toast-border: #bfdbfe;
+  --ec-toast-icon: #2563eb;
+  --ec-toast-shadow: rgba(30, 64, 175, 0.12);
+  --ec-toast-text: #1e3a8a;
+}
+
+@media (max-width: 640px) {
+  .ant-message-notice.ec-toast {
+    padding-inline: 12px;
+  }
+}
