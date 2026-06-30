@@ -9,6 +9,7 @@ import {
   getQuestionOptions,
   textAnswerQuestionTypes,
 } from "../QuestionBlock/question-block.helpers";
+import { RichText } from "../RichText/RichText";
 import styles from "../../pages/PracticeDetailPage.module.scss";
 
 type RealExamQuestionGroupBlockProps = {
@@ -71,6 +72,9 @@ export function RealExamQuestionGroupBlock({
   );
   const isMultipleChoiceGroup = group.questions.every(
     (question) => (question.type ?? group.type) === "multiple-choice"
+  );
+  const isSummaryCompletionOptionsGroup = group.questions.every(
+    (question) => (question.type ?? group.type) === "summary-completion-options"
   );
   const isCompletionGroup = group.questions.every((question) =>
     textAnswerQuestionTypes.has(question.type ?? group.type)
@@ -143,6 +147,19 @@ export function RealExamQuestionGroupBlock({
     );
   }
 
+  if (isSummaryCompletionOptionsGroup) {
+    return (
+      <SummaryCompletionOptionsGroup
+        group={group}
+        answers={answers}
+        onAnswer={onAnswer}
+        questionRefs={questionRefs}
+        markedQuestionIds={markedQuestionIds}
+        onToggleMark={onToggleMark}
+      />
+    );
+  }
+
   if (isCompletionGroup) {
     return (
       <CompletionQuestionGroup
@@ -161,7 +178,7 @@ export function RealExamQuestionGroupBlock({
   return (
     <section className={styles.questionGroup}>
       <h3>{group.title}</h3>
-      <p className={styles.questionIntro}>{group.instruction}</p>
+      <RichText className={styles.questionIntro} html={group.instruction} />
 
       {shouldShowOptionBank && (
         <div className={styles.optionBank}>
@@ -239,7 +256,7 @@ function MatchingHeadingsGroup({
   return (
     <section className={styles.questionGroup}>
       <h3>{group.title}</h3>
-      <p className={styles.questionIntro}>{group.instruction}</p>
+      <RichText className={styles.questionIntro} html={group.instruction} />
 
       <div
         className={`${styles.matchingHeadingsLayout} ${
@@ -348,10 +365,10 @@ function MatchingInformationGroup({
   return (
     <section className={styles.questionGroup}>
       <h3>{group.title}</h3>
-      <p className={styles.questionIntro}>{group.instruction}</p>
+      <RichText className={styles.questionIntro} html={group.instruction} />
 
       <div className={styles.matchingInfoTableWrap}>
-        <table className={styles.matchingInfoTable}>
+        <table className={`${styles.matchingInfoTable} ${styles.realMatchingInfoTable}`}>
           <thead>
             <tr>
               <th />
@@ -445,7 +462,7 @@ function MatchingFeaturesGroup({
   return (
     <section className={styles.questionGroup}>
       <h3>{group.title}</h3>
-      <p className={styles.questionIntro}>{group.instruction}</p>
+      <RichText className={styles.questionIntro} html={group.instruction} />
 
       <div className={styles.matchingFeaturesRows}>
         {group.questions.map((question) => {
@@ -530,8 +547,6 @@ function MultipleChoiceGroup({
   onToggleMark,
   realMode,
 }: MultipleChoiceGroupProps) {
-  const options = group.options ?? [];
-
   const toggleAnswer = (questionId: string, optionLabel: string) => {
     const currentAnswers = answers[questionId]?.split(",").filter(Boolean) ?? [];
     const nextAnswers = currentAnswers.includes(optionLabel)
@@ -544,9 +559,10 @@ function MultipleChoiceGroup({
   return (
     <section className={styles.questionGroup}>
       <h3>{group.title}</h3>
-      <p className={styles.questionIntro}>{group.instruction}</p>
+      <RichText className={styles.questionIntro} html={group.instruction} />
 
       {group.questions.map((question) => {
+        const options = question.options?.length ? question.options : group.options ?? [];
         const selectedAnswers = answers[question.id]?.split(",").filter(Boolean) ?? [];
 
         return (
@@ -557,8 +573,8 @@ function MultipleChoiceGroup({
             }}
             className={realMode ? styles.realQuestionItem : styles.practiceQuestionItem}
           >
-            <div className={styles.questionTitle}>
-              <span>{question.number}</span>
+            <div className={styles.multipleChoiceQuestionTitle}>
+              <strong>{getQuestionLabel(question)}</strong>
               <p>{question.text}</p>
               <MarkQuestionButton
                 questionId={question.id}
@@ -597,6 +613,165 @@ type CompletionQuestionGroupProps = {
   realMode?: boolean;
 };
 
+type SummaryCompletionOptionsGroupProps = {
+  group: IELTSReadingQuestionGroup;
+  answers: AnswerMap;
+  onAnswer: (questionId: string, value: string) => void;
+  questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
+  markedQuestionIds: Record<string, boolean>;
+  onToggleMark: (questionId: string) => void;
+};
+
+function SummaryCompletionOptionsGroup({
+  group,
+  answers,
+  onAnswer,
+  questionRefs,
+  markedQuestionIds,
+  onToggleMark,
+}: SummaryCompletionOptionsGroupProps) {
+  const options = getQuestionOptions(group.questions[0], group) ?? [];
+  const firstQuestionText = group.questions[0]?.text ?? "";
+  const hasRealSummaryTemplate =
+    firstQuestionText &&
+    !/^summary text with \{q?\d+\} blank\.?$/i.test(firstQuestionText.trim()) &&
+    group.questions.some((question) => firstQuestionText.includes(`{Q${question.number}}`));
+  const promptTemplate =
+    hasRealSummaryTemplate
+      ? firstQuestionText
+      : group.questions.map((question) => `${question.text || `{Q${question.number}}`}`).join(" ");
+  const questionByNumber = new Map(group.questions.map((question) => [question.number, question]));
+  const selectedLabels = new Set(Object.values(answers).filter(Boolean));
+  const renderTextWithLineBreaks = (text: string) =>
+    text.split("\n").map((line, index) => (
+      <span key={`${group.id}-${index}-${line.slice(0, 12)}`}>
+        {index > 0 && <br />}
+        {line}
+      </span>
+    ));
+  const templateParts = promptTemplate.split(/(\{q?\d+\}|\{blank\})/i);
+  const explicitQuestionNumbers = new Set(
+    templateParts
+      .map((part) => part.match(/\{q?(\d+)\}/i)?.[1])
+      .filter(Boolean)
+      .map(Number),
+  );
+  const sequentialBlankQuestions = group.questions.filter(
+    (question) => !explicitQuestionNumbers.has(question.number)
+  );
+  let blankIndex = 0;
+
+  const handleDrop = (event: React.DragEvent<HTMLElement>, questionId: string) => {
+    event.preventDefault();
+    const optionLabel = event.dataTransfer.getData("text/plain");
+
+    if (optionLabel) {
+      onAnswer(questionId, optionLabel);
+    }
+  };
+
+  return (
+    <section className={styles.questionGroup}>
+      <h3>{group.title}</h3>
+      <RichText className={styles.questionIntro} html={group.instruction} />
+
+      {group.heading && <h4 className={styles.completionHeading}>{group.heading}</h4>}
+
+      <div className={styles.summaryCompletionText}>
+        {templateParts.map((part, index) => {
+          const match = part.match(/\{q?(\d+)\}/i);
+          const isSequentialBlank = /\{blank\}/i.test(part);
+
+          if (!match && !isSequentialBlank) {
+            return (
+              <span key={`${group.id}-text-${index}`}>
+                {renderTextWithLineBreaks(part)}
+              </span>
+            );
+          }
+
+          const question = match
+            ? questionByNumber.get(Number(match[1]))
+            : sequentialBlankQuestions[blankIndex++];
+
+          if (!question) {
+            return <span key={`${group.id}-missing-${index}`}>{part}</span>;
+          }
+
+          const selectedOption = options.find((option) => option.label === answers[question.id]);
+
+          return (
+            <span
+              key={question.id}
+              ref={(element) => {
+                questionRefs.current[question.id] = element;
+              }}
+              className={`${styles.summaryDropBlank} ${
+                selectedOption ? styles.summaryDropBlankFilled : ""
+              }`}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => handleDrop(event, question.id)}
+            >
+              <strong>{question.number}</strong>
+              {selectedOption && (
+                <>
+                  <span>{selectedOption.content}</span>
+                  <button type="button" onClick={() => onAnswer(question.id, "")}>
+                    x
+                  </button>
+                </>
+              )}
+              {!selectedOption && <span aria-hidden="true" />}
+            </span>
+          );
+        })}
+      </div>
+
+      <div className={styles.summaryOptionBank}>
+        <strong>List of options</strong>
+        <div>
+          {options.map((option) => {
+            const isUsed = selectedLabels.has(option.label);
+
+            return (
+              <button
+                key={option.label}
+                type="button"
+                draggable={!isUsed}
+                disabled={isUsed}
+                onDragStart={(event) => event.dataTransfer.setData("text/plain", option.label)}
+                onClick={() => {
+                  const firstEmptyQuestion = group.questions.find((question) => !answers[question.id]);
+
+                  if (firstEmptyQuestion) {
+                    onAnswer(firstEmptyQuestion.id, option.label);
+                  }
+                }}
+              >
+                {option.content}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className={styles.summaryMarkList}>
+        {group.questions.map((question) => (
+          <MarkQuestionButton
+            key={question.id}
+            questionId={question.id}
+            isMarked={Boolean(markedQuestionIds[question.id])}
+            onToggleMark={onToggleMark}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const getQuestionLabel = (question: IELTSReadingQuestion) =>
+  question.numberLabel || String(question.number);
+
 function CompletionQuestionGroup({
   passage,
   group,
@@ -614,10 +789,12 @@ function CompletionQuestionGroup({
   return (
     <section className={styles.questionGroup}>
       <h3>{group.title}</h3>
-      <p className={styles.questionIntro}>{group.instruction}</p>
+      <RichText className={styles.questionIntro} html={group.instruction} />
 
       <div className={isTableLike ? styles.completionPanel : styles.completionList}>
-        {isTableLike && <h4>{passage.title}</h4>}
+        {(group.heading || isTableLike) && (
+          <h4 className={styles.completionHeading}>{group.heading || passage.title}</h4>
+        )}
 
         {group.questions.map((question) => (
           <InlineCompletionQuestion
@@ -657,7 +834,14 @@ function InlineCompletionQuestion({
   onToggleMark,
   realMode,
 }: InlineCompletionQuestionProps) {
-  const parts = question.text.split(/_{2,}/);
+  const parts = question.text.split(/(?:_{2,}|\{blank\}|\{q?\d+\})/i);
+  const renderTextWithLineBreaks = (text: string) =>
+    text.split("\n").map((line, index) => (
+      <span key={`${question.id}-${index}-${line.slice(0, 12)}`}>
+        {index > 0 && <br />}
+        {line}
+      </span>
+    ));
   const input = (
     <input
       type="text"
@@ -676,14 +860,17 @@ function InlineCompletionQuestion({
     >
       <span className={styles.inlineCompletionText}>
         <span>
-          {parts[0]}
+          {question.sectionTitle && (
+            <strong className={styles.inlineCompletionSectionTitle}>{question.sectionTitle}</strong>
+          )}
+          {renderTextWithLineBreaks(parts[0])}
           {parts.length > 1 ? (
             <>
               <label className={styles.inlineBlank}>
                 <strong>{question.number}</strong>
                 {input}
               </label>
-              {parts.slice(1).join("")}
+              {renderTextWithLineBreaks(parts.slice(1).join(""))}
             </>
           ) : (
             <label className={styles.inlineBlank}>
@@ -750,7 +937,7 @@ function QuestionBlock({
       className={realMode ? styles.realQuestionItem : styles.practiceQuestionItem}
     >
       <div className={styles.questionTitle}>
-        <span>{question.number}</span>
+        <span>{getQuestionLabel(question)}</span>
         <p>{question.text}</p>
         <MarkQuestionButton
           questionId={question.id}

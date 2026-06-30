@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 
@@ -35,7 +35,7 @@ const formats = [
 ];
 
 export type RichTextEditorProps = {
-  label?: string;
+  label?: ReactNode;
   minHeight?: number;
   onChange: (value: string) => void;
   value: string;

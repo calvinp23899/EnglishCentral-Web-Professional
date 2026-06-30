@@ -1,19 +1,22 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Container } from "@/components/ui";
 import { PracticeCard } from "../components/PracticeCard/PracticeCard";
 import {
-  mockPractices,
   practiceMenus,
+  type PublicPractice,
   type PracticeCategory,
   type PracticeSkill,
 } from "../data/mockPractice";
+import { publicPracticeApi } from "../api/public-practice-api";
 
 import styles from "./PracticePage.module.scss";
 const PAGE_SIZE = 4;
 
 export function PracticePage() {
+  const [practices, setPractices] = useState<PublicPractice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] =
-    useState<PracticeCategory | "all">("all");
+    useState<PracticeCategory | "all">("ielts");
 
   const [selectedSkill, setSelectedSkill] =
     useState<PracticeSkill | "all">("all");
@@ -21,10 +24,37 @@ export function PracticePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    setIsLoading(true);
+    publicPracticeApi
+      .getPublishedIeltsPractices()
+      .then((items) => {
+        if (isMounted) {
+          setPractices(items);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setPractices([]);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const filteredPractices = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
 
-    return mockPractices.filter((item) => {
+    return practices.filter((item) => {
       const matchCategory =
         selectedCategory === "all" || item.category === selectedCategory;
 
@@ -39,7 +69,7 @@ export function PracticePage() {
 
       return matchCategory && matchSkill && matchSearch;
     });
-  }, [selectedCategory, selectedSkill, searchTerm]);
+  }, [practices, selectedCategory, selectedSkill, searchTerm]);
 
   const totalPages = Math.ceil(filteredPractices.length / PAGE_SIZE);
 
@@ -126,7 +156,12 @@ export function PracticePage() {
                 />
               </div>
 
-              {paginatedPractices.length > 0 ? (
+              {isLoading ? (
+                <div className={styles.emptyState}>
+                  <h3>Đang tải nội dung IELTS...</h3>
+                  <p>Hệ thống đang lấy các bài IELTS đã được publish.</p>
+                </div>
+              ) : paginatedPractices.length > 0 ? (
                 <div className={styles.practiceGrid}>
                   {paginatedPractices.map((item) => (
                     <PracticeCard practice={item} key={item.id} />

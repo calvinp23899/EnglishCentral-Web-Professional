@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ChevronDown, FileText, ListChecks } from "lucide-react";
+import { ArrowLeft, ChevronDown, FileText, ListChecks, LoaderCircle, Send } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
 import { toastDanger, toastSuccess } from "@/components/ui";
@@ -63,6 +63,9 @@ export function IeltsReadingViewPage() {
     () => passages.reduce((total, passage) => total + passage.questionGroups.reduce((sum, group) => sum + group.questions.length, 0), 0),
     [passages],
   );
+  const isPublishedVersion = version
+    ? String(version.status).toLowerCase() === "published" || String(version.status) === "2"
+    : false;
 
   const publishVersion = async () => {
     if (!version || isPublishing) return;
@@ -101,8 +104,7 @@ export function IeltsReadingViewPage() {
 
     return paragraphs.map((paragraph) => (
       <article className={styles.paragraphCard} key={paragraph.id}>
-        <span>{paragraph.label}</span>
-        <div>{renderContent(paragraph.content)}</div>
+        <div className={styles.paragraphContent}>{renderContent(paragraph.content)}</div>
       </article>
     ));
   };
@@ -118,16 +120,35 @@ export function IeltsReadingViewPage() {
           <ArrowLeft aria-hidden="true" size={16} />
           Quay lại danh sách
         </Link>
-        <div>
-          <span>READING VIEW</span>
+        <div className={styles.headerMain}>
+          <div>
+            <span className={styles.eyebrow}>READING VIEW</span>
           <h1>{template?.name ?? "IELTS Reading"}</h1>
           <p>{template?.description ?? version?.description ?? "Preview passage, question groups và answer key."}</p>
         </div>
-        {version && (
-          <button disabled={isPublishing || String(version.status).toLowerCase() === "published" || String(version.status) === "2"} type="button" onClick={() => void publishVersion()}>
+          {version && (
+          <div className={styles.headerActions}>
+            <span className={isPublishedVersion ? styles.statusPublished : styles.statusDraft}>
+              {isPublishedVersion ? "Published" : "Draft"}
+            </span>
+          {!isPublishedVersion && (
+          <button
+            className={styles.publishButton}
+            disabled={isPublishing}
+            type="button"
+            onClick={() => void publishVersion()}
+          >
+            {isPublishing ? (
+              <LoaderCircle aria-hidden="true" size={18} />
+            ) : (
+              <Send aria-hidden="true" size={18} />
+            )}
             {isPublishing ? "Đang publish..." : "Publish"}
           </button>
+          )}
+          </div>
         )}
+        </div>
       </section>
 
       <section className={styles.metaPanel}>

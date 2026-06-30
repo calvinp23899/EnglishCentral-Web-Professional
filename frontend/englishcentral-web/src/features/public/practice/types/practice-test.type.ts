@@ -11,6 +11,7 @@ export type IELTSReadingQuestionType =
   | "matching-headings"
   | "matching-features"
   | "matching-sentence-ending"
+  | "summary-completion-options"
   | "sentence-completion"
   | "notes-completion"
   | "table-completion"
@@ -27,8 +28,10 @@ export type IELTSReadingOption = {
 export type IELTSReadingQuestion = {
   id: string;
   number: number;
+  numberLabel?: string;
   type?: IELTSReadingQuestionType;
   text: string;
+  sectionTitle?: string;
   instruction?: string;
   options?: IELTSReadingOption[];
   correctAnswer: string;
@@ -41,6 +44,7 @@ export type IELTSReadingQuestionGroup = {
   id: string;
   title: string;
   type: IELTSReadingQuestionType;
+  heading?: string;
   instruction: string;
   options?: IELTSReadingOption[];
   questions: IELTSReadingQuestion[];

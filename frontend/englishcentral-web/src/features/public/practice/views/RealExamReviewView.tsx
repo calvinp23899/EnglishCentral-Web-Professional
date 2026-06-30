@@ -5,6 +5,8 @@ import {
   getPassageRefIndex,
   getQuestionOptions,
 } from "../components/QuestionBlock";
+import { RichText } from "../components/RichText/RichText";
+import { shouldShowPassageTitle } from "../utils/passage-title";
 import type {
   AnswerMap,
   ExamResult,
@@ -168,12 +170,12 @@ export function RealExamReviewView({
         >
           <div className={styles.reviewSectionTitle}>
             <span>Part {activePassage.part}</span>
-            <h2>{activePassage.title}</h2>
+            {shouldShowPassageTitle(activePassage) && <h2>{activePassage.title}</h2>}
           </div>
 
           <div className={styles.passageText}>
             {activePassage.paragraphs.map((paragraph, index) => (
-              <p
+              <div
                 key={index}
                 ref={(element) => {
                   passageRefs.current[index + 1] = element;
@@ -184,13 +186,8 @@ export function RealExamReviewView({
                     : ""
                 }
               >
-                {paragraph.label && (
-                  <strong className={styles.paragraphLabel}>
-                    {paragraph.label}.{" "}
-                  </strong>
-                )}
-                {paragraph.content}
-              </p>
+                <RichText className={styles.passageParagraphText} html={paragraph.content} />
+              </div>
             ))}
           </div>
         </section>

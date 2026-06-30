@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
 import { getPassageQuestions } from "../components/QuestionBlock";
 import { PracticeQuestionGroupBlock } from "../components/PracticeQuestionBlock";
+import { RichText } from "../components/RichText/RichText";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
 import type {
   AnswerMap,
   IELTSMockTest,
   IELTSReadingPassage,
+  IELTSReadingQuestion,
 } from "../types/practice-test.type";
+import { shouldShowPassageTitle } from "../utils/passage-title";
 import styles from "../pages/PracticeDetailPage.module.scss";
 
 type PracticeReadingViewProps = {
@@ -17,6 +20,9 @@ type PracticeReadingViewProps = {
   onScrollToQuestion: (questionId: string) => void;
   onSubmit: () => void;
 };
+
+const getQuestionLabel = (question: IELTSReadingQuestion) =>
+  question.numberLabel || String(question.number);
 
 export function PracticeReadingView({
   test,
@@ -95,18 +101,15 @@ export function PracticeReadingView({
             className={styles.practicePassage}
             style={{ flexBasis: `${passageWidth}%` }}
           >
-            <h2>{activePassage.title}</h2>
+            {shouldShowPassageTitle(activePassage) && <h2>{activePassage.title}</h2>}
 
             <div className={styles.passageText}>
               {activePassage.paragraphs.map((paragraph) => (
-                <p key={paragraph.id}>
-                  {paragraph.label && (
-                    <strong className={styles.paragraphLabel}>
-                      {paragraph.label}.{" "}
-                    </strong>
-                  )}
-                  {paragraph.content}
-                </p>
+                <RichText
+                  key={paragraph.id}
+                  className={styles.passageParagraphText}
+                  html={paragraph.content}
+                />
               ))}
             </div>
           </section>
@@ -160,7 +163,7 @@ export function PracticeReadingView({
                       window.setTimeout(() => onScrollToQuestion(question.id), 0);
                     }}
                   >
-                    {question.number}
+                    {getQuestionLabel(question)}
                   </button>
                 );
               })}

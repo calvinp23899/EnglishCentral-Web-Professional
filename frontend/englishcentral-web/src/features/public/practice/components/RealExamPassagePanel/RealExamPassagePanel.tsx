@@ -6,6 +6,8 @@ import type {
   IELTSReadingPassage,
   IELTSReadingQuestion,
 } from "../../types/practice-test.type";
+import { shouldShowPassageTitle } from "../../utils/passage-title";
+import { RichText } from "../RichText/RichText";
 import styles from "../../pages/PracticeDetailPage.module.scss";
 
 type RealExamPassagePanelProps = {
@@ -54,6 +56,21 @@ function getTextOffset(container: HTMLElement, node: Node, offset: number) {
   range.setEnd(node, offset);
 
   return range.toString().length;
+}
+
+function htmlToPlainText(value: string) {
+  if (typeof document === "undefined") {
+    return value
+      .replace(/<\s*br\s*\/?>/gi, "\n")
+      .replace(/<\/\s*(p|div|h[1-6]|li|blockquote)\s*>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+  }
+
+  const template = document.createElement("template");
+  template.innerHTML = value;
+  return template.content.textContent?.replace(/\u00a0/g, " ").trim() ?? "";
 }
 
 function buildHeadingTargetMap(passage: IELTSReadingPassage) {
@@ -348,7 +365,7 @@ export function RealExamPassagePanel({
 
   return (
     <>
-      <h2>{passage.title}</h2>
+      {shouldShowPassageTitle(passage) && <h2>{passage.title}</h2>}
 
       <div
         ref={passageTextRef}
@@ -396,16 +413,17 @@ export function RealExamPassagePanel({
                 </div>
               )}
 
-              <p>
-                {paragraph.label && (
-                  <strong className={styles.paragraphLabel}>
-                    {paragraph.label}.{" "}
-                  </strong>
+              <div data-passage-content-id={paragraph.id}>
+                {annotations.some(
+                  (annotation) =>
+                    annotation.passageId === passage.id &&
+                    annotation.paragraphId === paragraph.id
+                ) ? (
+                  renderAnnotatedContent(paragraph.id, htmlToPlainText(paragraph.content))
+                ) : (
+                  <RichText className={styles.passageParagraphText} html={paragraph.content} />
                 )}
-                <span data-passage-content-id={paragraph.id}>
-                  {renderAnnotatedContent(paragraph.id, paragraph.content)}
-                </span>
-              </p>
+              </div>
             </div>
           );
         })}
