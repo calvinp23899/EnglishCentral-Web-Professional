@@ -1,4 +1,4 @@
-using EnglishCentral.Application.Features.Exam.DTOs;
+﻿using EnglishCentral.Application.Features.Exam.DTOs;
 using EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CreateExamVersion;
 using EnglishCentral.Domain.Enums.Exam;
 using EnglishCentral.Shared.Results;
@@ -8,8 +8,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.UpdateE
 {
     public record UpdateExamVersionDraftCommand(
         long Id,
-        string VersionCode,
-        int VersionNumber,
+        string? Slug,
         string Name,
         string? Description,
         int? DurationMinutes,

@@ -1,4 +1,5 @@
 using EnglishCentral.Application.Features.Exam.DTOs;
+using EnglishCentral.Application.Features.Exam.ExamVersions.Services;
 using EnglishCentral.Application.Interfaces.Exam;
 using EnglishCentral.Domain.Entities.Exam;
 using EnglishCentral.Domain.Enums.Exam;
@@ -32,18 +33,21 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CloneEx
             if (source.Status != EExamTemplateStatus.Published && source.Status != EExamTemplateStatus.Archived)
                 return Result<ExamVersionResponse>.Failure("Only published or archived versions can be cloned.", 400);
 
-            var versionCode = request.VersionCode.Trim().ToUpperInvariant();
-            if (await _repository.ExistsAsync(x => x.ExamTemplateId == source.ExamTemplateId && x.VersionCode == versionCode, ct))
-                return Result<ExamVersionResponse>.Failure("Exam version code already exists in this template.", 409);
-
-            if (await _repository.ExistsAsync(x => x.ExamTemplateId == source.ExamTemplateId && x.VersionNumber == request.VersionNumber, ct))
-                return Result<ExamVersionResponse>.Failure("Exam version number already exists in this template.", 409);
+            var versionNumber = await ExamVersionIdentityHelper.GetNextVersionNumberAsync(_repository, source.ExamTemplateId, ct);
+            var slug = await ExamVersionIdentityHelper.CreateUniqueSlugAsync(
+                _repository,
+                source.ExamTemplateId,
+                request.Slug,
+                request.Name,
+                versionNumber,
+                excludeVersionId: null,
+                ct);
 
             var clone = new ExamVersion
             {
                 ExamTemplateId = source.ExamTemplateId,
-                VersionCode = versionCode,
-                VersionNumber = request.VersionNumber,
+                Slug = slug,
+                VersionNumber = versionNumber,
                 Name = request.Name.Trim(),
                 Description = request.Description?.Trim() ?? source.Description,
                 Status = EExamTemplateStatus.Draft,

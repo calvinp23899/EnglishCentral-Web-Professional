@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Columns3, CopyPlus, Edit3, Eye, Funnel, Plus, Search, Send, Sparkles } from "lucide-react";
+import { Columns3, CopyPlus, Edit3, Eye, Funnel, Plus, RefreshCw, Search, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Pagination, toastDanger, toastSuccess } from "@/components/ui";
@@ -46,6 +46,72 @@ const getStatusClassName = (status: string | number) => {
   return crudStyles.statusBadge;
 };
 
+const formatDateTime = (value?: string | null) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
+
+const getCreatedBy = (record: ExamVersion) =>
+  record.createdByName || record.createdByUserName || record.createdBy || "-";
+
+const getUpdatedBy = (record: ExamVersion) =>
+  record.updatedByName || record.updatedByUserName || record.updatedBy || "-";
+
+type ColumnKey =
+  | "name"
+  | "versionNumber"
+  | "status"
+  | "createdAt"
+  | "createdBy"
+  | "updatedAt"
+  | "updatedBy"
+  | "actions";
+
+const columns: ColumnKey[] = [
+  "name",
+  "versionNumber",
+  "status",
+  "createdAt",
+  "createdBy",
+  "updatedAt",
+  "updatedBy",
+  "actions",
+];
+
+const toggleableColumns: ColumnKey[] = columns.filter((column) => column !== "actions");
+
+const columnLabels: Record<ColumnKey, string> = {
+  name: "Name",
+  versionNumber: "Version number",
+  status: "Status",
+  createdAt: "Created date",
+  createdBy: "Created by",
+  updatedAt: "Updated date",
+  updatedBy: "Updated by",
+  actions: "Action",
+};
+
+const initialVisibleColumns: Record<ColumnKey, boolean> = {
+  name: true,
+  versionNumber: true,
+  status: true,
+  createdAt: false,
+  createdBy: false,
+  updatedAt: false,
+  updatedBy: false,
+  actions: true,
+};
+
 export function IeltsReadingListPage() {
   const navigate = useNavigate();
   const [template, setTemplate] = useState<ExamTemplate | null>(null);
@@ -57,6 +123,10 @@ export function IeltsReadingListPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [publishingId, setPublishingId] = useState<number | null>(null);
   const [cloningId, setCloningId] = useState<number | null>(null);
+  const [isColumnsMenuOpen, setIsColumnsMenuOpen] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState(initialVisibleColumns);
+
+  const visibleColumnCount = Math.max(1, columns.filter((column) => visibleColumns[column]).length);
 
   const emptyMessage = useMemo(() => {
     if (isLoading) return "Đang tải danh sách IELTS Reading...";
@@ -104,8 +174,8 @@ export function IeltsReadingListPage() {
     return () => window.clearTimeout(timeoutId);
   }, [pageNumber, pageSize, searchTerm]);
 
-  const publishVersion = async (record: ExamVersion) => {
-    if (publishingId || !isDraft(record.status)) return;
+  const updateVersionStatus = async (record: ExamVersion) => {
+    if (publishingId || (!isDraft(record.status) && !isPublished(record.status))) return;
     setPublishingId(record.id);
     try {
       await adminIeltsReadingApi.publishVersion(record.id);
@@ -132,7 +202,8 @@ export function IeltsReadingListPage() {
     }
   };
 
-  const isCurrentVersion = (record: ExamVersion) => template?.currentVersionId === record.id;
+  const getStatusActionLabel = (record: ExamVersion) =>
+    isPublished(record.status) ? "Draft" : "Published";
 
   return (
     <div className={listStyles.page}>
@@ -155,7 +226,7 @@ export function IeltsReadingListPage() {
         <label className={listStyles.searchBox}>
           <Search aria-hidden="true" size={18} />
           <input
-            placeholder="Tìm theo version code hoặc tên đề"
+            placeholder="Tìm theo version number hoặc tên đề"
             value={searchTerm}
             onChange={(event) => {
               setSearchTerm(event.target.value);
@@ -169,10 +240,31 @@ export function IeltsReadingListPage() {
             <Funnel aria-hidden="true" size={18} />
             Filter
           </button>
-          <button className={teacherStyles.columnsButton} type="button">
-            <Columns3 aria-hidden="true" size={18} />
-            Columns
-          </button>
+          <div className={teacherStyles.menuWrap}>
+            <button
+              aria-expanded={isColumnsMenuOpen}
+              className={teacherStyles.columnsButton}
+              type="button"
+              onClick={() => setIsColumnsMenuOpen((current) => !current)}
+            >
+              <Columns3 aria-hidden="true" size={18} />
+              Columns
+            </button>
+            {isColumnsMenuOpen && (
+              <div className={`${teacherStyles.dropdownMenu} ${teacherStyles.columnsMenu}`}>
+                {toggleableColumns.map((column) => (
+                  <label key={column}>
+                    <input
+                      checked={visibleColumns[column]}
+                      type="checkbox"
+                      onChange={() => setVisibleColumns((current) => ({ ...current, [column]: !current[column] }))}
+                    />
+                    {columnLabels[column]}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -181,35 +273,30 @@ export function IeltsReadingListPage() {
           <table className={listStyles.table}>
             <thead>
               <tr>
-                <th>VersionCode</th>
-                <th>Status</th>
-                <th>Current</th>
-                <th>Action</th>
+                {columns.filter((column) => visibleColumns[column]).map((column) => (
+                  <th key={column}>{columnLabels[column]}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {records.map((record) => (
                 <tr key={record.id}>
-                  <td>
-                    <strong>{record.versionCode || "-"}</strong>
-                  </td>
-                  <td>
+                  {visibleColumns.name && <td>
+                    <strong>{record.name || "-"}</strong>
+                  </td>}
+                  {visibleColumns.versionNumber && <td>
+                    <strong>{record.versionNumber ? `v${record.versionNumber}` : "-"}</strong>
+                  </td>}
+                  {visibleColumns.status && <td>
                     <span className={getStatusClassName(record.status)}>
                       {String(record.status)}
                     </span>
-                  </td>
-                  <td>
-                    <span
-                      className={
-                        isCurrentVersion(record)
-                          ? `${crudStyles.statusBadge} ${crudStyles.statusBadgePublished}`
-                          : crudStyles.statusBadge
-                      }
-                    >
-                      {isCurrentVersion(record) ? "Yes" : "No"}
-                    </span>
-                  </td>
-                  <td>
+                  </td>}
+                  {visibleColumns.createdAt && <td>{formatDateTime(record.createdAt)}</td>}
+                  {visibleColumns.createdBy && <td>{getCreatedBy(record)}</td>}
+                  {visibleColumns.updatedAt && <td>{formatDateTime(record.updatedAt)}</td>}
+                  {visibleColumns.updatedBy && <td>{getUpdatedBy(record)}</td>}
+                  {visibleColumns.actions && <td>
                     <div className={listStyles.actions}>
                       {isDraft(record.status) ? (
                         <>
@@ -221,13 +308,13 @@ export function IeltsReadingListPage() {
                             <Edit3 aria-hidden="true" size={16} />
                           </Link>
                           <button
-                            aria-label="Publish"
+                            aria-label={getStatusActionLabel(record)}
                             disabled={publishingId === record.id}
-                            title="Publish"
+                            title={getStatusActionLabel(record)}
                             type="button"
-                            onClick={() => void publishVersion(record)}
+                            onClick={() => void updateVersionStatus(record)}
                           >
-                            <Send aria-hidden="true" size={16} />
+                            <RefreshCw aria-hidden="true" size={16} />
                           </button>
                           <Link
                             aria-label="Preview"
@@ -247,13 +334,24 @@ export function IeltsReadingListPage() {
                             <Eye aria-hidden="true" size={16} />
                           </Link>
                           {!isArchived(record.status) && (
-                            <Link
-                              aria-label="Preview"
-                              title="Preview"
-                              to={`/admin/practice-bank/ielts/reading/${record.id}/view`}
-                            >
-                              <Sparkles aria-hidden="true" size={16} />
-                            </Link>
+                            <>
+                              <button
+                                aria-label={getStatusActionLabel(record)}
+                                disabled={publishingId === record.id}
+                                title={getStatusActionLabel(record)}
+                                type="button"
+                                onClick={() => void updateVersionStatus(record)}
+                              >
+                                <RefreshCw aria-hidden="true" size={16} />
+                              </button>
+                              <Link
+                                aria-label="Preview"
+                                title="Preview"
+                                to={`/admin/practice-bank/ielts/reading/${record.id}/view`}
+                              >
+                                <Sparkles aria-hidden="true" size={16} />
+                              </Link>
+                            </>
                           )}
                           <button
                             aria-label="Clone to Draft"
@@ -267,13 +365,13 @@ export function IeltsReadingListPage() {
                         </>
                       )}
                     </div>
-                  </td>
+                  </td>}
                 </tr>
               ))}
 
               {(isLoading || records.length === 0) && (
                 <tr>
-                  <td colSpan={4}>
+                  <td colSpan={visibleColumnCount}>
                     <div className={listStyles.emptyState}>
                       <p>{emptyMessage}</p>
                       {!isLoading && !template && (

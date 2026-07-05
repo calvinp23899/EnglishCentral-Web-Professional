@@ -63,9 +63,9 @@ export function PracticePage() {
 
       const matchSearch =
         !keyword ||
-        item.title.toLowerCase().includes(keyword) ||
-        item.description.toLowerCase().includes(keyword) ||
-        item.level.toLowerCase().includes(keyword);
+        (item.title ?? "").toLowerCase().includes(keyword) ||
+        (item.description ?? "").toLowerCase().includes(keyword) ||
+        (item.level ?? "").toLowerCase().includes(keyword);
 
       return matchCategory && matchSkill && matchSearch;
     });

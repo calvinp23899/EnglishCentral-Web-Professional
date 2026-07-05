@@ -27,7 +27,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Queries.GetExamV
             if (!string.IsNullOrWhiteSpace(request.Keyword))
             {
                 var keyword = request.Keyword.Trim().ToLower();
-                query = query.Where(x => x.VersionCode.ToLower().Contains(keyword) || x.Name.ToLower().Contains(keyword));
+                query = query.Where(x => x.Slug.ToLower().Contains(keyword) || x.Name.ToLower().Contains(keyword));
             }
 
             query = request.IsDescending

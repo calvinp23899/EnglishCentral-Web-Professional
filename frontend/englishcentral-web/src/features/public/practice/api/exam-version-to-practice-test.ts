@@ -154,6 +154,10 @@ const getCorrectAnswer = (question: ExamVersionQuestion) => {
 };
 
 export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTSMockTest => {
+  const versionIdentity =
+    version.slug?.trim() ||
+    version.versionCode?.trim() ||
+    `exam-version-${version.id}`;
   const readingSection =
     version.sections?.find((section) => {
       const skill = normalizeType(section.skill);
@@ -277,8 +281,8 @@ export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTS
         };
       }) ?? [],
     skill: "reading",
-    slug: version.versionCode.toLowerCase(),
-    sourceLabel: version.versionCode,
-    title: version.name || version.versionCode,
+    slug: versionIdentity.toLowerCase(),
+    sourceLabel: version.versionCode || versionIdentity,
+    title: version.name || version.versionCode || versionIdentity,
   };
 };

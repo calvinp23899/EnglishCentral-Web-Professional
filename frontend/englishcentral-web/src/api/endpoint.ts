@@ -148,7 +148,7 @@ export const ENDPOINTS = {
     GET_BY_ID: (id: string | number) => `/admin/exam/versions/${id}/get-by-id`,
     CREATE: "/admin/exam/versions/insert",
     UPDATE_DRAFT: (id: string | number) => `/admin/exam/versions/${id}/update-draft`,
-    PUBLISH: (id: string | number) => `/admin/exam/versions/${id}/publish`,
+    PUBLISH: (id: string | number) => `/admin/exam/versions/${id}/publish-or-update-status`,
     CLONE_DRAFT: (id: string | number) => `/admin/exam/versions/${id}/clone-draft`,
   },
 

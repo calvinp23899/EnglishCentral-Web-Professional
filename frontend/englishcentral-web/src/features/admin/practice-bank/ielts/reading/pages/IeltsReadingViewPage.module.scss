@@ -364,11 +364,12 @@
 }
 
 .paragraphCard {
+  max-height: min(56vh, 620px);
   padding: 14px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-  overflow: hidden;
+  display: block;
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 
   p {
     margin: 0;
@@ -378,20 +379,25 @@
 }
 
 .paragraphContent {
-  min-width: 0;
-  max-width: 100%;
-  overflow: auto;
+  width: max(100%, 1180px);
+  min-width: 1180px;
+  max-width: none;
+  overflow: visible;
+  padding-bottom: 8px;
   color: #1e293b;
   font-size: 15px;
   line-height: 1.7;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: pre-wrap;
 
   > div {
-    min-width: 0;
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    width: 100%;
+    min-width: 100%;
+    max-width: none;
+    overflow-wrap: normal;
+    word-break: normal;
+    white-space: inherit;
   }
 
   p,
@@ -399,10 +405,10 @@
   span,
   li,
   blockquote {
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    white-space: normal;
-    word-break: break-word;
+    max-width: none;
+    overflow-wrap: normal;
+    white-space: pre-wrap;
+    word-break: normal;
   }
 
   p {
@@ -423,6 +429,10 @@
   img,
   table {
     max-width: none;
+  }
+
+  table {
+    width: max-content;
   }
 }
 

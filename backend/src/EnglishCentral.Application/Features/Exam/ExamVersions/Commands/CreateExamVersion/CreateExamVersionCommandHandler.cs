@@ -25,18 +25,21 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CreateE
             if (template is null)
                 return Result<ExamVersionResponse>.Failure("Exam template is not found.", 404);
 
-            var versionCode = request.VersionCode.Trim().ToUpperInvariant();
-            if (await _repository.ExistsAsync(x => x.ExamTemplateId == request.ExamTemplateId && x.VersionCode == versionCode, ct))
-                return Result<ExamVersionResponse>.Failure("Exam version code already exists in this template.", 409);
-
-            if (await _repository.ExistsAsync(x => x.ExamTemplateId == request.ExamTemplateId && x.VersionNumber == request.VersionNumber, ct))
-                return Result<ExamVersionResponse>.Failure("Exam version number already exists in this template.", 409);
+            var versionNumber = await ExamVersionIdentityHelper.GetNextVersionNumberAsync(_repository, request.ExamTemplateId, ct);
+            var slug = await ExamVersionIdentityHelper.CreateUniqueSlugAsync(
+                _repository,
+                request.ExamTemplateId,
+                request.Slug,
+                request.Name,
+                versionNumber,
+                excludeVersionId: null,
+                ct);
 
             var version = new ExamVersion
             {
                 ExamTemplateId = request.ExamTemplateId,
-                VersionCode = versionCode,
-                VersionNumber = request.VersionNumber,
+                Slug = slug,
+                VersionNumber = versionNumber,
                 Name = request.Name.Trim(),
                 Description = request.Description?.Trim(),
                 Status = EExamTemplateStatus.Draft,

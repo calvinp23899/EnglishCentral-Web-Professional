@@ -109,16 +109,6 @@ type ReadingPassage = {
   title: string;
 };
 
-const fallbackQuestionTypeOptions: MetadataOption[] = [
-  { label: "MultipleChoiceSingle", value: "MultipleChoiceSingle", code: 1 },
-  { label: "MultipleChoiceMultiple", value: "MultipleChoiceMultiple", code: 2 },
-  { label: "TrueFalseNotGiven", value: "TrueFalseNotGiven", code: 3 },
-  { label: "YesNoNotGiven", value: "YesNoNotGiven", code: 4 },
-  { label: "Matching", value: "Matching", code: 5 },
-  { label: "GapFill", value: "GapFill", code: 6 },
-  { label: "ShortAnswer", value: "ShortAnswer", code: 7 },
-];
-
 type ReadingQuestionSubtype = {
   answerLimit?: string;
   description: string;
@@ -238,14 +228,16 @@ const normalizeQuestionType = (type: string | number | null | undefined) =>
   String(type ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
 
 const isMultipleChoiceType = (type: string | number) =>
-  normalizeQuestionType(type).startsWith("multiplechoice");
+  normalizeQuestionType(type).startsWith("multiplechoice") ||
+  normalizeQuestionType(type) === "singlechoice";
 
 const isMultipleChoiceMultipleType = (type: string | number) =>
-  normalizeQuestionType(type) === "multiplechoicemultiple";
+  normalizeQuestionType(type) === "multiplechoicemultiple" ||
+  normalizeQuestionType(type) === "multiplechoice";
 
 const isSingleChoiceType = (type: string | number) =>
   normalizeQuestionType(type) === "multiplechoicesingle" ||
-  normalizeQuestionType(type) === "multiplechoice";
+  normalizeQuestionType(type) === "singlechoice";
 
 const isTrueFalseType = (type: string | number) =>
   normalizeQuestionType(type) === "truefalsenotgiven";
@@ -300,7 +292,10 @@ const isTextInputType = (type: string | number) =>
 const getDefaultDisplayTypeForQuestionType = (type: string | number | null | undefined) => {
   const normalizedType = normalizeQuestionType(type);
 
-  if (normalizedType.includes("multiplechoice") && normalizedType.includes("multiple")) {
+  if (
+    normalizedType === "multiplechoice" ||
+    (normalizedType.includes("multiplechoice") && normalizedType.includes("multiple"))
+  ) {
     return "multiple_choice_multiple";
   }
   if (
@@ -309,7 +304,7 @@ const getDefaultDisplayTypeForQuestionType = (type: string | number | null | und
   ) {
     return "summary_completion_with_options";
   }
-  if (normalizedType.includes("multiplechoice")) return "multiple_choice_single";
+  if (normalizedType.includes("multiplechoice") || normalizedType === "singlechoice") return "multiple_choice_single";
   if (normalizedType.includes("truefalsenotgiven")) return "true_false_not_given";
   if (normalizedType.includes("yesnonotgiven")) return "yes_no_not_given";
   if (
@@ -449,7 +444,9 @@ const toQuestionTypeValue = (type: string | number, configJson?: string | null):
   }
 
   const normalizedType = normalizeQuestionType(type);
-  if (normalizedType === "1" || normalizedType === "multiplechoice" || normalizedType === "multiplechoicesingle") return "MultipleChoiceSingle";
+  if (normalizedType === "singlechoice") return "SingleChoice";
+  if (normalizedType === "1" || normalizedType === "multiplechoicesingle") return "MultipleChoiceSingle";
+  if (normalizedType === "multiplechoice") return "MultipleChoice";
   if (normalizedType === "2" || normalizedType === "multiplechoicemultiple") return "MultipleChoiceMultiple";
   if (normalizedType === "3" || normalizedType === "truefalsenotgiven") return "TrueFalseNotGiven";
   if (normalizedType === "4" || normalizedType === "yesnonotgiven") return "YesNoNotGiven";
@@ -480,7 +477,7 @@ const defaultSetup: TestSetup = {
   sourceLabel: "IELTS Academic Reading - Original Mock Test",
   status: "draft",
   subDescriptions: ["3 reading passages with academic-style topics."],
-  testCode: "IELTS-RD-001",
+  testCode: "",
   title: "IELTS Reading Full Mock Test",
 };
 
@@ -718,7 +715,7 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
           displayType: groupConfig.displayType ?? subtype.displayType,
           groupLabel: group.code || `Group ${groupIndex + 1}`,
           heading: groupConfig.heading ?? "",
-          instruction: group.instructions ?? "",
+          instruction: group.instructions ?? group.instruction ?? "",
           interaction: groupConfig.interaction ?? subtype.interaction,
           optionsReusable: groupConfig.optionsReusable ?? subtype.optionsReusable,
           scoreMode: groupConfig.scoreMode,
@@ -807,8 +804,7 @@ export function IeltsReadingCreatePage() {
   const [isGroupEditorOpen, setGroupEditorOpen] = useState(true);
   const [openQuestionIds, setOpenQuestionIds] = useState<Record<string, boolean>>({});
   const [readingTemplate, setReadingTemplate] = useState<ExamTemplate | null>(null);
-  const [questionTypeOptions, setQuestionTypeOptions] = useState<MetadataOption[]>(fallbackQuestionTypeOptions);
-  const [currentVersionNumber, setCurrentVersionNumber] = useState(0);
+  const [questionTypeOptions, setQuestionTypeOptions] = useState<MetadataOption[]>([]);
   const [editingVersion, setEditingVersion] = useState<ExamVersion | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(recordId));
   const [isSaving, setIsSaving] = useState(false);
@@ -835,23 +831,8 @@ export function IeltsReadingCreatePage() {
     ? isTrueFalseType(activeGroup.type) || isYesNoType(activeGroup.type)
     : false;
   const questionTypeSelectOptions = useMemo(() => {
-    const options = questionTypeOptions.length ? questionTypeOptions : fallbackQuestionTypeOptions;
-    if (!activeGroup?.type) return options;
-
-    const hasActiveType = options.some(
-      (option) => normalizeQuestionType(option.value) === normalizeQuestionType(activeGroup.type),
-    );
-    if (hasActiveType) return options;
-
-    return [
-      ...options,
-      {
-        code: 0,
-        label: String(activeGroup.type),
-        value: String(activeGroup.type),
-      },
-    ];
-  }, [activeGroup?.type, questionTypeOptions]);
+    return questionTypeOptions;
+  }, [questionTypeOptions]);
   const totalQuestions = getQuestionCount(passages);
   const hasReachedQuestionLimit = totalQuestions >= maxReadingQuestions;
 
@@ -863,11 +844,11 @@ export function IeltsReadingCreatePage() {
       try {
         const [readingType, questionTypes] = await Promise.all([
           adminIeltsReadingApi.getReadingTemplate(),
-          adminMetadataApi.getExamQuestionTypeOptions().catch(() => fallbackQuestionTypeOptions),
+          adminMetadataApi.getExamQuestionTypeOptions().catch(() => []),
         ]);
         if (!isMounted) return;
         setReadingTemplate(readingType);
-        setQuestionTypeOptions(questionTypes.length ? questionTypes : fallbackQuestionTypeOptions);
+        setQuestionTypeOptions(questionTypes);
 
         if (!recordId) {
           if (readingType) {
@@ -875,14 +856,9 @@ export function IeltsReadingCreatePage() {
               ...current,
               description: readingType.description ?? current.description,
               durationMinutes: readingType.durationMinutes ?? current.durationMinutes,
-              testCode: readingType.code || current.testCode,
+              testCode: current.testCode,
               title: readingType.name || current.title,
             }));
-            const latestVersion = (await adminIeltsReadingApi.getVersions({
-              examTemplateId: readingType.id,
-              pageSize: 1,
-            })).items[0];
-            if (isMounted) setCurrentVersionNumber(latestVersion?.versionNumber ?? 0);
           }
           setIsLoading(false);
           return;
@@ -911,14 +887,13 @@ export function IeltsReadingCreatePage() {
         const template = readingType ?? await adminIeltsReadingApi.getTemplateById(version.examTemplateId);
         setReadingTemplate(template);
         setEditingVersion(version);
-        setCurrentVersionNumber(version.versionNumber);
         setSetup((current) => ({
           ...current,
           description: version.description ?? template.description ?? "",
           durationMinutes: version.durationMinutes ?? template.durationMinutes ?? 60,
           level: current.level,
           status: String(version.status).toLowerCase() === "published" || String(version.status) === "2" ? "published" : "draft",
-          testCode: version.versionCode || template.code,
+          testCode: version.slug ?? "",
           title: version.name || template.name,
         }));
 
@@ -942,14 +917,9 @@ export function IeltsReadingCreatePage() {
     };
   }, [recordId]);
 
-  const buildVersionPayload = (templateId: number, preserveVersion = false) => {
-    const nextVersionNumber = preserveVersion ? currentVersionNumber || 1 : currentVersionNumber + 1 || 1;
-    const nextVersionCode = preserveVersion
-      ? setup.testCode.trim() || editingVersion?.versionCode || "IELTS-RD-DRAFT"
-      : `${setup.testCode.trim() || "IELTS-RD"}-V${nextVersionNumber}`;
-    const nextVersionName = preserveVersion
-      ? setup.title.trim() || editingVersion?.name || "IELTS Reading Draft"
-      : `${setup.title.trim() || "IELTS Reading"} v${nextVersionNumber}`;
+  const buildVersionPayload = (templateId?: number) => {
+    const nextSlug = setup.testCode.trim() || null;
+    const nextVersionName = setup.title.trim() || editingVersion?.name || "IELTS Reading Draft";
     const templateDurationMinutes = readingTemplate?.durationMinutes ?? setup.durationMinutes ?? 60;
     const templateTotalScore = readingTemplate?.totalScore ?? 40;
     const buildAnswerOptions = (group: QuestionGroup, question: QuestionItem) => {
@@ -1042,9 +1012,8 @@ export function IeltsReadingCreatePage() {
     };
 
     return {
-      examTemplateId: templateId,
-      versionCode: nextVersionCode,
-      versionNumber: nextVersionNumber,
+      ...(templateId ? { examTemplateId: templateId } : {}),
+      slug: nextSlug,
       name: nextVersionName,
       description: setup.description.trim() || null,
       durationMinutes: templateDurationMinutes,
@@ -1097,6 +1066,7 @@ export function IeltsReadingCreatePage() {
               code: group.groupLabel || `GROUP-${passageIndex + 1}-${groupIndex + 1}`,
               stimulusClientKey: `passage_${passageIndex + 1}_text`,
               title: group.title,
+              instruction: group.instruction || null,
               instructions: group.instruction || null,
               questionType: isMatchingHeading
                 ? "MatchingHeadingDragDrop"
@@ -1849,8 +1819,8 @@ export function IeltsReadingCreatePage() {
         toastDanger("Chưa có ExamTemplate IELTS Reading. Vui lòng tạo Dạng bài kiểm tra và Mẫu đề kiểm tra trước.");
         return;
       }
-      if (!setup.testCode.trim() || !setup.title.trim()) {
-        toastDanger("Vui lòng nhập mã đề và tên đề.");
+      if (!setup.title.trim()) {
+        toastDanger("Vui lòng nhập tên đề.");
         setCurrentStep(1);
         return;
       }
@@ -1864,7 +1834,7 @@ export function IeltsReadingCreatePage() {
         if (recordId) {
           await adminIeltsReadingApi.updateDraftVersion(
             recordId,
-            buildVersionPayload(readingTemplate.id, true),
+            buildVersionPayload(),
           );
         } else {
           await adminIeltsReadingApi.createVersion(buildVersionPayload(readingTemplate.id));
@@ -1920,6 +1890,32 @@ export function IeltsReadingCreatePage() {
         </section>
       ) : (
       <section className={styles.builder}>
+        <nav className={styles.stepper} aria-label="IELTS Reading create steps">
+          {steps.map((step) => {
+            const Icon = step.icon;
+            const isDone = currentStep > step.id;
+            const isActive = currentStep === step.id;
+
+            return (
+              <button
+                aria-current={isActive ? "step" : undefined}
+                className={`${isActive ? styles.activeStep : ""} ${
+                  isDone ? styles.doneStep : ""
+                }`}
+                key={step.id}
+                type="button"
+                onClick={() => goToStep(step.id)}
+              >
+                <span>{isDone ? <Check size={16} /> : <Icon size={16} />}</span>
+                <div>
+                  <strong>{step.label}</strong>
+                  <small>{isDone ? "Completed" : isActive ? "Editing" : "Pending"}</small>
+                </div>
+              </button>
+            );
+          })}
+        </nav>
+
         <div className={styles.contentPanel}>
           {currentStep === 1 && (
             <div className={styles.panelBody}>
@@ -1948,8 +1944,9 @@ export function IeltsReadingCreatePage() {
                   />
                 </label>
                 <label>
-                  <span>Version code / slug</span>
+                  <span>Slug</span>
                   <input
+                    placeholder="Để trống để BE tự sinh/giữ slug"
                     value={setup.testCode}
                     onChange={(event) => updateSetup("testCode", event.target.value)}
                   />
@@ -2329,38 +2326,32 @@ export function IeltsReadingCreatePage() {
                                   }
                                 />
                               </label>
-                              <div className={styles.fullField}>
-                                <RichTextEditor
-                                  label={
-                                    <span className={styles.labelWithInfo}>
-                                      Summary template
-                                      <span className={styles.infoTooltip}>
-                                        <span
-                                          aria-label="Hướng dẫn placeholder"
-                                          className={styles.infoIcon}
-                                          tabIndex={0}
-                                        >
-                                          i
-                                        </span>
-                                        <span className={styles.infoTooltipContent}>
-                                          Dùng placeholder theo blank, ví dụ {"{Q27}"}, {"{Q28}"}.
-                                          Mỗi placeholder tương ứng một question bên dưới.
-                                        </span>
-                                      </span>
-                                    </span>
-                                  }
-                                  minHeight={180}
-                                  value={activeGroup.summaryTemplate ?? ""}
-                                  onChange={(value) =>
-                                    updateQuestionGroup(activeGroup.id, "summaryTemplate", value)
-                                  }
-                                />
-                              </div>
                             </>
                           )}
                           <div className={styles.fullField}>
                             <RichTextEditor
-                              label="Instruction"
+                              label={
+                                activeGroupIsSummaryCompletionWithOptions ? (
+                                  <span className={styles.labelWithInfo}>
+                                    Instruction
+                                    <span className={styles.infoTooltip}>
+                                      <span
+                                        aria-label="Hướng dẫn instruction"
+                                        className={styles.infoIcon}
+                                        tabIndex={0}
+                                      >
+                                        i
+                                      </span>
+                                      <span className={styles.infoTooltipContent}>
+                                        Nhập hướng dẫn cho dạng summary completion. Nội dung summary
+                                        và blank được cấu hình ở từng question bên dưới.
+                                      </span>
+                                    </span>
+                                  </span>
+                                ) : (
+                                  "Instruction"
+                                )
+                              }
                               minHeight={140}
                               value={activeGroup.instruction}
                               onChange={(value) =>
@@ -2870,6 +2861,8 @@ export function IeltsReadingCreatePage() {
                                         <div
                                           className={`${styles.questionOptionCard} ${
                                             activeGroupIsMultipleChoiceMultiple ? styles.multiAnswerOptionCard : ""
+                                          } ${
+                                            isSingleChoiceType(activeGroup.type) ? styles.singleChoiceOptionCard : ""
                                           }`}
                                           key={questionOption.id}
                                         >
@@ -2909,14 +2902,15 @@ export function IeltsReadingCreatePage() {
                                           <label className={styles.checkboxField}>
                                             <input
                                               checked={questionOption.isCorrectAnswer}
-                                              type="checkbox"
+                                              name={`correct-answer-${question.id}`}
+                                              type={isSingleChoiceType(activeGroup.type) ? "radio" : "checkbox"}
                                               onChange={(event) =>
                                                 updateQuestionOption(
                                                   activeGroup.id,
                                                   question.id,
                                                   questionOption.id,
                                                   "isCorrectAnswer",
-                                                  event.target.checked,
+                                                  isSingleChoiceType(activeGroup.type) ? true : event.target.checked,
                                                 )
                                               }
                                             />
@@ -3045,31 +3039,6 @@ export function IeltsReadingCreatePage() {
             </button>
           </div>
         </div>
-
-        <aside className={styles.stepper}>
-          {steps.map((step) => {
-            const Icon = step.icon;
-            const isDone = currentStep > step.id;
-            const isActive = currentStep === step.id;
-
-            return (
-              <button
-                className={`${isActive ? styles.activeStep : ""} ${
-                  isDone ? styles.doneStep : ""
-                }`}
-                key={step.id}
-                type="button"
-                onClick={() => goToStep(step.id)}
-              >
-                <span>{isDone ? <Check size={16} /> : <Icon size={16} />}</span>
-                <div>
-                  <strong>{step.label}</strong>
-                  <small>{isDone ? "Completed" : isActive ? "Editing" : "Pending"}</small>
-                </div>
-              </button>
-            );
-          })}
-        </aside>
       </section>
       )}
     </div>
