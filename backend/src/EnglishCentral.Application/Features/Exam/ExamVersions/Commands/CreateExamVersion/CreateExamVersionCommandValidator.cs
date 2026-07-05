@@ -7,8 +7,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CreateE
         public CreateExamVersionCommandValidator()
         {
             RuleFor(x => x.ExamTemplateId).GreaterThan(0);
-            RuleFor(x => x.VersionCode).NotEmpty().MaximumLength(50);
-            RuleFor(x => x.VersionNumber).GreaterThan(0);
+            RuleFor(x => x.Slug).MaximumLength(120);
             RuleFor(x => x.Name).NotEmpty().MaximumLength(255);
             RuleFor(x => x.Description).MaximumLength(2000);
             RuleFor(x => x.DurationMinutes).GreaterThan(0).When(x => x.DurationMinutes.HasValue);
@@ -88,7 +87,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CreateE
         public CreateExamAnswerOptionRequestValidator()
         {
             RuleFor(x => x.ClientKey).NotEmpty().MaximumLength(80);
-            RuleFor(x => x.Label).NotEmpty().MaximumLength(20);
+            RuleFor(x => x.Label).NotEmpty().MaximumLength(150);
             RuleFor(x => x.Content).NotEmpty();
             RuleFor(x => x.OrderIndex).GreaterThan(0);
         }

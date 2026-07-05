@@ -36,8 +36,8 @@
 
 .builder {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 290px;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
 }
 
@@ -107,18 +107,17 @@
 }
 
 .stepper {
-  padding: 12px;
-  position: sticky;
-  top: 20px;
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px;
 
   button {
-    min-height: 64px;
-    padding: 10px;
-    border: 1px solid transparent;
+    min-height: 58px;
+    padding: 10px 12px;
+    border: 1px solid #dbe5f0;
     border-radius: 8px;
-    background: transparent;
+    background: #ffffff;
     color: #64748b;
     display: flex;
     align-items: center;
@@ -512,6 +511,17 @@
     grid-column: 3;
     grid-row: 1;
     align-self: end;
+  }
+}
+
+.singleChoiceOptionCard {
+  grid-template-columns: minmax(220px, 1fr) max-content 38px;
+
+  .checkboxField {
+    width: max-content;
+    min-width: 152px;
+    justify-self: start;
+    white-space: nowrap;
   }
 }
 
@@ -936,15 +946,6 @@
 }
 
 @media (max-width: $desktop) {
-  .builder {
-    grid-template-columns: 1fr;
-  }
-
-  .stepper {
-    position: static;
-    order: -1;
-  }
-
   .questionLayout {
     grid-template-columns: 1fr;
   }
@@ -956,6 +957,10 @@
 }
 
 @media (max-width: $tablet) {
+  .stepper {
+    grid-template-columns: 1fr;
+  }
+
   .formGrid,
   .runtimeSection,
   .groupForm,

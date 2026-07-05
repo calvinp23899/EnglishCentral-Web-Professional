@@ -30,12 +30,29 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.Publish
             if (version is null)
                 return Result<ExamVersionResponse>.Failure("Exam version is not found.", 404);
 
-            if (!version.Sections.Any())
-                return Result<ExamVersionResponse>.Failure("Exam version must have at least one section before publish.", 400);
-
             var template = await _templateRepository.GetByIdAsync(version.ExamTemplateId, ct);
             if (template is null)
                 return Result<ExamVersionResponse>.Failure("Exam template is not found.", 404);
+
+            if (version.Status == EExamTemplateStatus.Published)
+            {
+                version.Status = EExamTemplateStatus.Draft;
+                version.UpdatedAt = DateTimeOffset.UtcNow;
+
+                if (template.CurrentVersionId == version.Id)
+                    template.CurrentVersionId = null;
+
+                template.Status = EExamTemplateStatus.Draft;
+                template.UpdatedAt = DateTimeOffset.UtcNow;
+
+                return Result<ExamVersionResponse>.Success(version.ToResponse());
+            }
+
+            if (version.Status != EExamTemplateStatus.Draft)
+                return Result<ExamVersionResponse>.Failure("Only draft or published exam version status can be updated.", 400);
+
+            if (!version.Sections.Any())
+                return Result<ExamVersionResponse>.Failure("Exam version must have at least one section before publish.", 400);
 
             version.Status = EExamTemplateStatus.Published;
             version.PublishedAt ??= DateTimeOffset.UtcNow;

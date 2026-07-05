@@ -37,39 +37,54 @@ export function PracticeDetailPage() {
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [apiTest, setApiTest] = useState<ReturnType<typeof mapExamVersionToPracticeTest> | null>(null);
   const [isLoadingApiTest, setIsLoadingApiTest] = useState(false);
+  const [apiTestError, setApiTestError] = useState<string | null>(null);
   const [openResultModal, setOpenResultModal] = useState(false);
   const navigate = useNavigate();
   const { setPublicChromeVisible } =
     useOutletContext<PublicLayoutOutletContext>();
   const questionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const apiVersionId =
+    category === "ielts" ? slug?.match(/^exam-version-(\d+)$/) : null;
+  const apiVersionRecordId = apiVersionId?.[1] ?? null;
+  const isApiVersionRoute = Boolean(apiVersionRecordId);
 
   const mockTest = useMemo(
-    () =>
-      mockPracticeTests.find(
+    () => {
+      if (isApiVersionRoute) return null;
+
+      return mockPracticeTests.find(
         (item) => item.category === category && item.slug === slug
-      ) ?? mockPracticeTests.find((item) => item.category === category),
-    [category, slug]
+      ) ?? mockPracticeTests.find((item) => item.category === category);
+    },
+    [category, slug, isApiVersionRoute]
   );
   const test = apiTest ?? mockTest;
+  const isWaitingForApiVersion =
+    isApiVersionRoute && !apiTest && !apiTestError;
 
   useEffect(() => {
-    if (!slug || category !== "ielts") return;
-    const versionIdMatch = slug.match(/^exam-version-(\d+)$/);
+    setApiTest(null);
+    setApiTestError(null);
 
-    if (!versionIdMatch) return;
+    if (!apiVersionRecordId) return;
 
     let isMounted = true;
     setIsLoadingApiTest(true);
     publicPracticeApi
-      .getVersionById(versionIdMatch[1])
+      .getVersionById(apiVersionRecordId)
       .then((version) => {
         if (isMounted) {
           setApiTest(mapExamVersionToPracticeTest(version));
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (isMounted) {
           setApiTest(null);
+          setApiTestError(
+            error instanceof Error
+              ? error.message
+              : "Không thể tải bài thi từ hệ thống.",
+          );
         }
       })
       .finally(() => {
@@ -81,7 +96,7 @@ export function PracticeDetailPage() {
     return () => {
       isMounted = false;
     };
-  }, [category, slug]);
+  }, [apiVersionRecordId]);
 
   const handleBackToPractice = () => {
     navigate("/practice");
@@ -167,10 +182,20 @@ export function PracticeDetailPage() {
     };
   };
 
-  if (isLoadingApiTest) {
+  if (isLoadingApiTest || isWaitingForApiVersion) {
     return (
       <div className={styles.notFound}>
         <h1>Đang tải bài thi...</h1>
+      </div>
+    );
+  }
+
+  if (isApiVersionRoute && apiTestError) {
+    return (
+      <div className={styles.notFound}>
+        <h1>Không thể tải bài thi từ BE</h1>
+        <p>{apiTestError}</p>
+        <Link to="/practice">Quay lại trang luyện tập</Link>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-using EnglishCentral.Domain.Constants;
+﻿using EnglishCentral.Domain.Constants;
 using EnglishCentral.Domain.Entities.Exam;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -13,11 +13,11 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Exam
             builder.HasKey(x => x.Id);
             builder.HasIndex(x => x.PublicId).IsUnique();
             builder.HasIndex(x => new { x.ExamTemplateId, x.VersionNumber }).IsUnique();
-            builder.HasIndex(x => new { x.ExamTemplateId, x.VersionCode }).IsUnique();
+            builder.HasIndex(x => new { x.ExamTemplateId, x.Slug }).IsUnique();
             builder.HasIndex(x => x.Status);
             builder.HasIndex(x => x.PublishedAt);
 
-            builder.Property(x => x.VersionCode).HasMaxLength(50).IsRequired();
+            builder.Property(x => x.Slug).HasMaxLength(120).IsRequired();
             builder.Property(x => x.Name).HasMaxLength(255).IsRequired();
             builder.Property(x => x.Description).HasMaxLength(2000);
             builder.Property(x => x.Status).HasConversion<int>();

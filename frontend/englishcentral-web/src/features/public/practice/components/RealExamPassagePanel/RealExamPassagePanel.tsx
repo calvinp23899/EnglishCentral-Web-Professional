@@ -363,6 +363,23 @@ export function RealExamPassagePanel({
     return nodes;
   };
 
+  const renderAnnotatedParagraph = (paragraphId: string, content: string) =>
+    renderAnnotatedContent(paragraphId, content).map((node, index) => {
+      if (typeof node !== "string") {
+        return node;
+      }
+
+      return node.split(/(\n+)/).map((part, partIndex) =>
+        part.includes("\n") ? (
+          <span aria-hidden="true" key={`${index}-${partIndex}`} className={styles.passageLineBreaks}>
+            {part}
+          </span>
+        ) : (
+          part
+        ),
+      );
+    });
+
   return (
     <>
       {shouldShowPassageTitle(passage) && <h2>{passage.title}</h2>}
@@ -419,7 +436,9 @@ export function RealExamPassagePanel({
                     annotation.passageId === passage.id &&
                     annotation.paragraphId === paragraph.id
                 ) ? (
-                  renderAnnotatedContent(paragraph.id, htmlToPlainText(paragraph.content))
+                  <div className={styles.passageParagraphText}>
+                    {renderAnnotatedParagraph(paragraph.id, htmlToPlainText(paragraph.content))}
+                  </div>
                 ) : (
                   <RichText className={styles.passageParagraphText} html={paragraph.content} />
                 )}

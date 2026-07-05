@@ -15,7 +15,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Exam
             builder.HasIndex(x => new { x.ExamQuestionId, x.Label }).IsUnique();
             builder.HasIndex(x => new { x.ExamQuestionId, x.OrderIndex }).IsUnique();
 
-            builder.Property(x => x.Label).HasMaxLength(20).IsRequired();
+            builder.Property(x => x.Label).HasMaxLength(250).IsRequired();
             builder.Property(x => x.Content).HasColumnType("text");
             builder.Property(x => x.MetadataJson).HasColumnType("text");
 

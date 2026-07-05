@@ -77,6 +77,7 @@ export type ExamQuestionGroup = {
   examStimulusId?: number | null;
   code: string;
   title?: string | null;
+  instruction?: string | null;
   instructions?: string | null;
   questionType: string | number;
   orderIndex: number;
@@ -126,6 +127,7 @@ export type ExamVersion = {
   publicId: string;
   id: number;
   examTemplateId: number;
+  slug?: string | null;
   versionCode: string;
   versionNumber: number;
   name: string;
@@ -138,7 +140,13 @@ export type ExamVersion = {
   scoringConfigJson?: string | null;
   publishedAt?: string | null;
   createdAt?: string | null;
+  createdBy?: string | null;
+  createdByName?: string | null;
+  createdByUserName?: string | null;
   updatedAt?: string | null;
+  updatedBy?: string | null;
+  updatedByName?: string | null;
+  updatedByUserName?: string | null;
   sections: ExamSection[];
   scoringRules: unknown[];
 };
@@ -154,9 +162,8 @@ export type ExamTemplatePayload = {
 };
 
 export type ExamVersionPayload = {
-  examTemplateId: number;
-  versionCode: string;
-  versionNumber: number;
+  examTemplateId?: number;
+  slug?: string | null;
   name: string;
   description?: string | null;
   durationMinutes?: number | null;
@@ -193,6 +200,7 @@ export type ExamVersionPayload = {
         code: string;
         stimulusClientKey?: string | null;
         title?: string | null;
+        instruction?: string | null;
         instructions?: string | null;
         questionType: string;
         orderIndex: number;
@@ -345,7 +353,7 @@ export const adminIeltsReadingApi = {
 
   async publishVersion(id: string | number) {
     const response = await api.post<ApiResult<ExamVersion>>(ENDPOINTS.ADMIN_EXAM_VERSIONS.PUBLISH(id));
-    return unwrap(response.data, "Không thể publish đề IELTS Reading.");
+    return unwrap(response.data, "Không thể cập nhật trạng thái đề IELTS Reading.");
   },
 
   async cloneDraftVersion(id: string | number) {

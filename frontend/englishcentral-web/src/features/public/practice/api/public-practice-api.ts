@@ -3,7 +3,14 @@ import { ENDPOINTS } from "@/api/endpoint";
 
 import type { PublicPractice } from "../data/mockPractice";
 
-type ApiResult<T> = { data?: T; error?: string; isSuccess: boolean };
+type ApiResult<T> = {
+  data?: T;
+  Data?: T;
+  error?: string;
+  Error?: string;
+  isSuccess?: boolean;
+  IsSuccess?: boolean;
+};
 type PagedResult<T> = {
   items: T[];
   page: number;
@@ -86,18 +93,39 @@ export type ExamVersionSummary = {
   name: string;
   publishedAt?: string | null;
   sections?: ExamSectionSummary[];
+  slug?: string | null;
   status: string | number;
   totalScore?: number | null;
-  versionCode: string;
+  versionCode?: string | null;
   versionNumber: number;
 };
 
-const unwrap = <T>(response: ApiResult<T>) => {
-  if (!response.isSuccess || response.data === undefined) {
-    throw new Error(response.error ?? "Không thể tải nội dung luyện tập.");
+const unwrap = <T>(response: ApiResult<T> | T) => {
+  if (typeof response !== "object" || response === null) {
+    return response as T;
   }
 
-  return response.data;
+  const source = response as ApiResult<T>;
+  const hasResultShape =
+    "isSuccess" in source ||
+    "IsSuccess" in source ||
+    "data" in source ||
+    "Data" in source;
+
+  if (!hasResultShape) {
+    return response as T;
+  }
+
+  const isSuccess = source.isSuccess ?? source.IsSuccess ?? true;
+  const data = source.data ?? source.Data;
+
+  if (!isSuccess || data === undefined) {
+    throw new Error(
+      source.error ?? source.Error ?? "Không thể tải nội dung luyện tập.",
+    );
+  }
+
+  return data;
 };
 
 const isPublished = (status: string | number) => {
@@ -155,6 +183,10 @@ const mapVersionToPractice = (
 ): PublicPractice => {
   const duration = version.durationMinutes ?? template?.durationMinutes ?? version.sections?.[0]?.durationMinutes;
   const score = version.totalScore ?? template?.totalScore ?? version.sections?.[0]?.maxScore;
+  const versionIdentity =
+    version.versionCode?.trim() ||
+    version.slug?.trim() ||
+    `exam-version-${version.id}`;
 
   return {
     category: "ielts",
@@ -166,14 +198,14 @@ const mapVersionToPractice = (
     highlights: [
       `Version ${version.versionNumber}`,
       score ? `Total score ${score}` : "Published test",
-      template?.name ?? version.versionCode,
-    ].filter(Boolean),
+      template?.name || versionIdentity,
+    ],
     id: version.id,
     level: "IELTS",
     skill: normalizeSkill(version, template),
     slug: createSlug(version),
     status: "inprogress",
-    title: version.name || template?.name || version.versionCode,
+    title: version.name || template?.name || versionIdentity,
   };
 };
 

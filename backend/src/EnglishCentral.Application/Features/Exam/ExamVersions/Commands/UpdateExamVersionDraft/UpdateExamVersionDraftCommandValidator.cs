@@ -8,8 +8,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.UpdateE
         public UpdateExamVersionDraftCommandValidator()
         {
             RuleFor(x => x.Id).GreaterThan(0);
-            RuleFor(x => x.VersionCode).NotEmpty().MaximumLength(50);
-            RuleFor(x => x.VersionNumber).GreaterThan(0);
+            RuleFor(x => x.Slug).MaximumLength(120);
             RuleFor(x => x.Name).NotEmpty().MaximumLength(255);
             RuleFor(x => x.Description).MaximumLength(2000);
             RuleFor(x => x.DurationMinutes).GreaterThan(0).When(x => x.DurationMinutes.HasValue);

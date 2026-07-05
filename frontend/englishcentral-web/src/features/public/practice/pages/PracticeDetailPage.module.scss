@@ -348,6 +348,11 @@
   margin: 0 0 22px;
   font-size: 18px;
   line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.passageLineBreaks {
+  white-space: pre-wrap;
 }
 
 .realQuestionItem,
@@ -656,7 +661,11 @@
     margin: 0 0 16px;
 
     p {
-      margin-bottom: 0;
+      margin-bottom: 14px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
     }
   }
 

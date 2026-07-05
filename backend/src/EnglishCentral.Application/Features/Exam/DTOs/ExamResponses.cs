@@ -1,4 +1,4 @@
-using EnglishCentral.Domain.Entities.Exam;
+﻿using EnglishCentral.Domain.Entities.Exam;
 using EnglishCentral.Domain.Enums.Exam;
 using DomainExamQuestionResponse = EnglishCentral.Domain.Entities.Exam.ExamQuestionResponse;
 
@@ -30,7 +30,7 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
         Guid PublicId,
         long Id,
         long ExamTemplateId,
-        string VersionCode,
+        string Slug,
         int VersionNumber,
         string Name,
         string? Description,
@@ -219,7 +219,7 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
             entity.PublicId,
             entity.Id,
             entity.ExamTemplateId,
-            entity.VersionCode,
+            entity.Slug,
             entity.VersionNumber,
             entity.Name,
             entity.Description,

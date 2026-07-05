@@ -1,4 +1,4 @@
-using EnglishCentral.Application.Features.Exam.DTOs;
+﻿using EnglishCentral.Application.Features.Exam.DTOs;
 using EnglishCentral.Domain.Enums.Exam;
 using EnglishCentral.Shared.Results;
 using MediatR;
@@ -7,8 +7,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CreateE
 {
     public record CreateExamVersionCommand(
         long ExamTemplateId,
-        string VersionCode,
-        int VersionNumber,
+        string? Slug,
         string Name,
         string? Description,
         int? DurationMinutes,

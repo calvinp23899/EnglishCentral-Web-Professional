@@ -1,4 +1,4 @@
-using EnglishCentral.Domain.Common;
+Ôªøusing EnglishCentral.Domain.Common;
 using EnglishCentral.Domain.Enums.Exam;
 
 namespace EnglishCentral.Domain.Entities.Exam
@@ -7,7 +7,7 @@ namespace EnglishCentral.Domain.Entities.Exam
     {
         public long ExamTemplateId { get; set; }
 
-        public string VersionCode { get; set; } = default!;
+        public string Slug { get; set; } = default!;
 
         public int VersionNumber { get; set; }
 
@@ -23,7 +23,7 @@ namespace EnglishCentral.Domain.Entities.Exam
 
         public EExamScoringMode ScoringMode { get; set; } = EExamScoringMode.Auto;
 
-        //nhi?u rule khÙng ?·ng t?o th‡nh c?t DB riÍng => cÛ th? custom trÍn FE thÍm field => add v‡o ?‚y
+        //nhi?u rule kh√¥ng ?√°ng t?o th√†nh c?t DB ri√™ng => c√≥ th? custom tr√™n FE th√™m field => add v√†o ?√¢y
         public string? RuntimeConfigJson { get; set; }
         //
         public string? ScoringConfigJson { get; set; }

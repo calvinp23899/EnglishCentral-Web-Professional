@@ -36,15 +36,16 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.UpdateE
             if (await _draftRepository.HasAttemptsAsync(version.Id, ct))
                 return Result<ExamVersionResponse>.Failure("Exam version already has attempts and cannot be updated.", 409);
 
-            var versionCode = request.VersionCode.Trim().ToUpperInvariant();
-            if (await _repository.ExistsAsync(x => x.Id != request.Id && x.ExamTemplateId == version.ExamTemplateId && x.VersionCode == versionCode, ct))
-                return Result<ExamVersionResponse>.Failure("Exam version code already exists in this template.", 409);
+            var slug = await ExamVersionIdentityHelper.CreateUniqueSlugAsync(
+                _repository,
+                version.ExamTemplateId,
+                request.Slug ?? version.Slug,
+                request.Name,
+                version.VersionNumber,
+                version.Id,
+                ct);
 
-            if (await _repository.ExistsAsync(x => x.Id != request.Id && x.ExamTemplateId == version.ExamTemplateId && x.VersionNumber == request.VersionNumber, ct))
-                return Result<ExamVersionResponse>.Failure("Exam version number already exists in this template.", 409);
-
-            version.VersionCode = versionCode;
-            version.VersionNumber = request.VersionNumber;
+            version.Slug = slug;
             version.Name = request.Name.Trim();
             version.Description = request.Description?.Trim();
             version.DurationMinutes = request.DurationMinutes;

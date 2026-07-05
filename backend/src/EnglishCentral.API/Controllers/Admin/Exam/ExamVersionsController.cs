@@ -62,9 +62,9 @@ namespace EnglishCentral.API.Controllers.Admin.Exam
             return StatusCode(result.StatusCode, result);
         }
 
-        [HttpPost("{id:long}/publish")]
+        [HttpPost("{id:long}/publish-or-update-status")]
         [HasPermission(SystemPermissions.ExamUpdate)]
-        public async Task<IActionResult> Publish(long id, CancellationToken ct)
+        public async Task<IActionResult> PublishOrUpdateStatus(long id, CancellationToken ct)
         {
             var result = await _mediator.Send(new PublishExamVersionCommand(id), ct);
             return StatusCode(result.StatusCode, result);

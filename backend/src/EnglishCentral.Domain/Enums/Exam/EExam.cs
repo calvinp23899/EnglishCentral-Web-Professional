@@ -50,8 +50,8 @@ namespace EnglishCentral.Domain.Enums.Exam
     public enum EExamQuestionType
     {
         #region IELTS Type
-        MultipleChoiceSingle = 1,
-        MultipleChoiceMultiple = 2,
+        SingleChoice = 1,
+        MultipleChoice = 2,
         TrueFalseNotGiven = 3,
         YesNoNotGiven = 4,
         MatchingHeadingDragDrop = 5,
