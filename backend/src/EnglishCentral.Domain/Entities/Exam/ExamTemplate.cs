@@ -23,6 +23,8 @@ namespace EnglishCentral.Domain.Entities.Exam
 
         public bool IsActive { get; set; } = true;
 
+        public string? TemplateConfigJson { get; set; }
+
         public ExamType ExamType { get; set; } = default!;
 
         public ExamVersion? CurrentVersion { get; set; }

@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Container, ErrorMessage, Input, toastDanger } from "@/components/ui";
 import {
   authApi,
@@ -22,8 +22,14 @@ const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value);
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [errors, setErrors] = useState<LoginErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const returnUrl = searchParams.get("returnUrl");
+  const safeReturnUrl =
+    returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")
+      ? returnUrl
+      : "/practice";
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -58,7 +64,7 @@ export function LoginPage() {
       });
 
       saveAuthSession(session, formData.get("rememberLogin") === "on");
-      navigate("/practice");
+      navigate(safeReturnUrl, { replace: true });
     } catch (error) {
       toastDanger(getAuthErrorMessage(error));
     } finally {

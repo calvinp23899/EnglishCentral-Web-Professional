@@ -17,8 +17,53 @@ const renderContent = (content?: string | null) =>
     <p>{content || "Chưa có nội dung."}</p>
   );
 
-const getQuestionAnswer = (question: ExamQuestion) =>
-  question.answerKeys.map((answer) => answer.correctValue).filter(Boolean).join(", ") || "No answer key";
+const getOptionClientKey = (questionCode: string, optionLabel: string) =>
+  `${questionCode}_${optionLabel.replace(/[^a-z0-9]/gi, "").toUpperCase()}`;
+
+const formatAnswerOption = (option?: { label?: string | null; content?: string | null }) => {
+  if (!option) return "";
+
+  const label = String(option.label ?? "").trim();
+  const content = String(option.content ?? "").trim();
+
+  if (!content || content === label) return label;
+  return label ? `${label} - ${content}` : content;
+};
+
+const getQuestionAnswer = (question: ExamQuestion) => {
+  const optionById = new Map(
+    question.answerOptions
+      .filter((option) => option.id !== undefined)
+      .map((option) => [option.id, option]),
+  );
+  const optionByClientKey = new Map(
+    question.answerOptions.flatMap((option) => {
+      const keys = [
+        option.publicId,
+        getOptionClientKey(question.code, option.label),
+      ].filter(Boolean) as string[];
+
+      return keys.map((key) => [key, option] as const);
+    }),
+  );
+
+  const answers = question.answerKeys
+    .map((answer) => {
+      if (answer.correctValue) return answer.correctValue;
+
+      const optionByAnswerId = answer.examAnswerOptionId
+        ? optionById.get(answer.examAnswerOptionId)
+        : undefined;
+      const optionByAnswerKey = answer.answerOptionClientKey
+        ? optionByClientKey.get(answer.answerOptionClientKey)
+        : undefined;
+
+      return formatAnswerOption(optionByAnswerId ?? optionByAnswerKey);
+    })
+    .filter(Boolean);
+
+  return answers.join(", ") || "No answer key";
+};
 
 export function IeltsReadingViewPage() {
   const { recordId } = useParams();
@@ -87,12 +132,22 @@ export function IeltsReadingViewPage() {
     return (
       <div className={styles.optionList}>
         <strong>QuestionOptions</strong>
-        {question.answerOptions.map((option) => (
-          <div className={styles.optionRow} key={`${question.id}-${option.label}`}>
-            <span>{option.label}</span>
-            <p>{option.content}</p>
+        {question.answerOptions.map((option, index) => {
+          const normalizedLabel = String(option.label ?? "").trim();
+          const normalizedContent = String(option.content ?? "").trim();
+          const labelLooksLikeOptionCode = /^[A-Z]$|^[ivxlcdm]+$/i.test(normalizedLabel);
+          const displayLabel = labelLooksLikeOptionCode
+            ? normalizedLabel
+            : String.fromCharCode(65 + index);
+          const displayContent = normalizedContent || normalizedLabel;
+
+          return (
+          <div className={styles.optionRow} key={`${question.id}-${option.id ?? index}`}>
+            <span>{displayLabel}</span>
+            <p>{displayContent}</p>
           </div>
-        ))}
+          );
+        })}
       </div>
     );
   };

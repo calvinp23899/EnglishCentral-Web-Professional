@@ -19,6 +19,9 @@ type FormState = {
   durationMinutes: string;
   totalScore: string;
   description: string;
+  sourceLabel: string;
+  level: string;
+  numberPassages: string;
   isActive: boolean;
 };
 type FormErrors = Partial<Record<keyof FormState, string>>;
@@ -30,12 +33,25 @@ const defaultForm: FormState = {
   durationMinutes: "60",
   totalScore: "40",
   description: "",
+  sourceLabel: "IELTS Academic Reading - Original Mock Test",
+  level: "Academic",
+  numberPassages: "3",
   isActive: true,
 };
 
 const toPositiveNumber = (value: string) => Number(value.replace(/[^\d.]/g, "")) || 0;
+const toPositiveInteger = (value: string) => Number(value.replace(/[^\d]/g, "")) || 0;
 const isIeltsType = (type: AdminExamType) =>
   `${type.code} ${type.name} ${type.family}`.toLowerCase().includes("ielts");
+const parseTemplateConfig = (value?: string | null) => {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value) as Record<string, unknown>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
 
 export function ExamTemplateFormPage({ mode }: Props) {
   const navigate = useNavigate();
@@ -65,6 +81,7 @@ export function ExamTemplateFormPage({ mode }: Props) {
         if (isEditMode && recordId) {
           const record = await adminExamTemplatesApi.getById(recordId);
           if (!isMounted) return;
+          const templateConfig = parseTemplateConfig(record.templateConfigJson);
           setForm({
             examTypeId: String(record.examTypeId),
             code: record.code,
@@ -72,6 +89,9 @@ export function ExamTemplateFormPage({ mode }: Props) {
             durationMinutes: String(record.durationMinutes ?? 60),
             totalScore: String(record.totalScore ?? 40),
             description: record.description ?? "",
+            sourceLabel: String(templateConfig.sourceLabel ?? ""),
+            level: String(templateConfig.level ?? "Academic"),
+            numberPassages: String(templateConfig.numberOfPassages ?? templateConfig.numberPassages ?? 3),
             isActive: record.isActive,
           });
         }
@@ -101,6 +121,7 @@ export function ExamTemplateFormPage({ mode }: Props) {
     if (!form.name.trim()) nextErrors.name = "Vui lòng nhập name.";
     if (toPositiveNumber(form.durationMinutes) <= 0) nextErrors.durationMinutes = "Duration phải lớn hơn 0.";
     if (toPositiveNumber(form.totalScore) <= 0) nextErrors.totalScore = "Total Score phải lớn hơn 0.";
+    if (toPositiveInteger(form.numberPassages) <= 0) nextErrors.numberPassages = "NumberPassage phải lớn hơn 0.";
     if (form.description.trim().length > 2000) nextErrors.description = "Mô tả không được vượt quá 2000 ký tự.";
 
     setErrors(nextErrors);
@@ -137,6 +158,14 @@ export function ExamTemplateFormPage({ mode }: Props) {
         description: form.description.trim() || null,
         durationMinutes: toPositiveNumber(form.durationMinutes),
         totalScore: toPositiveNumber(form.totalScore),
+        templateConfigJson: JSON.stringify({
+          exam: "IELTS",
+          module: "Reading",
+          level: form.level,
+          mode: "CBT",
+          numberOfPassages: toPositiveInteger(form.numberPassages),
+          sourceLabel: form.sourceLabel.trim(),
+        }),
         isActive: form.isActive,
       };
 
@@ -248,6 +277,47 @@ export function ExamTemplateFormPage({ mode }: Props) {
               />
               <ErrorMessage message={errors.description} />
             </label>
+
+            <section className={styles.runtimeConfigBox}>
+              <div className={styles.runtimeConfigHeader}>
+                <h3>Cấu hình thực thi</h3>
+                <p>Các thông tin này được lưu trong templateConfigJson của mẫu đề và được dùng khi tạo version.</p>
+              </div>
+
+              <div className={styles.formGrid}>
+                <label className={styles.field}>
+                  <span>Source label</span>
+                  <input
+                    value={form.sourceLabel}
+                    onChange={(event) => updateField("sourceLabel", event.target.value)}
+                  />
+                </label>
+
+                <label className={styles.field}>
+                  <span>Level</span>
+                  <select value={form.level} onChange={(event) => updateField("level", event.target.value)}>
+                    <option>Academic</option>
+                    <option>Band 5.5-6.0</option>
+                    <option>Band 6.0-6.5</option>
+                    <option>Band 6.5-7.0</option>
+                    <option>Band 7.0+</option>
+                  </select>
+                </label>
+
+                <label className={styles.field}>
+                  <span>NumberPassage</span>
+                  <select
+                    value={form.numberPassages}
+                    onChange={(event) => updateField("numberPassages", event.target.value)}
+                  >
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                  </select>
+                  <ErrorMessage message={errors.numberPassages} />
+                </label>
+              </div>
+            </section>
           </div>
         )}
 

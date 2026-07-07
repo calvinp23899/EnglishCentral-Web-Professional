@@ -134,6 +134,9 @@ const toUiQuestionType = (
 
   if (normalizedType.includes("truefalsenotgiven")) return "true-false-not-given";
   if (normalizedType.includes("yesnonotgiven")) return "yes-no-not-given";
+  if (normalizedType === "singlechoice" || normalizedType.includes("multiplechoicesingle")) {
+    return "single-choice";
+  }
   if (normalizedType.includes("multiplechoice")) return "multiple-choice";
   if (normalizedType.includes("shortanswer")) return "short-answer";
   if (displayType.includes("table")) return "table-completion";

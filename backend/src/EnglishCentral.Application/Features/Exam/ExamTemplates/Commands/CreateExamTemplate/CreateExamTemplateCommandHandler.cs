@@ -37,6 +37,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamTemplates.Commands.Create
                 TotalScore = request.TotalScore,
                 Status = EExamTemplateStatus.Draft,
                 IsActive = request.IsActive,
+                TemplateConfigJson = request.TemplateConfigJson,
                 CreatedAt = DateTimeOffset.UtcNow
             };
 

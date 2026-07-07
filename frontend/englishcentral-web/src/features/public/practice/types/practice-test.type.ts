@@ -17,6 +17,7 @@ export type IELTSReadingQuestionType =
   | "table-completion"
   | "flowchart-completion"
   | "diagram-labelling"
+  | "single-choice"
   | "multiple-choice"
   | "short-answer";
 

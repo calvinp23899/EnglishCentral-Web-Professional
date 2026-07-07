@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { getStoredAuthSession } from "@/features/public/auth/api/auth-api";
 import type { PublicPractice } from "../../data/mockPractice";
 
 import styles from "./PracticeModeModal.module.scss";
@@ -12,7 +13,14 @@ export function PracticeModeModal({ practice, onClose }: PracticeModeModalProps)
   const navigate = useNavigate();
 
   const goToMode = (mode: "real" | "practice") => {
-    navigate(`/practice/${practice.category}/${practice.slug}?mode=${mode}`);
+    const targetPath = `/practice/${practice.category}/${practice.slug}?mode=${mode}`;
+
+    if (!getStoredAuthSession()) {
+      navigate(`/login?returnUrl=${encodeURIComponent(targetPath)}`);
+      return;
+    }
+
+    navigate(targetPath);
   };
 
   return (

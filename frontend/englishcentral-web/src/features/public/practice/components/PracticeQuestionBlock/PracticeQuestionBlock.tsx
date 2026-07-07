@@ -14,6 +14,11 @@ import styles from "../../pages/PracticeDetailPage.module.scss";
 const getQuestionLabel = (question: IELTSReadingQuestion) =>
   question.numberLabel || String(question.number);
 
+const isChoiceQuestionType = (type?: string) =>
+  type === "single-choice" || type === "multiple-choice";
+
+const isSingleChoiceQuestionType = (type?: string) => type === "single-choice";
+
 type PracticeQuestionGroupBlockProps = {
   passage: IELTSReadingPassage;
   group: IELTSReadingQuestionGroup;
@@ -43,7 +48,7 @@ export function PracticeQuestionGroupBlock({
     (question) => (question.type ?? group.type) === "matching-features"
   );
   const isMultipleChoiceGroup = group.questions.every(
-    (question) => (question.type ?? group.type) === "multiple-choice"
+    (question) => isChoiceQuestionType(question.type ?? group.type)
   );
   const isSummaryCompletionOptionsGroup = group.questions.every(
     (question) => (question.type ?? group.type) === "summary-completion-options"
@@ -481,6 +486,7 @@ function MultipleChoiceGroup({
 
       {group.questions.map((question) => {
         const options = question.options?.length ? question.options : group.options ?? [];
+        const isSingleChoice = isSingleChoiceQuestionType(question.type ?? group.type);
         const selectedAnswers = answers[question.id]?.split(",").filter(Boolean) ?? [];
 
         return (
@@ -500,9 +506,18 @@ function MultipleChoiceGroup({
               {options.map((option) => (
                 <label key={option.label}>
                   <input
-                    type="checkbox"
-                    checked={selectedAnswers.includes(option.label)}
-                    onChange={() => toggleAnswer(question.id, option.label)}
+                    type={isSingleChoice ? "radio" : "checkbox"}
+                    name={isSingleChoice ? `question-${question.id}` : undefined}
+                    checked={
+                      isSingleChoice
+                        ? answers[question.id] === option.label
+                        : selectedAnswers.includes(option.label)
+                    }
+                    onChange={() =>
+                      isSingleChoice
+                        ? onAnswer(question.id, option.label)
+                        : toggleAnswer(question.id, option.label)
+                    }
                   />
                   <span>{option.content}</span>
                 </label>
@@ -548,7 +563,9 @@ function SummaryCompletionOptionsGroup({
       ? firstQuestionText
       : group.questions.map((question) => `${question.text || `{Q${question.number}}`}`).join(" ");
   const questionByNumber = new Map(group.questions.map((question) => [question.number, question]));
-  const selectedLabels = new Set(Object.values(answers).filter(Boolean));
+  const selectedLabels = new Set(
+    group.questions.map((question) => answers[question.id]).filter(Boolean),
+  );
   const renderTextWithLineBreaks = (text: string) =>
     text.split("\n").map((line, index) => (
       <span key={`${group.id}-${index}-${line.slice(0, 12)}`}>

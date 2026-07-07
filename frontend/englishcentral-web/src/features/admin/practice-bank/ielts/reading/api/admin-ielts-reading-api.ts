@@ -32,6 +32,7 @@ export type ExamTemplate = {
   description?: string | null;
   durationMinutes?: number | null;
   totalScore?: number | null;
+  templateConfigJson?: string | null;
   status: string | number;
   isActive: boolean;
 };
@@ -48,6 +49,7 @@ export type ExamAnswerOption = {
 export type ExamAnswerKey = {
   publicId?: string;
   id?: number;
+  answerOptionClientKey?: string | null;
   examAnswerOptionId?: number | null;
   correctValue?: string | null;
   matchPattern?: string | null;

@@ -152,6 +152,13 @@ export const ENDPOINTS = {
     CLONE_DRAFT: (id: string | number) => `/admin/exam/versions/${id}/clone-draft`,
   },
 
+  EXAM_PRACTICES: {
+    TEST_GET_LIST: "/ExamPractices/test/get-list",
+    TEST_GET_BY_ID: (id: string | number) => `/ExamPractices/test/${id}/get-by-id`,
+    TEMPLATE_GET_LIST: "/ExamPractices/template/get-list",
+    TEMPLATE_GET_BY_ID: (id: string | number) => `/ExamPractices/template/${id}/get-by-id`,
+  },
+
   ADMIN_ACCOUNT: {
     GET_STUDENT_ACCOUNT: "/admin/account/get-student-account",
     GET_TEACHER_ACCOUNT: "/admin/account/get-teacher-account",
