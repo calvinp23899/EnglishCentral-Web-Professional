@@ -212,7 +212,8 @@ const mapVersionToPractice = (
 export const publicPracticeApi = {
   async getPublishedIeltsPractices() {
     const [templatesResult, versionsResult] = await Promise.all([
-      api.get<ApiResult<PagedResult<ExamTemplateSummary>>>(ENDPOINTS.ADMIN_EXAM_TEMPLATES.GET_LIST, {
+      api.get<ApiResult<PagedResult<ExamTemplateSummary>>>(ENDPOINTS.EXAM_PRACTICES.TEMPLATE_GET_LIST, {
+        skipAuthRedirect: true,
         params: {
           IsActive: true,
           Keyword: "IELTS",
@@ -220,7 +221,8 @@ export const publicPracticeApi = {
           PageSize: 100,
         },
       }),
-      api.get<ApiResult<PagedResult<ExamVersionSummary>>>(ENDPOINTS.ADMIN_EXAM_VERSIONS.GET_LIST, {
+      api.get<ApiResult<PagedResult<ExamVersionSummary>>>(ENDPOINTS.EXAM_PRACTICES.TEST_GET_LIST, {
+        skipAuthRedirect: true,
         params: {
           ExamFamily: "IELTS",
           Page: 1,
@@ -241,7 +243,10 @@ export const publicPracticeApi = {
   },
 
   async getVersionById(id: string | number) {
-    const response = await api.get<ApiResult<ExamVersionSummary>>(ENDPOINTS.ADMIN_EXAM_VERSIONS.GET_BY_ID(id));
+    const response = await api.get<ApiResult<ExamVersionSummary>>(
+      ENDPOINTS.EXAM_PRACTICES.TEST_GET_BY_ID(id),
+      { skipAuthRedirect: true },
+    );
     return unwrap(response.data);
   },
 };

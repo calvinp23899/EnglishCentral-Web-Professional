@@ -60,5 +60,6 @@ namespace EnglishCentral.API.Controllers.Admin.Exam
             var result = await _mediator.Send(new SubmitExamAttemptCommand(attemptId), ct);
             return StatusCode(result.StatusCode, result);
         }
+
     }
 }

@@ -262,6 +262,35 @@
   grid-column: 1 / -1;
 }
 
+.runtimeConfigBox {
+  grid-column: 1 / -1;
+  padding: 18px;
+  border: 1px solid #dbe5f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  display: grid;
+  gap: 16px;
+}
+
+.runtimeConfigHeader {
+  display: grid;
+  gap: 4px;
+
+  h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
 .accountStep {
   padding: 20px;
   display: grid;

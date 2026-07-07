@@ -23,6 +23,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Exam
             builder.Property(x => x.Description).HasMaxLength(2000);
             builder.Property(x => x.TotalScore).HasPrecision(18, 2);
             builder.Property(x => x.Status).HasConversion<int>();
+            builder.Property(x => x.TemplateConfigJson).HasColumnType("text");
+
 
             builder.HasOne(x => x.ExamType)
                 .WithMany(x => x.Templates)

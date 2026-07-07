@@ -2,6 +2,12 @@ import axios, { isAxiosError } from "axios";
 
 import { ENDPOINTS } from "./endpoint";
 
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    skipAuthRedirect?: boolean;
+  }
+}
+
 const USER_STORAGE_KEY = "englishcentral-user";
 const ACCESS_TOKEN_STORAGE_KEY = "englishcentral-access-token";
 const ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY =
@@ -181,6 +187,11 @@ api.interceptors.response.use(
     }
 
     const originalRequest = error.config as RetryableRequestConfig | undefined;
+
+    if (originalRequest?.skipAuthRedirect) {
+      return Promise.reject(error);
+    }
+
     const requestUrl = originalRequest?.url ?? "";
     const isAuthRequest =
       requestUrl.includes(ENDPOINTS.AUTH.LOGIN) ||

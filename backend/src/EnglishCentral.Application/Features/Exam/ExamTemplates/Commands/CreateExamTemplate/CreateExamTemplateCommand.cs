@@ -11,5 +11,6 @@ namespace EnglishCentral.Application.Features.Exam.ExamTemplates.Commands.Create
         string? Description,
         int? DurationMinutes,
         decimal? TotalScore,
+        string? TemplateConfigJson,
         bool IsActive) : IRequest<Result<ExamTemplateResponse>>;
 }

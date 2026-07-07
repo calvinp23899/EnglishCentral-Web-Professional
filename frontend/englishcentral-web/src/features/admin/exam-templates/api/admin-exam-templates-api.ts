@@ -32,6 +32,7 @@ export type AdminExamTemplate = {
   description?: string | null;
   durationMinutes?: number | null;
   totalScore?: number | null;
+  templateConfigJson?: string | null;
   status: string | number;
   isActive: boolean;
 };
@@ -51,6 +52,7 @@ export type ExamTemplatePayload = {
   description?: string | null;
   durationMinutes?: number | null;
   totalScore?: number | null;
+  templateConfigJson?: string | null;
   isActive: boolean;
 };
 

@@ -31,12 +31,7 @@ const steps = [
 type TestSetup = {
   description: string;
   durationMinutes: number;
-  level: string;
-  note: string;
-  numberPassages: number;
-  sourceLabel: string;
   status: "draft" | "published";
-  subDescriptions: string[];
   testCode: string;
   title: string;
 };
@@ -94,6 +89,7 @@ type QuestionGroup = {
   questions: QuestionItem[];
   scoreMode?: "all_or_nothing" | "partial";
   sharedOptions: GroupSharedOption[];
+  summaryText?: string;
   summaryTemplate?: string;
   title: string;
   type: string;
@@ -216,7 +212,6 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
 
 const fallbackReadingQuestionSubtype = readingQuestionSubtypes[0];
 const maxReadingQuestions = 40;
-const passageCountOptions = [1, 2, 3];
 const gapFillAnswerLimitOptions = [
   { label: "ONE WORD ONLY", value: "ONE_WORD_ONLY" },
   { label: "NO MORE THAN TWO WORDS", value: "NO_MORE_THAN_TWO_WORDS" },
@@ -471,12 +466,7 @@ const parseJson = <T,>(value: string | null | undefined, fallback: T): T => {
 const defaultSetup: TestSetup = {
   description: "A full IELTS Reading mock test with 3 passages and 40 questions.",
   durationMinutes: 60,
-  level: "Academic",
-  note: "Original mock dataset for UI development.",
-  numberPassages: 3,
-  sourceLabel: "IELTS Academic Reading - Original Mock Test",
   status: "draft",
-  subDescriptions: ["3 reading passages with academic-style topics."],
   testCode: "",
   title: "IELTS Reading Full Mock Test",
 };
@@ -695,6 +685,7 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
           paragraphs?: string[];
           scoreMode?: "all_or_nothing" | "partial";
           sharedOptions?: Array<{ content?: string; label?: string }>;
+          summaryText?: string;
           summaryTemplate?: string;
         }>(group.configJson, {});
         const subtype = findQuestionSubtype(questionType, groupConfig.displayType);
@@ -719,6 +710,7 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
           interaction: groupConfig.interaction ?? subtype.interaction,
           optionsReusable: groupConfig.optionsReusable ?? subtype.optionsReusable,
           scoreMode: groupConfig.scoreMode,
+          summaryText: groupConfig.summaryText ?? groupConfig.summaryTemplate ?? "",
           questions: group.questions.map((question) => {
             const questionMetadata = parseJson<{
               answerSlots?: number[];
@@ -742,7 +734,9 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
                 question.answerKeys.some((answer) =>
                   answer.correctValue === option.label ||
                   answer.correctValue === option.content ||
-                  answer.examAnswerOptionId === option.id,
+                  answer.examAnswerOptionId === option.id ||
+                  answer.answerOptionClientKey === option.publicId ||
+                  answer.answerOptionClientKey === `${question.code}_${option.label.replace(/[^a-z0-9]/gi, "").toUpperCase()}`,
                 ),
               )
               .map((option) => option.label);
@@ -772,7 +766,9 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
                 isCorrectAnswer: question.answerKeys.some((answer) =>
                   answer.correctValue === option.label ||
                   answer.correctValue === option.content ||
-                  answer.examAnswerOptionId === option.id,
+                  answer.examAnswerOptionId === option.id ||
+                  answer.answerOptionClientKey === option.publicId ||
+                  answer.answerOptionClientKey === `${question.code}_${option.label.replace(/[^a-z0-9]/gi, "").toUpperCase()}`,
                 ),
               })),
               sectionTitle: questionMetadata.sectionTitle ?? "",
@@ -780,7 +776,6 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
             };
           }),
           sharedOptions,
-          summaryTemplate: groupConfig.summaryTemplate ?? "",
           title: group.title ?? `Questions ${groupIndex + 1}`,
           type: questionType,
         };
@@ -891,7 +886,6 @@ export function IeltsReadingCreatePage() {
           ...current,
           description: version.description ?? template.description ?? "",
           durationMinutes: version.durationMinutes ?? template.durationMinutes ?? 60,
-          level: current.level,
           status: String(version.status).toLowerCase() === "published" || String(version.status) === "2" ? "published" : "draft",
           testCode: version.slug ?? "",
           title: version.name || template.name,
@@ -1019,16 +1013,7 @@ export function IeltsReadingCreatePage() {
       durationMinutes: templateDurationMinutes,
       totalScore: templateTotalScore,
       scoringMode: "Auto" as const,
-      runtimeConfigJson: JSON.stringify({
-        exam: "IELTS",
-        module: "Reading",
-        level: setup.level,
-        mode: "CBT",
-        note: setup.note,
-        numberOfPassages: setup.numberPassages,
-        sourceLabel: setup.sourceLabel,
-        subDescription: setup.subDescriptions.filter(Boolean).join("\n"),
-      }),
+      runtimeConfigJson: readingTemplate?.templateConfigJson ?? null,
       scoringConfigJson: JSON.stringify({ scorePerCorrect: 1 }),
       sections: [{
         code: "READING",
@@ -1086,7 +1071,7 @@ export function IeltsReadingCreatePage() {
                   : undefined,
                 range: getQuestionRange(group),
                 scoreMode: isMultiAnswerGroup ? group.scoreMode ?? "all_or_nothing" : undefined,
-                summaryTemplate: isSummaryCompletionWithOptions ? group.summaryTemplate || "" : undefined,
+                summaryText: isSummaryCompletionWithOptions ? group.summaryText || "" : undefined,
                 sharedOptions: isMatchingHeading || isSummaryCompletionWithOptions
                   ? undefined
                   : group.sharedOptions.map((option) =>
@@ -1160,37 +1145,6 @@ export function IeltsReadingCreatePage() {
       ...currentSetup,
       [key]: value,
     }));
-  };
-
-  const updateSubDescription = (index: number, value: string) => {
-    setSetup((currentSetup) => ({
-      ...currentSetup,
-      subDescriptions: currentSetup.subDescriptions.map((description, descriptionIndex) =>
-        descriptionIndex === index ? value : description,
-      ),
-    }));
-  };
-
-  const updateNumberPassages = (value: number) => {
-    const nextNumberPassages = Math.min(3, Math.max(1, value));
-    const nextPassages = [...passages];
-
-    while (nextPassages.length < nextNumberPassages) {
-      nextPassages.push(createPassage(nextPassages.length + 1));
-    }
-
-    const visiblePassages = nextPassages.slice(0, nextNumberPassages);
-    const nextActivePassage =
-      visiblePassages.find((passage) => passage.id === activePassageId) ?? visiblePassages[0];
-
-    setSetup((currentSetup) => ({
-      ...currentSetup,
-      numberPassages: nextNumberPassages,
-    }));
-    setPassages(visiblePassages);
-    setActivePassageId(nextActivePassage.id);
-    setActiveGroupId(nextActivePassage.questionGroups[0]?.id ?? "");
-    setGroupEditorOpen(true);
   };
 
   const updatePassage = <Key extends keyof ReadingPassage>(
@@ -1447,7 +1401,8 @@ export function IeltsReadingCreatePage() {
             optionsReusable: subtype.optionsReusable,
             scoreMode: isMultiAnswer ? group.scoreMode ?? "all_or_nothing" : undefined,
             sharedOptions: createDefaultSharedOptions(subtype),
-            summaryTemplate: isSummaryCompletion ? group.summaryTemplate || "" : undefined,
+            summaryText: isSummaryCompletion ? group.summaryText || group.summaryTemplate || "" : undefined,
+            summaryTemplate: undefined,
             type: questionType,
             questions: group.questions.map((question, questionIndex) => {
               const questionOptions = shouldUseQuestionOptions(questionType)
@@ -1944,14 +1899,6 @@ export function IeltsReadingCreatePage() {
                   />
                 </label>
                 <label>
-                  <span>Slug</span>
-                  <input
-                    placeholder="Để trống để BE tự sinh/giữ slug"
-                    value={setup.testCode}
-                    onChange={(event) => updateSetup("testCode", event.target.value)}
-                  />
-                </label>
-                <label>
                   <span>Duration</span>
                   <input
                     disabled
@@ -1977,61 +1924,6 @@ export function IeltsReadingCreatePage() {
                     onChange={(event) => updateSetup("description", event.target.value)}
                   />
                 </label>
-                <section className={styles.runtimeSection}>
-                  <div className={styles.runtimeSectionTitle}>
-                    <h3>Cấu hình thực thi</h3>
-                    <p>Các thông tin này được lưu trong runtimeConfigJson của version.</p>
-                  </div>
-                  <label>
-                    <span>Source label</span>
-                    <input
-                      value={setup.sourceLabel}
-                      onChange={(event) => updateSetup("sourceLabel", event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    <span>Level</span>
-                    <select
-                      value={setup.level}
-                      onChange={(event) => updateSetup("level", event.target.value)}
-                    >
-                      <option>Academic</option>
-                      <option>Band 5.5-6.0</option>
-                      <option>Band 6.0-6.5</option>
-                      <option>Band 6.5-7.0</option>
-                      <option>Band 7.0+</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>NumberPassage</span>
-                    <select
-                      value={setup.numberPassages}
-                      onChange={(event) => updateNumberPassages(Number(event.target.value))}
-                    >
-                      {passageCountOptions.map((passageCount) => (
-                        <option key={passageCount} value={passageCount}>
-                          {passageCount}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className={styles.fullField}>
-                    <span>Sub description</span>
-                    <textarea
-                      rows={3}
-                      value={setup.subDescriptions[0] ?? ""}
-                      onChange={(event) => updateSubDescription(0, event.target.value)}
-                    />
-                  </label>
-                  <label className={styles.fullField}>
-                    <span>Note</span>
-                    <textarea
-                      rows={3}
-                      value={setup.note}
-                      onChange={(event) => updateSetup("note", event.target.value)}
-                    />
-                  </label>
-                </section>
               </div>
             </div>
           )}
@@ -2359,6 +2251,36 @@ export function IeltsReadingCreatePage() {
                               }
                             />
                           </div>
+                          {activeGroupIsSummaryCompletionWithOptions && (
+                            <div className={styles.fullField}>
+                              <RichTextEditor
+                                label={
+                                  <span className={styles.labelWithInfo}>
+                                    Summary text
+                                    <span className={styles.infoTooltip}>
+                                      <span
+                                        aria-label="Hướng dẫn Summary text"
+                                        className={styles.infoIcon}
+                                        tabIndex={0}
+                                      >
+                                        i
+                                      </span>
+                                      <span className={styles.infoTooltipContent}>
+                                        Nhập đoạn summary hoàn chỉnh và đặt blank bằng placeholder
+                                        theo số câu, ví dụ {"{Q27}"}, {"{Q28}"}. Khi thi thật FE sẽ
+                                        thay các placeholder này bằng ô kéo thả đáp án.
+                                      </span>
+                                    </span>
+                                  </span>
+                                }
+                                minHeight={180}
+                                value={activeGroup.summaryText ?? ""}
+                                onChange={(value) =>
+                                  updateQuestionGroup(activeGroup.id, "summaryText", value)
+                                }
+                              />
+                            </div>
+                          )}
                           {activeGroupIsMatching && (
                             <div className={styles.sharedOptionsPanel}>
                               <div className={styles.questionOptionsHeader}>
