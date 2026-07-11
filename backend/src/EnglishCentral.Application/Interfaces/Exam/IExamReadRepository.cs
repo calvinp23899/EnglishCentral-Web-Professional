@@ -19,6 +19,8 @@ namespace EnglishCentral.Application.Interfaces.Exam
             int pageSize,
             long? examVersionId,
             long? studentId,
+            string? candidateEmail,
+            EExamAttemptMode? mode,
             EExamAttemptStatus? status,
             string? keyword,
             bool isDescending,

@@ -42,6 +42,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.StartEx
                 AttemptCode = $"EXA-{_codeGenerator.GenerateCode()}",
                 CandidateName = request.CandidateName?.Trim(),
                 CandidateEmail = request.CandidateEmail?.Trim(),
+                Mode = request.Mode ?? EExamAttemptMode.Practice,
                 Status = EExamAttemptStatus.InProgress,
                 StartedAt = now,
                 CreatedAt = now

@@ -16,6 +16,8 @@ namespace EnglishCentral.Domain.Entities.Exam
 
         public string? CandidateEmail { get; set; }
 
+        public EExamAttemptMode Mode { get; set; } = EExamAttemptMode.Practice;
+
         public EExamAttemptStatus Status { get; set; } = EExamAttemptStatus.NotStarted;
 
         public DateTimeOffset? StartedAt { get; set; }

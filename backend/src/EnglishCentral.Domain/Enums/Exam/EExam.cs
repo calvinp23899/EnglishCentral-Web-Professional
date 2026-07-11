@@ -78,6 +78,12 @@ namespace EnglishCentral.Domain.Enums.Exam
         Cancelled = 7
     }
 
+    public enum EExamAttemptMode
+    {
+        Practice = 1,
+        RealTest = 2
+    }
+
     public enum EExamScoringMode
     {
         Auto = 1,

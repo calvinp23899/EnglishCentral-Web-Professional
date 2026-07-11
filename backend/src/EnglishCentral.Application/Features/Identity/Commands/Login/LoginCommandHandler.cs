@@ -25,7 +25,10 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Login
 
         public async Task<Result<AuthTokenResult>> Handle(LoginCommand request, CancellationToken ct)
         {
-            var user = await _userRepository.GetByEmailAsync(request.Email, ct);
+            var userWithStudent = await _userRepository.GetByEmailAsync(request.Email, ct);
+            var user = userWithStudent?.User;
+            var student = userWithStudent?.Student;
+
             if (user is null || !_passwordService.Verify(request.Password, user.PasswordHash))
                 return Result<AuthTokenResult>.Failure("Invalid email or password.", 401);
 
@@ -34,7 +37,7 @@ namespace EnglishCentral.Application.Features.Identity.Commands.Login
 
             user.LastLoginAt = DateTimeOffset.UtcNow;
 
-            var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(user, IsCheckAdminPage(user));
+            var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(user, IsCheckAdminPage(user), student?.Id);
             var refreshToken = await _jwtService.GenerateRefreshTokenAsync(user, ct);
 
             return Result<AuthTokenResult>.Success(new AuthTokenResult(

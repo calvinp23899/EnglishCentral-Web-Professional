@@ -12,6 +12,8 @@ namespace EnglishCentral.Application.Features.Exam.ExamAttempts.Queries.GetExamA
         public int PageSize { get; init; } = 10;
         public long? ExamVersionId { get; init; }
         public long? StudentId { get; init; }
+        public string? CandidateEmail { get; init; }
+        public EExamAttemptMode? Mode { get; init; }
         public EExamAttemptStatus? Status { get; init; }
         public string? Keyword { get; init; }
         public bool IsDescending { get; init; } = true;

@@ -1,5 +1,6 @@
 using EnglishCentral.Domain.Constants;
 using EnglishCentral.Domain.Entities.Exam;
+using EnglishCentral.Domain.Enums.Exam;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,12 +17,16 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Exam
             builder.HasIndex(x => x.ExamVersionId);
             builder.HasIndex(x => x.StudentId);
             builder.HasIndex(x => x.Status);
+            builder.HasIndex(x => x.Mode);
             builder.HasIndex(x => x.StartedAt);
             builder.HasIndex(x => x.SubmittedAt);
 
             builder.Property(x => x.AttemptCode).HasMaxLength(80).IsRequired();
             builder.Property(x => x.CandidateName).HasMaxLength(255);
             builder.Property(x => x.CandidateEmail).HasMaxLength(255);
+            builder.Property(x => x.Mode)
+                .HasConversion<int>()
+                .HasDefaultValue(EExamAttemptMode.Practice);
             builder.Property(x => x.Status).HasConversion<int>();
             builder.Property(x => x.RawScore).HasPrecision(18, 2);
             builder.Property(x => x.ScaledScore).HasPrecision(18, 2);

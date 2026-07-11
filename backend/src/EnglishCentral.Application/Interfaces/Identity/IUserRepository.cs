@@ -1,10 +1,11 @@
-﻿using EnglishCentral.Domain.Entities.Authentication;
+﻿using EnglishCentral.Application.Features.Identity.DTOs;
+using EnglishCentral.Domain.Entities.Authentication;
 
 namespace EnglishCentral.Application.Interfaces.Identity
 {
     public interface IUserRepository : IGenericRepository<User>
     {
-        Task<User?> GetByEmailAsync(string email, CancellationToken ct = default);
+        Task<UserWithStudentResult?> GetByEmailAsync(string email, CancellationToken ct = default);
         Task<bool> IsEmailExistsAsync(string email, CancellationToken ct = default);
         Task<bool> IsPhoneNumberExistsAsync(string phoneNumber, CancellationToken ct = default);
         Task<User?> GetByPublicIdAsync(Guid publicId, CancellationToken ct = default);

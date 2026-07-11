@@ -1,4 +1,5 @@
 using EnglishCentral.Application.Features.Exam.DTOs;
+using EnglishCentral.Domain.Enums.Exam;
 using EnglishCentral.Shared.Results;
 using MediatR;
 
@@ -8,5 +9,6 @@ namespace EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.StartEx
         long ExamVersionId,
         long? StudentId,
         string? CandidateName,
-        string? CandidateEmail) : IRequest<Result<ExamAttemptResponse>>;
+        string? CandidateEmail,
+        EExamAttemptMode? Mode) : IRequest<Result<ExamAttemptResponse>>;
 }

@@ -539,6 +539,30 @@
   }
 }
 
+.realSubmitPartButton {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 5px;
+  padding: 16px 6px 7px !important;
+  text-align: left;
+  user-select: none;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #eef2f7;
+  }
+
+  strong {
+    font-size: 14px;
+  }
+}
+
+.activeSubmitPartButton {
+  background: #eef6ff !important;
+}
+
 .realQuestionNavButton {
   flex: 0 0 auto;
   width: auto;

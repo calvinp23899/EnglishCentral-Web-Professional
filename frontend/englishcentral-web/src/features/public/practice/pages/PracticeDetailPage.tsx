@@ -7,6 +7,12 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import type { PublicLayoutOutletContext } from "@/app/layouts/public-layout/PublicLayout";
+import { toastDanger } from "@/components/ui";
+import {
+  getAuthErrorMessage,
+  getStoredAuthSession,
+  getStoredStudentIdFromAccessToken,
+} from "@/features/public/auth/api/auth-api";
 import { SubmitResultModal } from "../components/SubmitResultModal/SubmitResultModal";
 import { getAllQuestions } from "../components/QuestionBlock";
 import { mockPracticeTests } from "../data/mockPracticeTests";
@@ -21,11 +27,143 @@ import { RealTestListeningView } from "../views/RealTestListeningView";
 import { RealTestReadingView } from "../views/RealTestReadingView";
 import { mapExamVersionToPracticeTest } from "../api/exam-version-to-practice-test";
 import { publicPracticeApi } from "../api/public-practice-api";
-import type { AnswerMap, ExamResult } from "../types/practice-test.type";
+import type {
+  AnswerMap,
+  ExamResult,
+  IELTSMockTest,
+  IELTSReadingQuestion,
+} from "../types/practice-test.type";
 import styles from "./PracticeDetailPage.module.scss";
 
 type RealSubmitStep = "exam" | "continue" | "loading" | "result" | "review";
 type PracticeSubmitStep = "exam" | "result" | "review";
+
+const getNumericQuestionId = (question: IELTSReadingQuestion) => {
+  const fallbackId = Number(question.id);
+  return question.backendQuestionId ?? (Number.isFinite(fallbackId) ? fallbackId : null);
+};
+
+const splitAnswerValue = (value: string) =>
+  value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const buildAttemptAnswers = (test: IELTSMockTest, answers: AnswerMap) =>
+  getAllQuestions(test)
+    .map((question) => {
+      const questionId = getNumericQuestionId(question);
+      const rawAnswer = answers[question.id]?.trim();
+
+      if (!questionId || !rawAnswer) {
+        return null;
+      }
+
+      const selectedValues = splitAnswerValue(rawAnswer);
+      const optionIds = selectedValues
+        .map((value) => question.optionBackendIds?.[value])
+        .filter((value): value is number => typeof value === "number");
+
+      if (optionIds.length === 1 && selectedValues.length === 1) {
+        return {
+          answerJson: null,
+          answerOptionId: optionIds[0],
+          answerText: null,
+          questionId,
+        };
+      }
+
+      if (optionIds.length > 1) {
+        return {
+          answerJson: JSON.stringify({
+            answerOptionIds: optionIds,
+            answers: selectedValues,
+          }),
+          answerOptionId: null,
+          answerText: null,
+          questionId,
+        };
+      }
+
+      return {
+        answerJson: null,
+        answerOptionId: null,
+        answerText: rawAnswer,
+        questionId,
+      };
+    })
+    .filter((answer): answer is NonNullable<typeof answer> => Boolean(answer));
+
+const readNumber = (
+  source: Record<string, unknown>,
+  keys: string[],
+  fallback: number,
+) => {
+  for (const key of keys) {
+    const value = source[key];
+
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+
+    if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) {
+      return Number(value);
+    }
+  }
+
+  return fallback;
+};
+
+const normalizeSubmitResult = (
+  response: unknown,
+  fallback: ExamResult,
+): ExamResult => {
+  const source =
+    response && typeof response === "object"
+      ? ((response as Record<string, unknown>).result as Record<string, unknown>) ??
+        ((response as Record<string, unknown>).Result as Record<string, unknown>) ??
+        (response as Record<string, unknown>)
+      : {};
+  const totalQuestions = readNumber(
+    source,
+    ["totalQuestions", "TotalQuestions", "total", "Total"],
+    fallback.totalQuestions,
+  );
+  const correctQuestions = readNumber(
+    source,
+    ["correctQuestions", "CorrectQuestions", "correctCount", "CorrectCount", "score", "Score"],
+    fallback.correctQuestions,
+  );
+  const answeredQuestions = readNumber(
+    source,
+    ["answeredQuestions", "AnsweredQuestions"],
+    fallback.answeredQuestions,
+  );
+  const skippedQuestions = readNumber(
+    source,
+    ["skippedQuestions", "SkippedQuestions"],
+    Math.max(totalQuestions - answeredQuestions, 0),
+  );
+  const wrongQuestions = readNumber(
+    source,
+    ["wrongQuestions", "WrongQuestions"],
+    Math.max(answeredQuestions - correctQuestions, 0),
+  );
+  const bandScore = readNumber(
+    source,
+    ["bandScore", "BandScore", "ieltsBandScore", "IeltsBandScore"],
+    fallback.bandScore,
+  );
+
+  return {
+    answeredQuestions,
+    bandScore,
+    correctQuestions,
+    skippedQuestions,
+    totalQuestions,
+    wrongQuestions,
+  };
+};
 
 export function PracticeDetailPage() {
   const { category, slug } = useParams();
@@ -38,6 +176,9 @@ export function PracticeDetailPage() {
   const [apiTest, setApiTest] = useState<ReturnType<typeof mapExamVersionToPracticeTest> | null>(null);
   const [isLoadingApiTest, setIsLoadingApiTest] = useState(false);
   const [apiTestError, setApiTestError] = useState<string | null>(null);
+  const [realActivePartIndex, setRealActivePartIndex] = useState(0);
+  const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
+  const [submitResult, setSubmitResult] = useState<ExamResult | null>(null);
   const [openResultModal, setOpenResultModal] = useState(false);
   const navigate = useNavigate();
   const { setPublicChromeVisible } =
@@ -101,6 +242,12 @@ export function PracticeDetailPage() {
   const handleBackToPractice = () => {
     navigate("/practice");
   };
+
+  useEffect(() => {
+    setStartedAt(new Date().toISOString());
+    setSubmitResult(null);
+    setRealActivePartIndex(0);
+  }, [mode, test?.id]);
 
   useEffect(() => {
     const shouldUseFullscreen =
@@ -182,6 +329,42 @@ export function PracticeDetailPage() {
     };
   };
 
+  const handleRealExamSubmit = async () => {
+    if (!test) return;
+
+    const examVersionId = Number(test.id);
+
+    if (!Number.isFinite(examVersionId)) {
+      setSubmitResult(getExamResult());
+      setRealSubmitStep("result");
+      return;
+    }
+
+    setRealSubmitStep("loading");
+
+    try {
+      const currentUser = getStoredAuthSession()?.user;
+      const attemptMode = await publicPracticeApi.getExamAttemptModeValue(
+        mode === "real" ? "real" : "practice",
+      );
+      const response = await publicPracticeApi.submitAttemptWithAnswers({
+        answers: buildAttemptAnswers(test, answers),
+        candidateEmail: currentUser?.email?.trim() || null,
+        candidateName: currentUser?.name?.trim() || null,
+        examVersionId,
+        mode: attemptMode,
+        startedAt,
+        studentId: getStoredStudentIdFromAccessToken(),
+      });
+
+      setSubmitResult(normalizeSubmitResult(response, getExamResult()));
+      setRealSubmitStep("result");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+      setRealSubmitStep("continue");
+    }
+  };
+
   if (isLoadingApiTest || isWaitingForApiVersion) {
     return (
       <div className={styles.notFound}>
@@ -217,13 +400,14 @@ export function PracticeDetailPage() {
     if (realSubmitStep === "continue") {
       return (
         <RealSubmitContinueView
-          onNext={() => {
-            setRealSubmitStep("loading");
-
-            window.setTimeout(() => {
-              setRealSubmitStep("result");
-            }, 1500);
+          activePartIndex={realActivePartIndex}
+          answers={answers}
+          test={test}
+          onBackToPart={(partIndex) => {
+            setRealActivePartIndex(partIndex);
+            setRealSubmitStep("exam");
           }}
+          onNext={handleRealExamSubmit}
         />
       );
     }
@@ -235,7 +419,7 @@ export function PracticeDetailPage() {
     if (realSubmitStep === "result") {
       return (
         <RealExamResultView
-          {...getExamResult()}
+          {...(submitResult ?? getExamResult())}
           time="00:00:27"
           onReview={() => setRealSubmitStep("review")}
         />
@@ -247,7 +431,7 @@ export function PracticeDetailPage() {
         <RealExamReviewView
           test={test}
           answers={answers}
-          result={getExamResult()}
+          result={submitResult ?? getExamResult()}
           time="00:00:27"
           onBackToResult={() => setRealSubmitStep("result")}
           onBackToPractice={handleBackToPractice}
@@ -270,10 +454,12 @@ export function PracticeDetailPage() {
 
     return (
       <RealTestReadingView
+        activePartIndex={realActivePartIndex}
         test={test}
         answers={answers}
         questionRefs={questionRefs}
         onAnswer={handleAnswer}
+        onActivePartIndexChange={setRealActivePartIndex}
         onScrollToQuestion={scrollToQuestion}
         onSubmit={() => setRealSubmitStep("continue")}
       />

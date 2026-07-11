@@ -13,10 +13,12 @@ import type {
 import styles from "../pages/PracticeDetailPage.module.scss";
 
 type RealTestReadingViewProps = {
+  activePartIndex: number;
   test: IELTSMockTest;
   answers: AnswerMap;
   questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
   onAnswer: (questionId: string, value: string) => void;
+  onActivePartIndexChange: (partIndex: number) => void;
   onScrollToQuestion: (questionId: string) => void;
   onSubmit: () => void;
 };
@@ -25,14 +27,15 @@ const getQuestionLabel = (question: IELTSReadingQuestion) =>
   question.numberLabel || String(question.number);
 
 export function RealTestReadingView({
+  activePartIndex,
   test,
   answers,
   questionRefs,
   onAnswer,
+  onActivePartIndexChange,
   onScrollToQuestion,
   onSubmit,
 }: RealTestReadingViewProps) {
-  const [activePartIndex, setActivePartIndex] = useState(0);
   const [passageWidth, setPassageWidth] = useState(50);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [passageAnnotations, setPassageAnnotations] = useState<
@@ -170,15 +173,15 @@ export function RealTestReadingView({
           <div className={styles.floatingArrows}>
             <button
               disabled={activePartIndex === 0}
-              onClick={() => setActivePartIndex((prev) => Math.max(0, prev - 1))}
+              onClick={() => onActivePartIndexChange(Math.max(0, activePartIndex - 1))}
             >
               ←
             </button>
             <button
               disabled={activePartIndex === test.passages.length - 1}
               onClick={() =>
-                setActivePartIndex((prev) =>
-                  Math.min(test.passages.length - 1, prev + 1)
+                onActivePartIndexChange(
+                  Math.min(test.passages.length - 1, activePartIndex + 1)
                 )
               }
             >
@@ -265,17 +268,17 @@ export function RealTestReadingView({
               className={styles.realPartGroup}
               role="button"
               tabIndex={0}
-              onClick={() => setActivePartIndex(index)}
+              onClick={() => onActivePartIndexChange(index)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  setActivePartIndex(index);
+                  onActivePartIndexChange(index);
                 }
               }}
             >
               <button
                 className={activePartIndex === index ? styles.activePartButton : ""}
-                onClick={() => setActivePartIndex(index)}
+                onClick={() => onActivePartIndexChange(index)}
               >
                 <strong>Part {passage.part}</strong>
               </button>

@@ -77,11 +77,11 @@ namespace EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.SubmitE
             var attempt = new ExamAttempt
             {
                 ExamVersionId = request.ExamVersionId,
-                ExamVersion = version,
                 StudentId = request.StudentId,
                 AttemptCode = $"EXA-{_codeGenerator.GenerateCode()}",
                 CandidateName = request.CandidateName?.Trim(),
                 CandidateEmail = request.CandidateEmail?.Trim(),
+                Mode = request.Mode ?? EExamAttemptMode.Practice,
                 Status = EExamAttemptStatus.InProgress,
                 StartedAt = startedAt,
                 CreatedAt = submittedAt
@@ -124,7 +124,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.SubmitE
                 });
             }
 
-            ExamAttemptScoringService.ScoreAttempt(attempt, submittedAt);
+            ExamAttemptScoringService.ScoreAttempt(attempt, version, submittedAt);
 
             await _attemptRepository.AddAsync(attempt, ct);
             return Result<ExamAttemptResponse>.Success(attempt.ToResponse(), 201);

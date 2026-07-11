@@ -78,7 +78,7 @@ export type UpdateAdminStudentPayload = {
   enrollmentDate: string;
   status: string;
   notes?: string | null;
-  newPassword?: string | null;
+  NewPassword?: string | null;
 };
 
 type PagedResult<T> = {
@@ -173,9 +173,14 @@ export const adminStudentsApi = {
   },
 
   async update(id: string | number, payload: UpdateAdminStudentPayload) {
+    const requestPayload = {
+      ...payload,
+      NewPassword: payload.NewPassword ?? null,
+    };
+
     const response = await api.put<ApiResult<RawAdminStudent>>(
       ENDPOINTS.ADMIN_STUDENTS.UPDATE(id),
-      payload
+      requestPayload
     );
 
     if (!response.data.isSuccess || !response.data.data) {

@@ -1,4 +1,5 @@
 ﻿using EnglishCentral.Domain.Entities.Exam;
+using EnglishCentral.Application.Features.Exam.ExamAttempts.Services;
 using EnglishCentral.Domain.Enums.Exam;
 using DomainExamQuestionResponse = EnglishCentral.Domain.Entities.Exam.ExamQuestionResponse;
 
@@ -138,10 +139,12 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
         Guid PublicId,
         long Id,
         long ExamVersionId,
+        string? ExamName,
         long? StudentId,
         string AttemptCode,
         string? CandidateName,
         string? CandidateEmail,
+        EExamAttemptMode Mode,
         EExamAttemptStatus Status,
         DateTimeOffset? StartedAt,
         DateTimeOffset? SubmittedAt,
@@ -150,7 +153,7 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
         decimal? RawScore,
         decimal? ScaledScore,
         decimal? BandScore,
-        string? ResultLevel,
+        string? ResultDetail,
         List<ExamSectionAttemptResponse> SectionAttempts,
         List<ExamQuestionResponseResponse> Responses);
 
@@ -327,10 +330,12 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
             entity.PublicId,
             entity.Id,
             entity.ExamVersionId,
+            entity.ExamVersion?.Name,
             entity.StudentId,
             entity.AttemptCode,
             entity.CandidateName,
             entity.CandidateEmail,
+            Enum.IsDefined(entity.Mode) ? entity.Mode : EExamAttemptMode.Practice,
             entity.Status,
             entity.StartedAt,
             entity.SubmittedAt,
@@ -338,10 +343,25 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
             entity.DurationSeconds,
             entity.RawScore,
             entity.ScaledScore,
-            entity.BandScore,
-            entity.ResultLevel,
+            entity.BandScore ?? ExamAttemptScoringService.CalculateBandScore(entity.RawScore, entity.ExamVersion?.ScoringConfigJson),
+            BuildResultDetail(entity),
             entity.SectionAttempts.OrderBy(x => x.Id).Select(x => x.ToResponse()).ToList(),
             entity.Responses.OrderBy(x => x.ExamQuestionId).Select(x => x.ToResponse()).ToList());
+
+        private static string BuildResultDetail(ExamAttempt entity)
+        {
+            var correctAnswers = entity.Responses.Count(x => x.IsCorrect == true);
+            var totalQuestions = entity.ExamVersion?.Sections
+                .SelectMany(x => x.Parts)
+                .SelectMany(x => x.QuestionGroups)
+                .SelectMany(x => x.Questions)
+                .Count() ?? 0;
+
+            if (totalQuestions <= 0)
+                totalQuestions = entity.Responses.Select(x => x.ExamQuestionId).Distinct().Count();
+
+            return $"{correctAnswers}/{totalQuestions}";
+        }
 
         public static ExamSectionAttemptResponse ToResponse(this ExamSectionAttempt entity) => new(
             entity.PublicId,

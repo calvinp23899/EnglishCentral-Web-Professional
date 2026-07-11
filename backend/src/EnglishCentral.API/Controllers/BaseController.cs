@@ -1,3 +1,4 @@
+using EnglishCentral.Contracts.Responses.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
@@ -49,6 +50,14 @@ namespace EnglishCentral.API.Controllers
                     Path = "/"
                 });
         }
-
+        protected List<MetadataOptionResponse> GetEnumMetadata<T>() where T : struct, Enum
+        {
+            return Enum.GetValues<T>()
+                .Select(x => new MetadataOptionResponse(
+                    Label: x.ToString(),
+                    Value: x.ToString(),
+                    Code: Convert.ToInt32(x)))
+                .ToList();
+        }
     }
 }

@@ -1,6 +1,5 @@
 using EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.SaveExamResponse;
 using EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.StartExamAttempt;
-using EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.SubmitExamAttempt;
 using EnglishCentral.Application.Features.Exam.ExamAttempts.Queries.GetExamAttemptById;
 using EnglishCentral.Application.Features.Exam.ExamAttempts.Queries.GetExamAttempts;
 using EnglishCentral.Infrastructure.Authorization;
@@ -53,13 +52,13 @@ namespace EnglishCentral.API.Controllers.Admin.Exam
             return StatusCode(result.StatusCode, result);
         }
 
-        [HttpPost("{attemptId:long}/submit")]
-        [HasPermission(SystemPermissions.ExamUpdate)]
-        public async Task<IActionResult> Submit(long attemptId, CancellationToken ct)
-        {
-            var result = await _mediator.Send(new SubmitExamAttemptCommand(attemptId), ct);
-            return StatusCode(result.StatusCode, result);
-        }
+        //[HttpPost("{attemptId:long}/submit")]
+        //[HasPermission(SystemPermissions.ExamUpdate)]
+        //public async Task<IActionResult> Submit(long attemptId, CancellationToken ct)
+        //{
+        //    var result = await _mediator.Send(new SubmitExamAttemptCommand(attemptId), ct);
+        //    return StatusCode(result.StatusCode, result);
+        //}
 
     }
 }

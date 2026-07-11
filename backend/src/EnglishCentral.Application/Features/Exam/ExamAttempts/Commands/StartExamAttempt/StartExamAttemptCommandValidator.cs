@@ -10,6 +10,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.StartEx
             RuleFor(x => x.StudentId).GreaterThan(0).When(x => x.StudentId.HasValue);
             RuleFor(x => x.CandidateName).MaximumLength(255);
             RuleFor(x => x.CandidateEmail).MaximumLength(255).EmailAddress().When(x => !string.IsNullOrWhiteSpace(x.CandidateEmail));
+            RuleFor(x => x.Mode).IsInEnum().When(x => x.Mode.HasValue);
         }
     }
 }

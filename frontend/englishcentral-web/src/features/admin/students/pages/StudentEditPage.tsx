@@ -291,7 +291,7 @@ export function StudentEditPage() {
         enrollmentDate: formValue.enrollmentDate || initialFormValue.enrollmentDate,
         status: formValue.status,
         notes: formValue.notes.trim() || null,
-        newPassword: hasLinkedAccount && newPassword.trim() ? newPassword.trim() : null,
+        NewPassword: hasLinkedAccount && newPassword.trim() ? newPassword.trim() : null,
       });
 
       setIsConfirmOpen(false);
