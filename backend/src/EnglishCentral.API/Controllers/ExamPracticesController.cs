@@ -1,9 +1,12 @@
-﻿using EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.SubmitExamAttemptWithAnswers;
+﻿using EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.SubmitExamAttempt;
+using EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.SubmitExamAttemptWithAnswers;
+using EnglishCentral.Application.Features.Exam.ExamAttempts.Queries.GetExamAttempts;
 using EnglishCentral.Application.Features.Exam.ExamTemplates.Queries.GetExamTemplateById;
 using EnglishCentral.Application.Features.Exam.ExamTemplates.Queries.GetExamTemplates;
 using EnglishCentral.Application.Features.Exam.ExamVersions.Queries.GetExamVersionById;
 using EnglishCentral.Application.Features.Exam.ExamVersions.Queries.GetExamVersions;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EnglishCentral.API.Controllers
@@ -48,6 +51,21 @@ namespace EnglishCentral.API.Controllers
         public async Task<IActionResult> SubmitWithAnswers(SubmitExamAttemptWithAnswersCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPost("{attemptId:long}/submit")]
+        public async Task<IActionResult> Submit(long attemptId, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new SubmitExamAttemptCommand(attemptId), ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpGet("get-history")]
+        [Authorize]
+        public async Task<IActionResult> GetList([FromQuery] GetExamAttemptsQuery query, CancellationToken ct)
+        {
+            var result = await _mediator.Send(query, ct);
             return StatusCode(result.StatusCode, result);
         }
     }

@@ -313,6 +313,23 @@ export const getStoredAccessToken = () =>
   window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) ??
   window.sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
 
+export const getStoredStudentIdFromAccessToken = () => {
+  const tokenPayload = decodeJwtPayload(getStoredAccessToken() ?? undefined) ?? {};
+  const rawStudentId = readString(tokenPayload, [
+    "studentId",
+    "StudentId",
+    "student_id",
+    "StudentID",
+  ]);
+
+  if (!rawStudentId) {
+    return null;
+  }
+
+  const studentId = Number(rawStudentId);
+  return Number.isFinite(studentId) ? studentId : null;
+};
+
 export const getStoredAuthSession = (): AuthSession | null => {
   const user = getStoredUser();
   const accessToken = getStoredAccessToken();

@@ -1,3 +1,4 @@
+using EnglishCentral.Application.Features.Identity.DTOs;
 using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Domain.Entities.Authentication;
 using EnglishCentral.Infrastructure.Persistence.Context;
@@ -9,14 +10,25 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Identity
     {
         public UserRepository(ApplicationDbContext db) : base(db) { }
 
-        public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
+        public async Task<UserWithStudentResult?> GetByEmailAsync(string email, CancellationToken ct = default)
         {
-            return await _dbContenxt.Users
-                .Include(x => x.UserRoles)
-                    .ThenInclude(x => x.Role)
-                        .ThenInclude(x => x.RolePermissions)
-                            .ThenInclude(x => x.Permission)
-                .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted, ct);
+            var rs = await (
+                        from user in _dbContenxt.Users
+                            .Include(x => x.UserRoles)
+                                .ThenInclude(x => x.Role)
+                                    .ThenInclude(x => x.RolePermissions)
+                                        .ThenInclude(x => x.Permission)
+                        join student in _dbContenxt.Students
+                            on user.Id equals student.UserId into studentJoin
+                        from student in studentJoin.DefaultIfEmpty()
+                        where user.Email == email && !user.IsDeleted
+                        select new
+                        {
+                            User = user,
+                            Student = student
+                        }
+                    ).FirstOrDefaultAsync(ct);
+            return rs is null ? null : new UserWithStudentResult(rs.User, rs.Student);
         }
 
 

@@ -155,8 +155,17 @@ export const ENDPOINTS = {
   EXAM_PRACTICES: {
     TEST_GET_LIST: "/ExamPractices/test/get-list",
     TEST_GET_BY_ID: (id: string | number) => `/ExamPractices/test/${id}/get-by-id`,
+    HISTORY: "/ExamPractices/get-history",
     TEMPLATE_GET_LIST: "/ExamPractices/template/get-list",
     TEMPLATE_GET_BY_ID: (id: string | number) => `/ExamPractices/template/${id}/get-by-id`,
+  },
+
+  EXAM_ATTEMPTS: {
+    SUBMIT_WITH_ANSWERS: "/ExamPractices/submit-with-answers",
+  },
+
+  PUBLIC_METADATA: {
+    EXAM_ATTEMPT_MODE: "/PublicMetadatas/get-exam-attempt-mode",
   },
 
   ADMIN_ACCOUNT: {

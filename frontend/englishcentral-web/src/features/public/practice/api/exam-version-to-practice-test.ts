@@ -248,8 +248,14 @@ export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTS
                     const sectionTitle = htmlToReadableText(
                       questionMetadata.sectionTitle ?? questionMetadata.title ?? question.title,
                     );
+                    const optionBackendIds = Object.fromEntries(
+                      (question.answerOptions ?? [])
+                        .filter((option) => option.id !== undefined)
+                        .map((option) => [option.label, option.id as number]),
+                    );
 
                     return {
+                      backendQuestionId: question.id,
                       correctAnswer: getCorrectAnswer(question),
                       explanation: htmlToReadableText(question.explanation),
                       id: String(question.id ?? question.publicId ?? `${groupIndex + 1}-${questionIndex + 1}`),
@@ -261,6 +267,7 @@ export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTS
                         content: htmlToReadableText(option.content),
                         label: option.label,
                       })),
+                      optionBackendIds,
                       passageRef: questionMetadata.paragraph ?? questionMetadata.passageRef ?? "",
                       sectionTitle: sectionTitle || undefined,
                       text: htmlToReadableText(

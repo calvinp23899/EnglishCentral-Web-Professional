@@ -142,6 +142,9 @@ namespace EnglishCentral.API.Controllers.Admin.Metadata
         [HttpGet("get-exam-attempt-status")]
         public IActionResult GetMetadataExamAttemptStatus() => Ok(GetEnumMetadata<EExamAttemptStatus>());
 
+        [HttpGet("get-exam-attempt-mode")]
+        public IActionResult GetMetadataExamAttemptMode() => Ok(GetEnumMetadata<EExamAttemptMode>());
+
         [HttpGet("get-exam-scoring-mode")]
         public IActionResult GetMetadataExamScoringMode() => Ok(GetEnumMetadata<EExamScoringMode>());
 

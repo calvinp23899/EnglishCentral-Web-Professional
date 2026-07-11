@@ -28,6 +28,7 @@ export type IELTSReadingOption = {
 
 export type IELTSReadingQuestion = {
   id: string;
+  backendQuestionId?: number;
   number: number;
   numberLabel?: string;
   type?: IELTSReadingQuestionType;
@@ -35,6 +36,7 @@ export type IELTSReadingQuestion = {
   sectionTitle?: string;
   instruction?: string;
   options?: IELTSReadingOption[];
+  optionBackendIds?: Record<string, number>;
   correctAnswer: string;
   explanation?: string;
   passageRef?: string;

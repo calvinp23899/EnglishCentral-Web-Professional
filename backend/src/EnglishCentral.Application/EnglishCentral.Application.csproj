@@ -17,8 +17,4 @@
     <ProjectReference Include="..\EnglishCentral.Shared\EnglishCentral.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\Identity\DTOs\" />
-  </ItemGroup>
-
 </Project>

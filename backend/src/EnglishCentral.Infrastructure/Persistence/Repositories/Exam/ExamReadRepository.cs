@@ -54,6 +54,11 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Exam
             var query = _db.ExamAttempts
                 .Include(x => x.SectionAttempts)
                 .Include(x => x.Responses)
+                .Include(x => x.ExamVersion)
+                    .ThenInclude(x => x.Sections)
+                    .ThenInclude(x => x.Parts)
+                    .ThenInclude(x => x.QuestionGroups)
+                    .ThenInclude(x => x.Questions)
                 .AsSplitQuery();
 
             if (asNoTracking)
@@ -82,6 +87,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Exam
             int pageSize,
             long? examVersionId,
             long? studentId,
+            string? candidateEmail,
+            EExamAttemptMode? mode,
             EExamAttemptStatus? status,
             string? keyword,
             bool isDescending,
@@ -89,6 +96,11 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Exam
         {
             var query = _db.ExamAttempts
                 .AsNoTracking()
+                .Include(x => x.ExamVersion)
+                    .ThenInclude(x => x.Sections)
+                    .ThenInclude(x => x.Parts)
+                    .ThenInclude(x => x.QuestionGroups)
+                    .ThenInclude(x => x.Questions)
                 .Include(x => x.SectionAttempts)
                 .Include(x => x.Responses)
                 .AsSplitQuery()
@@ -98,6 +110,13 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Exam
                 query = query.Where(x => x.ExamVersionId == examVersionId.Value);
             if (studentId.HasValue)
                 query = query.Where(x => x.StudentId == studentId.Value);
+            if (!string.IsNullOrWhiteSpace(candidateEmail))
+            {
+                var normalizedEmail = candidateEmail.Trim().ToLower();
+                query = query.Where(x => x.CandidateEmail != null && x.CandidateEmail.ToLower() == normalizedEmail);
+            }
+            if (mode.HasValue)
+                query = query.Where(x => x.Mode == mode.Value);
             if (status.HasValue)
                 query = query.Where(x => x.Status == status.Value);
             if (!string.IsNullOrWhiteSpace(keyword))

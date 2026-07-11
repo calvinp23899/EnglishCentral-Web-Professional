@@ -23,6 +23,8 @@ namespace EnglishCentral.Application.Features.Exam.ExamAttempts.Queries.GetExamA
                 request.PageSize,
                 request.ExamVersionId,
                 request.StudentId,
+                request.CandidateEmail,
+                request.Mode,
                 request.Status,
                 request.Keyword,
                 request.IsDescending,
