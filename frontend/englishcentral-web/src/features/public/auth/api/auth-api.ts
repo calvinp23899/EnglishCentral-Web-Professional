@@ -313,8 +313,8 @@ export const getStoredAccessToken = () =>
   window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) ??
   window.sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
 
-export const getStoredStudentIdFromAccessToken = () => {
-  const tokenPayload = decodeJwtPayload(getStoredAccessToken() ?? undefined) ?? {};
+const getStudentIdFromAccessToken = (accessToken?: string) => {
+  const tokenPayload = decodeJwtPayload(accessToken) ?? {};
   const rawStudentId = readString(tokenPayload, [
     "studentId",
     "StudentId",
@@ -328,6 +328,31 @@ export const getStoredStudentIdFromAccessToken = () => {
 
   const studentId = Number(rawStudentId);
   return Number.isFinite(studentId) ? studentId : null;
+};
+
+export const getStoredStudentIdFromAccessToken = () =>
+  getStudentIdFromAccessToken(getStoredAccessToken() ?? undefined);
+
+export const refreshStoredAuthSession = async () => {
+  const response = await api.post(ENDPOINTS.AUTH.REFRESH, undefined, {
+    withCredentials: true,
+  });
+  const session = normalizeSession(response.data);
+
+  saveAuthSession(session);
+
+  return session;
+};
+
+export const getStudentIdWithRefresh = async () => {
+  const storedStudentId = getStoredStudentIdFromAccessToken();
+
+  if (storedStudentId !== null) {
+    return storedStudentId;
+  }
+
+  const session = await refreshStoredAuthSession();
+  return getStudentIdFromAccessToken(session.accessToken);
 };
 
 export const getStoredAuthSession = (): AuthSession | null => {

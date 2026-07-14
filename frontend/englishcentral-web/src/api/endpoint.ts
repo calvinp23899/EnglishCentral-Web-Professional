@@ -156,6 +156,7 @@ export const ENDPOINTS = {
     TEST_GET_LIST: "/ExamPractices/test/get-list",
     TEST_GET_BY_ID: (id: string | number) => `/ExamPractices/test/${id}/get-by-id`,
     HISTORY: "/ExamPractices/get-history",
+    DETAIL_EXAM: (id: string | number) => `/ExamPractices/detail-exam/${id}/get-by-id`,
     TEMPLATE_GET_LIST: "/ExamPractices/template/get-list",
     TEMPLATE_GET_BY_ID: (id: string | number) => `/ExamPractices/template/${id}/get-by-id`,
   },

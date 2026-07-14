@@ -128,8 +128,41 @@ export type ExamAttemptSubmitResult = {
   wrongQuestions?: number;
 };
 
+export type ExamAttemptDetailResponse = {
+  attemptCode?: string | null;
+  bandScore?: number | null;
+  candidateEmail?: string | null;
+  candidateName?: string | null;
+  completedAt?: string | null;
+  durationSeconds?: number | null;
+  examName?: string | null;
+  examVersionId: number;
+  id: number;
+  mode?: string | number | null;
+  rawScore?: number | null;
+  resultDetail?: string | null;
+  scaledScore?: number | null;
+  startedAt?: string | null;
+  status?: string | number | null;
+  studentId?: number | null;
+  submittedAt?: string | null;
+  responses?: Array<{
+    answerJson?: string | null;
+    answerText?: string | null;
+    answeredAt?: string | null;
+    examAnswerOptionId?: number | null;
+    examQuestionId: number;
+    feedback?: string | null;
+    id: number;
+    isCorrect?: boolean | null;
+    reviewStatus?: string | number | null;
+    score?: number | null;
+  }>;
+};
+
 export type PracticeHistoryItem = {
   band: string;
+  examVersionId: string | null;
   id: string;
   mode: string;
   result: string;
@@ -219,6 +252,25 @@ const readNumber = (source: RawObject, keys: string[]) => {
   return null;
 };
 
+const readBoolean = (source: RawObject, keys: string[]) => {
+  for (const key of keys) {
+    const value = source[key];
+
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+
+      if (normalized === "true") return true;
+      if (normalized === "false") return false;
+    }
+  }
+
+  return null;
+};
+
 const readMetadataCandidate = (source: PublicMetadataOption, keys: Array<keyof PublicMetadataOption>) => {
   for (const key of keys) {
     const value = source[key];
@@ -273,8 +325,19 @@ const unwrapItems = (payload: RawPracticeHistoryResponse) => {
 
 const mapHistoryItem = (item: RawObject, index: number): PracticeHistoryItem => {
   const id =
-    readString(item, ["id", "Id", "attemptId", "AttemptId", "publicId", "PublicId"]) ||
+    readString(item, ["attemptId", "AttemptId", "id", "Id", "publicId", "PublicId"]) ||
     String(index + 1);
+  const examVersionId =
+    readString(item, [
+      "examVersionId",
+      "ExamVersionId",
+      "versionId",
+      "VersionId",
+      "testId",
+      "TestId",
+      "practiceId",
+      "PracticeId",
+    ]) || null;
   const correct = readNumber(item, ["correctCount", "CorrectCount", "correctQuestions", "CorrectQuestions"]);
   const total = readNumber(item, ["totalQuestions", "TotalQuestions", "questionCount", "QuestionCount"]);
   const score = readNumber(item, ["score", "Score", "totalScore", "TotalScore"]);
@@ -305,6 +368,7 @@ const mapHistoryItem = (item: RawObject, index: number): PracticeHistoryItem => 
     band:
       readString(item, ["bandScore", "BandScore", "ieltsBandScore", "IeltsBandScore", "band", "Band"]) ||
       "-",
+    examVersionId,
     id,
     mode:
       readString(item, ["mode", "Mode", "attemptMode", "AttemptMode", "practiceMode", "PracticeMode"]) ||
@@ -328,6 +392,47 @@ const mapHistoryItem = (item: RawObject, index: number): PracticeHistoryItem => 
         "title",
         "Title",
       ]) || `Bài làm #${id}`,
+  };
+};
+
+const normalizeAttemptDetail = (payload: unknown): ExamAttemptDetailResponse => {
+  const source = isObject(payload) ? payload : {};
+  const responsesCandidate = source.responses ?? source.Responses;
+  const responses = Array.isArray(responsesCandidate)
+    ? responsesCandidate.filter(isObject).map((response) => ({
+        answerJson: readString(response, ["answerJson", "AnswerJson"]) || null,
+        answerText: readString(response, ["answerText", "AnswerText"]) || null,
+        answeredAt: readString(response, ["answeredAt", "AnsweredAt"]) || null,
+        examAnswerOptionId: readNumber(response, ["examAnswerOptionId", "ExamAnswerOptionId"]),
+        examQuestionId:
+          readNumber(response, ["examQuestionId", "ExamQuestionId", "questionId", "QuestionId"]) ?? 0,
+        feedback: readString(response, ["feedback", "Feedback"]) || null,
+        id: readNumber(response, ["id", "Id"]) ?? 0,
+        isCorrect: readBoolean(response, ["isCorrect", "IsCorrect"]),
+        reviewStatus: readString(response, ["reviewStatus", "ReviewStatus"]) || null,
+        score: readNumber(response, ["score", "Score"]),
+      }))
+    : [];
+
+  return {
+    attemptCode: readString(source, ["attemptCode", "AttemptCode"]) || null,
+    bandScore: readNumber(source, ["bandScore", "BandScore"]),
+    candidateEmail: readString(source, ["candidateEmail", "CandidateEmail"]) || null,
+    candidateName: readString(source, ["candidateName", "CandidateName"]) || null,
+    completedAt: readString(source, ["completedAt", "CompletedAt"]) || null,
+    durationSeconds: readNumber(source, ["durationSeconds", "DurationSeconds"]),
+    examName: readString(source, ["examName", "ExamName"]) || null,
+    examVersionId: readNumber(source, ["examVersionId", "ExamVersionId"]) ?? 0,
+    id: readNumber(source, ["id", "Id"]) ?? 0,
+    mode: readString(source, ["mode", "Mode"]) || null,
+    rawScore: readNumber(source, ["rawScore", "RawScore"]),
+    resultDetail: readString(source, ["resultDetail", "ResultDetail"]) || null,
+    responses,
+    scaledScore: readNumber(source, ["scaledScore", "ScaledScore"]),
+    startedAt: readString(source, ["startedAt", "StartedAt"]) || null,
+    status: readString(source, ["status", "Status"]) || null,
+    studentId: readNumber(source, ["studentId", "StudentId"]),
+    submittedAt: readString(source, ["submittedAt", "SubmittedAt"]) || null,
   };
 };
 
@@ -481,6 +586,14 @@ export const publicPracticeApi = {
     const data = unwrap(response.data);
 
     return unwrapItems(data).map(mapHistoryItem);
+  },
+
+  async getPracticeAttemptDetail(id: string | number) {
+    const response = await api.get<ApiResult<ExamAttemptDetailResponse>>(
+      ENDPOINTS.EXAM_PRACTICES.DETAIL_EXAM(id),
+    );
+
+    return normalizeAttemptDetail(unwrap(response.data));
   },
 
   async submitAttemptWithAnswers(payload: ExamAttemptSubmitPayload) {

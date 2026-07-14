@@ -11,6 +11,7 @@ import { ForgotPasswordPage } from "@/features/public/auth/pages/ForgotPasswordP
 import { PracticePage } from "@/features/public/practice/pages/PracticePage";
 import { PracticeDetailPage } from "@/features/public/practice/pages/PracticeDetailPage";
 import { UserProfilePage } from "@/features/public/profile/pages/UserProfilePage";
+import { PracticeHistoryDetailPage } from "@/features/public/profile/pages/PracticeHistoryDetailPage";
 import { PracticeHistoryPage } from "@/features/public/profile/pages/PracticeHistoryPage";
 
 import { NotFoundPage } from "@/pages/not-found/NotFoundPage";
@@ -42,6 +43,10 @@ export const publicRoutes = {
     {
       path: "/practice-history",
       element: <PracticeHistoryPage />,
+    },
+    {
+      path: "/practice-history/:attemptId",
+      element: <PracticeHistoryDetailPage />,
     },
     {
       path: "/contact",
