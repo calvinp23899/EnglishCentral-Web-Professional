@@ -38,6 +38,10 @@ const USER_STORAGE_KEY = "englishcentral-user";
 const ACCESS_TOKEN_STORAGE_KEY = "englishcentral-access-token";
 const ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY =
   "englishcentral-access-token-expires-at";
+const ADMIN_USER_STORAGE_KEY = "englishcentral-admin-user";
+const ADMIN_ACCESS_TOKEN_STORAGE_KEY = "englishcentral-admin-access-token";
+const ADMIN_ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY =
+  "englishcentral-admin-access-token-expires-at";
 export const AUTH_CHANGE_EVENT = "englishcentral-auth-change";
 const AUTH_SYNC_CHANNEL = "englishcentral-auth-sync";
 
@@ -48,6 +52,12 @@ const removeAuthSessionFromStorage = (storage: Storage) => {
   storage.removeItem(USER_STORAGE_KEY);
   storage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
   storage.removeItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+};
+
+const removeAdminAuthSessionFromStorage = (storage: Storage) => {
+  storage.removeItem(ADMIN_USER_STORAGE_KEY);
+  storage.removeItem(ADMIN_ACCESS_TOKEN_STORAGE_KEY);
+  storage.removeItem(ADMIN_ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
 };
 
 const isObject = (value: unknown): value is RawObject =>
@@ -244,6 +254,12 @@ export const getAuthErrorMessage = (error: unknown) => {
 const hasStoredSession = (storage: Storage) =>
   Boolean(storage.getItem(USER_STORAGE_KEY) ?? storage.getItem(ACCESS_TOKEN_STORAGE_KEY));
 
+const hasStoredAdminSession = (storage: Storage) =>
+  Boolean(
+    storage.getItem(ADMIN_USER_STORAGE_KEY) ??
+      storage.getItem(ADMIN_ACCESS_TOKEN_STORAGE_KEY)
+  );
+
 const shouldRememberLogin = (rememberLogin?: boolean) => {
   if (typeof rememberLogin === "boolean") {
     return rememberLogin;
@@ -287,9 +303,58 @@ export const saveAuthSession = (
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
 };
 
+const shouldRememberAdminLogin = (rememberLogin?: boolean) => {
+  if (typeof rememberLogin === "boolean") {
+    return rememberLogin;
+  }
+
+  if (hasStoredAdminSession(window.localStorage)) {
+    return true;
+  }
+
+  if (hasStoredAdminSession(window.sessionStorage)) {
+    return false;
+  }
+
+  return true;
+};
+
+export const saveAdminAuthSession = (
+  session: AuthSession,
+  rememberLogin?: boolean
+) => {
+  const shouldPersist = shouldRememberAdminLogin(rememberLogin);
+  const storage = getStorage(shouldPersist);
+  const otherStorage = shouldPersist
+    ? window.sessionStorage
+    : window.localStorage;
+
+  removeAdminAuthSessionFromStorage(otherStorage);
+  storage.setItem(ADMIN_USER_STORAGE_KEY, JSON.stringify(session.user));
+
+  if (session.accessToken) {
+    storage.setItem(ADMIN_ACCESS_TOKEN_STORAGE_KEY, session.accessToken);
+  }
+
+  if (session.accessTokenExpiresAt) {
+    storage.setItem(
+      ADMIN_ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY,
+      session.accessTokenExpiresAt
+    );
+  }
+
+  window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+};
+
 export const clearAuthSession = () => {
   removeAuthSessionFromStorage(window.localStorage);
   removeAuthSessionFromStorage(window.sessionStorage);
+  window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+};
+
+export const clearAdminAuthSession = () => {
+  removeAdminAuthSessionFromStorage(window.localStorage);
+  removeAdminAuthSessionFromStorage(window.sessionStorage);
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
 };
 
@@ -312,6 +377,26 @@ export const getStoredUser = (): AuthUser | null => {
 export const getStoredAccessToken = () =>
   window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) ??
   window.sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+
+export const getStoredAdminUser = (): AuthUser | null => {
+  const rawUser =
+    window.localStorage.getItem(ADMIN_USER_STORAGE_KEY) ??
+    window.sessionStorage.getItem(ADMIN_USER_STORAGE_KEY);
+
+  if (!rawUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawUser) as AuthUser;
+  } catch {
+    return null;
+  }
+};
+
+export const getStoredAdminAccessToken = () =>
+  window.localStorage.getItem(ADMIN_ACCESS_TOKEN_STORAGE_KEY) ??
+  window.sessionStorage.getItem(ADMIN_ACCESS_TOKEN_STORAGE_KEY);
 
 const getStudentIdFromAccessToken = (accessToken?: string) => {
   const tokenPayload = decodeJwtPayload(accessToken) ?? {};
@@ -374,7 +459,39 @@ export const getStoredAuthSession = (): AuthSession | null => {
   };
 };
 
-export const hasAdminPortalAccess = (session = getStoredAuthSession()) => {
+export const getStoredAdminAuthSession = (): AuthSession | null => {
+  const user = getStoredAdminUser();
+  const accessToken = getStoredAdminAccessToken();
+  const accessTokenExpiresAt =
+    window.localStorage.getItem(ADMIN_ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY) ??
+    window.sessionStorage.getItem(ADMIN_ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY) ??
+    undefined;
+
+  if (!user || !accessToken) {
+    return null;
+  }
+
+  return {
+    accessToken,
+    accessTokenExpiresAt,
+    user,
+  };
+};
+
+export const refreshStoredAdminAuthSession = async () => {
+  const response = await api.post(ENDPOINTS.ADMIN_AUTH.REFRESH, undefined, {
+    withCredentials: true,
+  });
+  const session = normalizeSession(response.data);
+
+  saveAdminAuthSession(session);
+
+  return session;
+};
+
+export const hasAdminPortalAccess = (
+  session = getStoredAdminAuthSession() ?? getStoredAuthSession()
+) => {
   if (!session?.accessToken) {
     return false;
   }

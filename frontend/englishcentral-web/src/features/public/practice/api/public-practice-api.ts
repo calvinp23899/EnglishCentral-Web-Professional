@@ -18,6 +18,7 @@ type PagedResult<T> = {
   totalItems: number;
   totalPages: number;
 };
+export type PublicPracticePagedResult = PagedResult<PublicPractice>;
 
 type ExamTemplateSummary = {
   code: string;
@@ -323,6 +324,44 @@ const unwrapItems = (payload: RawPracticeHistoryResponse) => {
   return collection?.filter(isObject) ?? [];
 };
 
+const normalizePagedResult = <T>(payload: unknown): PagedResult<T> => {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload as T[],
+      page: 1,
+      pageSize: payload.length,
+      totalItems: payload.length,
+      totalPages: 1,
+    };
+  }
+
+  const source = isObject(payload) ? payload : {};
+  const rawItems = [source.items, source.Items, source.data, source.Data].find(Array.isArray);
+  const items = (rawItems ?? []) as T[];
+  const page = readNumber(source, ["page", "Page", "pageNumber", "PageNumber", "currentPage", "CurrentPage"]) ?? 1;
+  const pageSize = readNumber(source, ["pageSize", "PageSize", "size", "Size"]) ?? items.length;
+  const totalItems =
+    readNumber(source, [
+      "totalItems",
+      "TotalItems",
+      "totalCount",
+      "TotalCount",
+      "totalRecords",
+      "TotalRecords",
+    ]) ?? items.length;
+  const totalPages =
+    readNumber(source, ["totalPages", "TotalPages", "pageCount", "PageCount"]) ??
+    Math.max(1, Math.ceil(totalItems / Math.max(pageSize, 1)));
+
+  return {
+    items,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+  };
+};
+
 const mapHistoryItem = (item: RawObject, index: number): PracticeHistoryItem => {
   const id =
     readString(item, ["attemptId", "AttemptId", "id", "Id", "publicId", "PublicId"]) ||
@@ -534,7 +573,14 @@ export const publicPracticeApi = {
     }
   },
 
-  async getPublishedIeltsPractices() {
+  async getPublishedIeltsPractices(params?: {
+    keyword?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<PublicPracticePagedResult> {
+    const page = Math.max(1, params?.page ?? 1);
+    const pageSize = Math.max(1, params?.pageSize ?? 20);
+    const keyword = params?.keyword?.trim();
     const [templatesResult, versionsResult] = await Promise.all([
       api.get<ApiResult<PagedResult<ExamTemplateSummary>>>(ENDPOINTS.EXAM_PRACTICES.TEMPLATE_GET_LIST, {
         skipAuthRedirect: true,
@@ -549,8 +595,9 @@ export const publicPracticeApi = {
         skipAuthRedirect: true,
         params: {
           ExamFamily: "IELTS",
-          Page: 1,
-          PageSize: 100,
+          ...(keyword ? { Keyword: keyword } : {}),
+          Page: page,
+          PageSize: pageSize,
           Status: "Published",
         },
       }),
@@ -559,11 +606,20 @@ export const publicPracticeApi = {
     const templates = unwrap(templatesResult.data).items.filter(isIeltsTemplate);
     const templateById = new Map(templates.map((template) => [template.id, template]));
     const ieltsTemplateIds = new Set(templates.map((template) => template.id));
+    const versionsPage = normalizePagedResult<ExamVersionSummary>(unwrap(versionsResult.data));
 
-    return unwrap(versionsResult.data).items
+    const items = versionsPage.items
       .filter((version) => isPublished(version.status))
       .filter((version) => !ieltsTemplateIds.size || ieltsTemplateIds.has(version.examTemplateId))
       .map((version) => mapVersionToPractice(version, templateById.get(version.examTemplateId)));
+
+    return {
+      items,
+      page: versionsPage.page,
+      pageSize: versionsPage.pageSize,
+      totalItems: versionsPage.totalItems,
+      totalPages: versionsPage.totalPages,
+    };
   },
 
   async getVersionById(id: string | number) {

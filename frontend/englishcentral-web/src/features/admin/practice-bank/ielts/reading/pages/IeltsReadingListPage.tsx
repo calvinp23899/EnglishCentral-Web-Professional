@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Columns3, CopyPlus, Edit3, Eye, Funnel, Plus, RefreshCw, Search, Sparkles } from "lucide-react";
+import { Columns3, CopyPlus, Edit3, Eye, Funnel, Headphones, Plus, RefreshCw, Search, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Pagination, toastDanger, toastSuccess } from "@/components/ui";
@@ -112,9 +112,56 @@ const initialVisibleColumns: Record<ColumnKey, boolean> = {
   actions: true,
 };
 
-export function IeltsReadingListPage() {
+type IeltsSkillList = "reading" | "listening";
+
+const skillListConfig: Record<
+  IeltsSkillList,
+  {
+    title: string;
+    description: string;
+    loadingText: string;
+    emptyText: string;
+    createLabel?: string;
+    createPath?: string;
+    audioListLabel?: string;
+    audioListPath?: string;
+    actionBasePath: string;
+    examTemplateId: number;
+  }
+> = {
+  reading: {
+    title: "IELTS Reading - Danh sách đề",
+    description:
+      "Quản lý các version IELTS Reading. Draft được sửa trực tiếp, Published/Archived chỉ xem hoặc clone sang draft mới.",
+    loadingText: "Đang tải danh sách IELTS Reading...",
+    emptyText: "Không có đề IELTS Reading phù hợp.",
+    createLabel: "Tạo đề Reading",
+    createPath: "/admin/practice-bank/ielts/reading/create",
+    actionBasePath: "/admin/practice-bank/ielts/reading",
+    examTemplateId: 1,
+  },
+  listening: {
+    title: "IELTS Listening - Danh sách đề",
+    description: "Quản lý các version IELTS Listening thuộc template Listening.",
+    loadingText: "Đang tải danh sách IELTS Listening...",
+    emptyText: "Không có đề IELTS Listening phù hợp.",
+    createLabel: "Tạo đề Listening",
+    createPath: "/admin/practice-bank/ielts/listening/create",
+    audioListLabel: "Danh Sách Audio",
+    audioListPath: "/admin/practice-bank/ielts/listening/audio",
+    actionBasePath: "/admin/practice-bank/ielts/listening",
+    examTemplateId: 2,
+  },
+};
+
+type IeltsReadingListPageProps = {
+  skill?: IeltsSkillList;
+};
+
+export function IeltsReadingListPage({ skill = "reading" }: IeltsReadingListPageProps) {
   const navigate = useNavigate();
-  const [template, setTemplate] = useState<ExamTemplate | null>(null);
+  const config = skillListConfig[skill];
+  const [template, setTemplate] = useState<ExamTemplate | null>({ id: config.examTemplateId } as ExamTemplate);
   const [records, setRecords] = useState<ExamVersion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -129,30 +176,25 @@ export function IeltsReadingListPage() {
   const visibleColumnCount = Math.max(1, columns.filter((column) => visibleColumns[column]).length);
 
   const emptyMessage = useMemo(() => {
-    if (isLoading) return "Đang tải danh sách IELTS Reading...";
-    if (!template) {
-      return "Chưa có template IELTS Reading để tạo đề. Hãy tạo ExamType IELTS ở Dạng Bài Kiểm Tra, sau đó tạo ExamTemplate IELTS Academic Reading ở Mẫu Đề Kiểm Tra.";
-    }
-    return "Không có đề IELTS Reading phù hợp.";
-  }, [isLoading, template]);
+    if (isLoading) return config.loadingText;
+    return config.emptyText;
+  }, [config.emptyText, config.loadingText, isLoading]);
 
   const loadRecords = async (nextTemplate = template) => {
     setIsLoading(true);
     try {
-      const resolvedTemplate = nextTemplate ?? await adminIeltsReadingApi.getReadingTemplate();
+      const resolvedTemplate =
+        nextTemplate ??
+        (await adminIeltsReadingApi
+          .getTemplateById(config.examTemplateId)
+          .catch(() => ({ id: config.examTemplateId } as ExamTemplate)));
       setTemplate(resolvedTemplate);
-
-      if (!resolvedTemplate) {
-        setRecords([]);
-        setTotalItems(0);
-        return;
-      }
 
       const result = await adminIeltsReadingApi.getVersions({
         page: pageNumber,
         pageSize,
         keyword: searchTerm.trim() || undefined,
-        examTemplateId: resolvedTemplate.id,
+        examTemplateId: config.examTemplateId,
       });
 
       setRecords(result.items);
@@ -194,7 +236,7 @@ export function IeltsReadingListPage() {
     try {
       const draftVersion = await adminIeltsReadingApi.cloneDraftVersion(record.id);
       toastSuccess("Đã clone đề sang draft mới.");
-      navigate(`/admin/practice-bank/ielts/reading/${draftVersion.id}/edit`);
+      navigate(`${config.actionBasePath}/${draftVersion.id}/edit`);
     } catch (error) {
       toastDanger(getAuthErrorMessage(error));
     } finally {
@@ -209,17 +251,26 @@ export function IeltsReadingListPage() {
     <div className={listStyles.page}>
       <section className={listStyles.header}>
         <div>
-          <h1>IELTS Reading - Danh sách đề</h1>
-          <p>
-            Quản lý các version IELTS Reading. Draft được sửa trực tiếp, Published/Archived chỉ xem
-            hoặc clone sang draft mới.
-          </p>
+          <h1>{config.title}</h1>
+          <p>{config.description}</p>
         </div>
 
-        <Link className={listStyles.createButton} to="/admin/practice-bank/ielts/reading/create">
-          <Plus aria-hidden="true" size={18} />
-          Tạo đề Reading
-        </Link>
+        {(config.audioListPath || config.createPath) && (
+          <div className={teacherStyles.toolbarActions}>
+            {config.audioListPath && config.audioListLabel && (
+              <Link className={teacherStyles.columnsButton} to={config.audioListPath}>
+                <Headphones aria-hidden="true" size={18} />
+                {config.audioListLabel}
+              </Link>
+            )}
+            {config.createPath && config.createLabel && (
+              <Link className={listStyles.createButton} to={config.createPath}>
+                <Plus aria-hidden="true" size={18} />
+                {config.createLabel}
+              </Link>
+            )}
+          </div>
+        )}
       </section>
 
       <section className={`${listStyles.toolbar} ${teacherStyles.toolbar}`}>
@@ -303,7 +354,7 @@ export function IeltsReadingListPage() {
                           <Link
                             aria-label="Chỉnh sửa draft"
                             title="Chỉnh sửa draft"
-                            to={`/admin/practice-bank/ielts/reading/${record.id}/edit`}
+                            to={`${config.actionBasePath}/${record.id}/edit`}
                           >
                             <Edit3 aria-hidden="true" size={16} />
                           </Link>
@@ -319,7 +370,7 @@ export function IeltsReadingListPage() {
                           <Link
                             aria-label="Preview"
                             title="Preview"
-                            to={`/admin/practice-bank/ielts/reading/${record.id}/view`}
+                            to={`${config.actionBasePath}/${record.id}/view`}
                           >
                             <Sparkles aria-hidden="true" size={16} />
                           </Link>
@@ -329,7 +380,7 @@ export function IeltsReadingListPage() {
                           <Link
                             aria-label="Xem chi tiết"
                             title="Xem chi tiết"
-                            to={`/admin/practice-bank/ielts/reading/${record.id}/view`}
+                            to={`${config.actionBasePath}/${record.id}/view`}
                           >
                             <Eye aria-hidden="true" size={16} />
                           </Link>
@@ -347,7 +398,7 @@ export function IeltsReadingListPage() {
                               <Link
                                 aria-label="Preview"
                                 title="Preview"
-                                to={`/admin/practice-bank/ielts/reading/${record.id}/view`}
+                                  to={`${config.actionBasePath}/${record.id}/view`}
                               >
                                 <Sparkles aria-hidden="true" size={16} />
                               </Link>

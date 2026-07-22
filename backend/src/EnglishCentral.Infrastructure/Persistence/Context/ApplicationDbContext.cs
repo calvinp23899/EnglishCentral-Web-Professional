@@ -101,6 +101,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Context
 
         public DbSet<ExamStimulus> ExamStimuli => Set<ExamStimulus>();
 
+        public DbSet<ExamAsset> ExamAssets => Set<ExamAsset>();
+
         public DbSet<ExamQuestionGroup> ExamQuestionGroups => Set<ExamQuestionGroup>();
 
         public DbSet<ExamQuestion> ExamQuestions => Set<ExamQuestion>();

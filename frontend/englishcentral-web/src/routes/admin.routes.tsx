@@ -29,6 +29,7 @@ import { MyClassListPage } from "@/features/admin/my-classes/pages/MyClassListPa
 import { MyClassViewPage } from "@/features/admin/my-classes/pages/MyClassViewPage";
 import { AdminChangePasswordPage } from "@/features/admin/profile/pages/AdminChangePasswordPage";
 import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePage";
+import { IeltsAudioAssetListPage } from "@/features/admin/practice-bank/ielts/assets/pages/IeltsAudioAssetListPage";
 import { IeltsHubPage } from "@/features/admin/practice-bank/ielts/pages/IeltsHubPage";
 import { IeltsReadingCreatePage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingCreatePage";
 import { IeltsReadingListPage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingListPage";
@@ -302,10 +303,36 @@ export const adminRoutes = [
       },
       {
         path: "practice-bank/ielts/listening",
+        element: <IeltsReadingListPage skill="listening" />,
+      },
+      {
+        path: "practice-bank/ielts/listening/create",
         element: (
           <AdminPlaceholderPage
-            title="IELTS Listening"
-            description="Quản lý đề IELTS Listening theo audio sections, transcript, questions và đáp án."
+            title="Tạo đề IELTS Listening"
+            description="Wizard tạo đề Listening sẽ được triển khai sau phần danh sách audio."
+          />
+        ),
+      },
+      {
+        path: "practice-bank/ielts/listening/audio",
+        element: <IeltsAudioAssetListPage />,
+      },
+      {
+        path: "practice-bank/ielts/listening/:recordId/view",
+        element: (
+          <AdminPlaceholderPage
+            title="Chi tiết đề IELTS Listening"
+            description="Màn hình chi tiết IELTS Listening sẽ được triển khai sau."
+          />
+        ),
+      },
+      {
+        path: "practice-bank/ielts/listening/:recordId/edit",
+        element: (
+          <AdminPlaceholderPage
+            title="Chỉnh sửa đề IELTS Listening"
+            description="Màn hình chỉnh sửa IELTS Listening sẽ được triển khai sau."
           />
         ),
       },

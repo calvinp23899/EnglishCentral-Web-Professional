@@ -5,6 +5,8 @@ using EnglishCentral.Domain.Enums.Exam;
 using EnglishCentral.Domain.Enums.Finance;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel;
+using System.Reflection;
 
 namespace EnglishCentral.API.Controllers.Admin.Metadata
 {
@@ -139,6 +141,18 @@ namespace EnglishCentral.API.Controllers.Admin.Metadata
         [HttpGet("get-exam-question-type")]
         public IActionResult GetMetadataExamQuestionType() => Ok(GetEnumMetadata<EExamQuestionType>());
 
+        [HttpGet("get-ielts-listening-question-type")]
+        public IActionResult GetMetadataIeltsListeningQuestionType() => Ok(GetEnumDescriptionMetadata<EIELTSListeningQuestionType>());
+
+        [HttpGet("get-exam-asset-type")]
+        public IActionResult GetMetadataExamAssetType() => Ok(GetEnumMetadata<EExamAssetType>());
+
+        [HttpGet("get-exam-asset-provider")]
+        public IActionResult GetMetadataExamAssetProvider() => Ok(GetEnumMetadata<EExamAssetProvider>());
+
+        [HttpGet("get-exam-asset-status")]
+        public IActionResult GetMetadataExamAssetStatus() => Ok(GetEnumMetadata<EExamAssetStatus>());
+
         [HttpGet("get-exam-attempt-status")]
         public IActionResult GetMetadataExamAttemptStatus() => Ok(GetEnumMetadata<EExamAttemptStatus>());
 
@@ -156,6 +170,25 @@ namespace EnglishCentral.API.Controllers.Admin.Metadata
         {
             var result = await _mediator.Send(new GetRoleQuery(), ct);
             return StatusCode(result.StatusCode, result.Data);
+        }
+
+        private static List<MetadataOptionResponse> GetEnumDescriptionMetadata<T>() where T : struct, Enum
+        {
+            return Enum.GetValues<T>()
+                .Select(x => new MetadataOptionResponse(
+                    Label: GetEnumDescription(x),
+                    Value: x.ToString(),
+                    Code: Convert.ToInt32(x)))
+                .ToList();
+        }
+
+        private static string GetEnumDescription<T>(T value) where T : struct, Enum
+        {
+            return typeof(T)
+                .GetMember(value.ToString())
+                .FirstOrDefault()?
+                .GetCustomAttribute<DescriptionAttribute>()?
+                .Description ?? value.ToString();
         }
     }
 }
