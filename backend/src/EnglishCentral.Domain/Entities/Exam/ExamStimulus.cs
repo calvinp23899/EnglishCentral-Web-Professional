@@ -7,6 +7,8 @@ namespace EnglishCentral.Domain.Entities.Exam
     {
         public long ExamPartId { get; set; }
 
+        public long? ExamAssetId { get; set; }
+
         public EExamStimulusType Type { get; set; } = EExamStimulusType.Text;
 
         public string? Title { get; set; }
@@ -22,6 +24,8 @@ namespace EnglishCentral.Domain.Entities.Exam
         public string? MetadataJson { get; set; }
 
         public ExamPart ExamPart { get; set; } = default!;
+
+        public ExamAsset? ExamAsset { get; set; }
 
         public ICollection<ExamQuestionGroup> QuestionGroups { get; set; } = [];
     }

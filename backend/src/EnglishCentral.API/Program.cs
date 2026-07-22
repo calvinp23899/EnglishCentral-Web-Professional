@@ -56,6 +56,8 @@ namespace EnglishCentral.API
                         .GetSection("Cors:AllowedOrigins")
                         .Get<string[]>() ?? [];
 
+                    Log.Information("Configured CORS allowed origins: {AllowedOrigins}", allowedOrigins);
+
                     policy
                         .WithOrigins(allowedOrigins)
                         .AllowAnyHeader()

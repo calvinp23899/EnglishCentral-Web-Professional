@@ -67,6 +67,49 @@ namespace EnglishCentral.Domain.Enums.Exam
         //TableOptions = 13
     }
 
+    public enum EIELTSListeningQuestionType
+    {
+        [Description("Multiple Choice")]
+        MultipleChoice = 1,
+
+        [Description("Matching")]
+        Matching = 2,
+
+        [Description("Map/Plan/Diagram")]
+        MapPlanDiagram = 3,
+
+        [Description("Form/Note/Table/Summary Completion")]
+        FormNoteTableSummaryCompletion = 4,
+
+        [Description("Sentence Completion")]
+        SentenceCompletion = 5,
+
+        [Description("Short Answer")]
+        ShortAnswer = 6
+    }
+
+    public enum EExamAssetType
+    {
+        Audio = 1,
+        Image = 2,
+        Video = 3,
+        Document = 4,
+        Other = 99
+    }
+
+    public enum EExamAssetProvider
+    {
+        CloudflareR2 = 1
+    }
+
+    public enum EExamAssetStatus
+    {
+        Uploaded = 1,
+        Linked = 2,
+        Orphaned = 3,
+        Deleted = 4
+    }
+
     public enum EExamAttemptStatus
     {
         NotStarted = 1,

@@ -1,5 +1,6 @@
 ﻿using EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.SubmitExamAttempt;
 using EnglishCentral.Application.Features.Exam.ExamAttempts.Commands.SubmitExamAttemptWithAnswers;
+using EnglishCentral.Application.Features.Exam.ExamAttempts.Queries.GetExamAttemptById;
 using EnglishCentral.Application.Features.Exam.ExamAttempts.Queries.GetExamAttempts;
 using EnglishCentral.Application.Features.Exam.ExamTemplates.Queries.GetExamTemplateById;
 using EnglishCentral.Application.Features.Exam.ExamTemplates.Queries.GetExamTemplates;
@@ -66,6 +67,13 @@ namespace EnglishCentral.API.Controllers
         public async Task<IActionResult> GetList([FromQuery] GetExamAttemptsQuery query, CancellationToken ct)
         {
             var result = await _mediator.Send(query, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpGet("detail-exam/{id:long}/get-by-id")]
+        public async Task<IActionResult> GetDetailExamById(long id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetExamAttemptByIdQuery(id), ct);
             return StatusCode(result.StatusCode, result);
         }
     }

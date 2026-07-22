@@ -10,10 +10,10 @@ import {
 import { Button, Card, ErrorMessage, Input, toastDanger } from "@/components/ui";
 import {
   authApi,
-  clearAuthSession,
+  clearAdminAuthSession,
   getAuthErrorMessage,
   hasAdminPortalAccess,
-  saveAuthSession,
+  saveAdminAuthSession,
 } from "@/features/public/auth/api/auth-api";
 
 import styles from "./AdminLoginPage.module.scss";
@@ -69,12 +69,12 @@ export function AdminLoginPage() {
       });
 
       if (!hasAdminPortalAccess(session)) {
-        clearAuthSession();
+        clearAdminAuthSession();
         toastDanger("Tài khoản này không có quyền truy cập trang quản trị.");
         return;
       }
 
-      saveAuthSession(session, formData.get("rememberLogin") === "on");
+      saveAdminAuthSession(session, formData.get("rememberLogin") === "on");
 
       const fromPath =
         typeof location.state === "object" &&

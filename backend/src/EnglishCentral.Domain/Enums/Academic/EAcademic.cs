@@ -1,8 +1,12 @@
-﻿namespace EnglishCentral.Domain.Enums.Academic
+﻿using System.ComponentModel;
+
+namespace EnglishCentral.Domain.Enums.Academic
 {
     public enum EGender
     {
+        [Description("Male")]
         Male = 1,
+        [Description("Female")]
         Female = 2,
         Other = 3
     }

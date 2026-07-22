@@ -16,7 +16,7 @@ const skillCards = [
     description: "Quản lý audio sections, transcript, question groups và đáp án.",
     path: "/admin/practice-bank/ielts/listening",
     icon: Headphones,
-    stats: "Sắp triển khai",
+    stats: "Danh sách đề",
   },
   {
     title: "Writing",

@@ -18,6 +18,7 @@ type PagedResult<T> = {
   totalItems: number;
   totalPages: number;
 };
+export type PublicPracticePagedResult = PagedResult<PublicPractice>;
 
 type ExamTemplateSummary = {
   code: string;
@@ -128,8 +129,41 @@ export type ExamAttemptSubmitResult = {
   wrongQuestions?: number;
 };
 
+export type ExamAttemptDetailResponse = {
+  attemptCode?: string | null;
+  bandScore?: number | null;
+  candidateEmail?: string | null;
+  candidateName?: string | null;
+  completedAt?: string | null;
+  durationSeconds?: number | null;
+  examName?: string | null;
+  examVersionId: number;
+  id: number;
+  mode?: string | number | null;
+  rawScore?: number | null;
+  resultDetail?: string | null;
+  scaledScore?: number | null;
+  startedAt?: string | null;
+  status?: string | number | null;
+  studentId?: number | null;
+  submittedAt?: string | null;
+  responses?: Array<{
+    answerJson?: string | null;
+    answerText?: string | null;
+    answeredAt?: string | null;
+    examAnswerOptionId?: number | null;
+    examQuestionId: number;
+    feedback?: string | null;
+    id: number;
+    isCorrect?: boolean | null;
+    reviewStatus?: string | number | null;
+    score?: number | null;
+  }>;
+};
+
 export type PracticeHistoryItem = {
   band: string;
+  examVersionId: string | null;
   id: string;
   mode: string;
   result: string;
@@ -219,6 +253,25 @@ const readNumber = (source: RawObject, keys: string[]) => {
   return null;
 };
 
+const readBoolean = (source: RawObject, keys: string[]) => {
+  for (const key of keys) {
+    const value = source[key];
+
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+
+      if (normalized === "true") return true;
+      if (normalized === "false") return false;
+    }
+  }
+
+  return null;
+};
+
 const readMetadataCandidate = (source: PublicMetadataOption, keys: Array<keyof PublicMetadataOption>) => {
   for (const key of keys) {
     const value = source[key];
@@ -271,10 +324,59 @@ const unwrapItems = (payload: RawPracticeHistoryResponse) => {
   return collection?.filter(isObject) ?? [];
 };
 
+const normalizePagedResult = <T>(payload: unknown): PagedResult<T> => {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload as T[],
+      page: 1,
+      pageSize: payload.length,
+      totalItems: payload.length,
+      totalPages: 1,
+    };
+  }
+
+  const source = isObject(payload) ? payload : {};
+  const rawItems = [source.items, source.Items, source.data, source.Data].find(Array.isArray);
+  const items = (rawItems ?? []) as T[];
+  const page = readNumber(source, ["page", "Page", "pageNumber", "PageNumber", "currentPage", "CurrentPage"]) ?? 1;
+  const pageSize = readNumber(source, ["pageSize", "PageSize", "size", "Size"]) ?? items.length;
+  const totalItems =
+    readNumber(source, [
+      "totalItems",
+      "TotalItems",
+      "totalCount",
+      "TotalCount",
+      "totalRecords",
+      "TotalRecords",
+    ]) ?? items.length;
+  const totalPages =
+    readNumber(source, ["totalPages", "TotalPages", "pageCount", "PageCount"]) ??
+    Math.max(1, Math.ceil(totalItems / Math.max(pageSize, 1)));
+
+  return {
+    items,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+  };
+};
+
 const mapHistoryItem = (item: RawObject, index: number): PracticeHistoryItem => {
   const id =
-    readString(item, ["id", "Id", "attemptId", "AttemptId", "publicId", "PublicId"]) ||
+    readString(item, ["attemptId", "AttemptId", "id", "Id", "publicId", "PublicId"]) ||
     String(index + 1);
+  const examVersionId =
+    readString(item, [
+      "examVersionId",
+      "ExamVersionId",
+      "versionId",
+      "VersionId",
+      "testId",
+      "TestId",
+      "practiceId",
+      "PracticeId",
+    ]) || null;
   const correct = readNumber(item, ["correctCount", "CorrectCount", "correctQuestions", "CorrectQuestions"]);
   const total = readNumber(item, ["totalQuestions", "TotalQuestions", "questionCount", "QuestionCount"]);
   const score = readNumber(item, ["score", "Score", "totalScore", "TotalScore"]);
@@ -305,6 +407,7 @@ const mapHistoryItem = (item: RawObject, index: number): PracticeHistoryItem => 
     band:
       readString(item, ["bandScore", "BandScore", "ieltsBandScore", "IeltsBandScore", "band", "Band"]) ||
       "-",
+    examVersionId,
     id,
     mode:
       readString(item, ["mode", "Mode", "attemptMode", "AttemptMode", "practiceMode", "PracticeMode"]) ||
@@ -328,6 +431,47 @@ const mapHistoryItem = (item: RawObject, index: number): PracticeHistoryItem => 
         "title",
         "Title",
       ]) || `Bài làm #${id}`,
+  };
+};
+
+const normalizeAttemptDetail = (payload: unknown): ExamAttemptDetailResponse => {
+  const source = isObject(payload) ? payload : {};
+  const responsesCandidate = source.responses ?? source.Responses;
+  const responses = Array.isArray(responsesCandidate)
+    ? responsesCandidate.filter(isObject).map((response) => ({
+        answerJson: readString(response, ["answerJson", "AnswerJson"]) || null,
+        answerText: readString(response, ["answerText", "AnswerText"]) || null,
+        answeredAt: readString(response, ["answeredAt", "AnsweredAt"]) || null,
+        examAnswerOptionId: readNumber(response, ["examAnswerOptionId", "ExamAnswerOptionId"]),
+        examQuestionId:
+          readNumber(response, ["examQuestionId", "ExamQuestionId", "questionId", "QuestionId"]) ?? 0,
+        feedback: readString(response, ["feedback", "Feedback"]) || null,
+        id: readNumber(response, ["id", "Id"]) ?? 0,
+        isCorrect: readBoolean(response, ["isCorrect", "IsCorrect"]),
+        reviewStatus: readString(response, ["reviewStatus", "ReviewStatus"]) || null,
+        score: readNumber(response, ["score", "Score"]),
+      }))
+    : [];
+
+  return {
+    attemptCode: readString(source, ["attemptCode", "AttemptCode"]) || null,
+    bandScore: readNumber(source, ["bandScore", "BandScore"]),
+    candidateEmail: readString(source, ["candidateEmail", "CandidateEmail"]) || null,
+    candidateName: readString(source, ["candidateName", "CandidateName"]) || null,
+    completedAt: readString(source, ["completedAt", "CompletedAt"]) || null,
+    durationSeconds: readNumber(source, ["durationSeconds", "DurationSeconds"]),
+    examName: readString(source, ["examName", "ExamName"]) || null,
+    examVersionId: readNumber(source, ["examVersionId", "ExamVersionId"]) ?? 0,
+    id: readNumber(source, ["id", "Id"]) ?? 0,
+    mode: readString(source, ["mode", "Mode"]) || null,
+    rawScore: readNumber(source, ["rawScore", "RawScore"]),
+    resultDetail: readString(source, ["resultDetail", "ResultDetail"]) || null,
+    responses,
+    scaledScore: readNumber(source, ["scaledScore", "ScaledScore"]),
+    startedAt: readString(source, ["startedAt", "StartedAt"]) || null,
+    status: readString(source, ["status", "Status"]) || null,
+    studentId: readNumber(source, ["studentId", "StudentId"]),
+    submittedAt: readString(source, ["submittedAt", "SubmittedAt"]) || null,
   };
 };
 
@@ -429,7 +573,14 @@ export const publicPracticeApi = {
     }
   },
 
-  async getPublishedIeltsPractices() {
+  async getPublishedIeltsPractices(params?: {
+    keyword?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<PublicPracticePagedResult> {
+    const page = Math.max(1, params?.page ?? 1);
+    const pageSize = Math.max(1, params?.pageSize ?? 20);
+    const keyword = params?.keyword?.trim();
     const [templatesResult, versionsResult] = await Promise.all([
       api.get<ApiResult<PagedResult<ExamTemplateSummary>>>(ENDPOINTS.EXAM_PRACTICES.TEMPLATE_GET_LIST, {
         skipAuthRedirect: true,
@@ -444,8 +595,9 @@ export const publicPracticeApi = {
         skipAuthRedirect: true,
         params: {
           ExamFamily: "IELTS",
-          Page: 1,
-          PageSize: 100,
+          ...(keyword ? { Keyword: keyword } : {}),
+          Page: page,
+          PageSize: pageSize,
           Status: "Published",
         },
       }),
@@ -454,11 +606,20 @@ export const publicPracticeApi = {
     const templates = unwrap(templatesResult.data).items.filter(isIeltsTemplate);
     const templateById = new Map(templates.map((template) => [template.id, template]));
     const ieltsTemplateIds = new Set(templates.map((template) => template.id));
+    const versionsPage = normalizePagedResult<ExamVersionSummary>(unwrap(versionsResult.data));
 
-    return unwrap(versionsResult.data).items
+    const items = versionsPage.items
       .filter((version) => isPublished(version.status))
       .filter((version) => !ieltsTemplateIds.size || ieltsTemplateIds.has(version.examTemplateId))
       .map((version) => mapVersionToPractice(version, templateById.get(version.examTemplateId)));
+
+    return {
+      items,
+      page: versionsPage.page,
+      pageSize: versionsPage.pageSize,
+      totalItems: versionsPage.totalItems,
+      totalPages: versionsPage.totalPages,
+    };
   },
 
   async getVersionById(id: string | number) {
@@ -481,6 +642,14 @@ export const publicPracticeApi = {
     const data = unwrap(response.data);
 
     return unwrapItems(data).map(mapHistoryItem);
+  },
+
+  async getPracticeAttemptDetail(id: string | number) {
+    const response = await api.get<ApiResult<ExamAttemptDetailResponse>>(
+      ENDPOINTS.EXAM_PRACTICES.DETAIL_EXAM(id),
+    );
+
+    return normalizeAttemptDetail(unwrap(response.data));
   },
 
   async submitAttemptWithAnswers(payload: ExamAttemptSubmitPayload) {

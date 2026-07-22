@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { Fragment, type MouseEvent as ReactMouseEvent, useRef, useState } from "react";
+import { ArrowLeft, GripVertical, MessageSquare } from "lucide-react";
 import {
   getAllQuestions,
   getPassageQuestions,
@@ -12,6 +13,7 @@ import type {
   ExamResult,
   IELTSMockTest,
   IELTSReadingQuestion,
+  IELTSReadingQuestionGroup,
 } from "../types/practice-test.type";
 import styles from "../pages/PracticeDetailPage.module.scss";
 
@@ -24,16 +26,125 @@ type RealExamReviewViewProps = {
   onBackToPractice: () => void;
 };
 
+type ExplanationTooltip = {
+  question: IELTSReadingQuestion;
+  left: number;
+  top: number;
+  placement: "top" | "bottom";
+};
+
+const truthChoiceTypes = new Set([
+  "true-false-not-given",
+  "yes-no-not-given",
+]);
+
+const gridChoiceTypes = new Set(["matching-information"]);
+const summaryOptionTypes = new Set(["summary-completion-options"]);
+const singleChoiceTypes = new Set(["single-choice"]);
+
+const splitAnswer = (value?: string) =>
+  (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const formatAnswer = (value?: string) => {
+  const parts = splitAnswer(value);
+
+  return parts.length ? parts.join(" / ") : "Skipped";
+};
+
+const normalizeAnswer = (value?: string) =>
+  splitAnswer(value)
+    .map((item) => item.toLowerCase())
+    .sort()
+    .join("|");
+
+const matchesOptionAnswer = (
+  values: string[],
+  option: { label: string; content: string }
+) => {
+  const optionLabel = option.label.trim().toLowerCase();
+  const optionContent = option.content.trim().toLowerCase();
+
+  return values.some((value) => {
+    const normalizedValue = value.trim().toLowerCase();
+
+    return (
+      normalizedValue === optionLabel ||
+      normalizedValue === optionContent ||
+      normalizedValue === `${optionLabel} - ${optionContent}` ||
+      normalizedValue === `${optionLabel}. ${optionContent}`
+    );
+  });
+};
+
+const formatQuestionLabel = (question: IELTSReadingQuestion) => {
+  const rawLabel = question.numberLabel || String(question.number);
+  const cleaned = rawLabel
+    .replace(/^Q/i, "")
+    .replace(/_/g, "-")
+    .replace(/\s*-\s*/g, " - ");
+
+  return cleaned;
+};
+
+const getOptionDisplay = (
+  value: string | undefined,
+  options?: { label: string; content: string }[]
+) => {
+  if (!value) {
+    return "";
+  }
+
+  const values = splitAnswer(value);
+
+  return values
+    .map((item) => {
+      const option = options?.find((candidate) =>
+        matchesOptionAnswer([item], candidate)
+      );
+
+      return option?.content || item;
+    })
+    .join(" / ");
+};
+
+const getReviewOptionLabel = (
+  option: { label: string; content: string },
+  index: number
+) => {
+  const label = option.label?.trim();
+
+  if (label && /^[A-Z]$|^[ivxlcdm]+$/i.test(label) && label.length <= 5) {
+    return label;
+  }
+
+  return String.fromCharCode(65 + index);
+};
+
+const getReviewOptionContent = (option: { label: string; content: string }) => {
+  const content = option.content?.trim();
+
+  return content || option.label || "";
+};
+
+const getQuestionType = (
+  question?: IELTSReadingQuestion,
+  group?: IELTSReadingQuestionGroup
+) => question?.type ?? group?.type;
+
 export function RealExamReviewView({
   test,
   answers,
   result,
   time,
   onBackToResult,
-  onBackToPractice,
 }: RealExamReviewViewProps) {
   const allQuestions = getAllQuestions(test);
   const [activeQuestionId, setActiveQuestionId] = useState(allQuestions[0]?.id ?? "");
+  const [explanationTooltip, setExplanationTooltip] =
+    useState<ExplanationTooltip | null>(null);
   const [passageWidth, setPassageWidth] = useState(48);
   const passageRefs = useRef<Record<number, HTMLParagraphElement | null>>({});
   const activeQuestion =
@@ -45,22 +156,12 @@ export function RealExamReviewView({
         group.questions.some((question) => question.id === activeQuestion?.id)
       )
     ) ?? test.passages[0];
-  const activeGroup =
-    activePassage.questionGroups.find((group) =>
-      group.questions.some((question) => question.id === activeQuestion?.id)
-    ) ?? activePassage.questionGroups[0];
-  const reviewOptions =
-    activeQuestion && getQuestionOptions(activeQuestion, activeGroup, activePassage)
-      ? getQuestionOptions(activeQuestion, activeGroup, activePassage)!.map(
-          (option) => option.label
-        )
-      : [];
-  const groupTitle = activeGroup?.title ?? "Questions";
-  const groupInstruction =
-    activeQuestion?.instruction ?? activeGroup?.instruction ?? activePassage.instruction;
   const activePassageRefIndex = activeQuestion
     ? getPassageRefIndex(activeQuestion)
     : undefined;
+  const passagesWithQuestions = test.passages.filter(
+    (passage) => getPassageQuestions(passage).length > 0
+  );
 
   const getQuestionStatus = (question: IELTSReadingQuestion) => {
     const userAnswer = answers[question.id];
@@ -69,48 +170,475 @@ export function RealExamReviewView({
       return "skipped";
     }
 
-    if (userAnswer.includes(",") || question.correctAnswer.includes(",")) {
-      const userParts = userAnswer.split(",").map((item) => item.trim()).sort();
-      const expectedParts = question.correctAnswer
-        .split(",")
-        .map((item) => item.trim())
-        .sort();
-
-      return userParts.join(",") === expectedParts.join(",") ? "correct" : "wrong";
-    }
-
-    return userAnswer === question.correctAnswer ? "correct" : "wrong";
+    return normalizeAnswer(userAnswer) === normalizeAnswer(question.correctAnswer)
+      ? "correct"
+      : "wrong";
   };
 
-  const getCellClassName = (question: IELTSReadingQuestion, option: string) => {
-    const status = getQuestionStatus(question);
-    const isCorrectOption = question.correctAnswer === option;
-    const isUserOption = answers[question.id] === option;
-
-    if (isCorrectOption) {
-      return styles.correctAnswerCell;
-    }
-
-    if (status === "wrong" && isUserOption) {
-      return styles.wrongAnswerCell;
-    }
-
-    return "";
-  };
-
-  const handleShowExplanation = (question: IELTSReadingQuestion) => {
+  const openExplanationTooltip = (
+    question: IELTSReadingQuestion,
+    event: ReactMouseEvent<HTMLButtonElement>
+  ) => {
+    event.stopPropagation();
     setActiveQuestionId(question.id);
 
-    window.setTimeout(() => {
-      const passageRefIndex = getPassageRefIndex(question);
+    const rect = event.currentTarget.getBoundingClientRect();
+    const margin = 12;
+    const tooltipWidth = Math.min(380, window.innerWidth - margin * 2);
+    const left = Math.min(
+      Math.max(rect.left + rect.width / 2 - tooltipWidth / 2, margin),
+      window.innerWidth - tooltipWidth - margin
+    );
+    const placement =
+      rect.bottom + 220 > window.innerHeight ? "top" : "bottom";
+    const top = placement === "top" ? rect.top - 10 : rect.bottom + 10;
 
-      if (passageRefIndex) {
-        passageRefs.current[passageRefIndex]?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
+    setExplanationTooltip({
+      question,
+      left,
+      top,
+      placement,
+    });
+  };
+
+  const getQuestionGroup = (
+    question: IELTSReadingQuestion,
+    passage = activePassage
+  ) =>
+    passage.questionGroups.find((group) =>
+      group.questions.some((item) => item.id === question.id)
+    ) ?? passage.questionGroups[0];
+
+  const getQuestionDisplayAnswer = (
+    question: IELTSReadingQuestion,
+    value?: string
+  ) => {
+    const passage =
+      test.passages.find((candidate) =>
+        candidate.questionGroups.some((group) =>
+          group.questions.some((item) => item.id === question.id)
+        )
+      ) ?? activePassage;
+    const questionGroup = getQuestionGroup(question, passage);
+    const options = getQuestionOptions(question, questionGroup, passage);
+
+    return getOptionDisplay(value, options) || formatAnswer(value);
+  };
+
+  const renderExplanationButton = (question: IELTSReadingQuestion) => (
+    <button
+      type="button"
+      className={styles.explanationIconButton}
+      onClick={(event) => openExplanationTooltip(question, event)}
+      title="Show explanation"
+      aria-label={`Show explanation for question ${formatQuestionLabel(question)}`}
+    >
+      <MessageSquare size={14} />
+    </button>
+  );
+
+  const renderAnswerInput = (question: IELTSReadingQuestion) => {
+    const status = getQuestionStatus(question);
+    const userAnswer = answers[question.id];
+
+    return (
+      <span
+        className={`${styles.reviewInlineInput} ${styles[`${status}InlineInput`]}`}
+      >
+        <span>{question.number}</span>
+        <strong>{userAnswer || "x"}</strong>
+      </span>
+    );
+  };
+
+  const renderInputQuestion = (question: IELTSReadingQuestion) => {
+    const promptParts = question.text.split(/\{blank\}|_{3,}/i);
+    const hasBlank = promptParts.length > 1;
+
+    return (
+      <>
+        {question.sectionTitle && (
+          <h4 className={styles.reviewQuestionSectionTitle}>
+            {question.sectionTitle}
+          </h4>
+        )}
+
+        <div className={styles.reviewInputPrompt}>
+          {hasBlank ? (
+            promptParts.map((part, index) => (
+              <Fragment key={`${question.id}-${index}`}>
+                {index > 0 && renderAnswerInput(question)}
+                {part}
+              </Fragment>
+            ))
+          ) : (
+            <>
+              <RichText html={question.text} />
+              {renderAnswerInput(question)}
+            </>
+          )}
+        </div>
+
+        <div className={styles.reviewCorrectAnswerLine}>
+          <span>Correct answer</span>
+          <div className={styles.reviewCorrectAnswerValue}>
+            {renderExplanationButton(question)}
+            <strong>{formatAnswer(question.correctAnswer)}</strong>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const renderTruthChoiceQuestion = (
+    question: IELTSReadingQuestion,
+    options: NonNullable<ReturnType<typeof getQuestionOptions>>
+  ) => {
+    const status = getQuestionStatus(question);
+    const userValues = splitAnswer(answers[question.id]);
+    const correctValues = splitAnswer(question.correctAnswer);
+
+    return (
+      <>
+        <div className={styles.reviewChoicePrompt}>
+          <span className={`${styles.reviewQuestionNumber} ${styles[status]}`}>
+            {formatQuestionLabel(question)}
+          </span>
+          <RichText html={question.text} />
+        </div>
+
+        <div className={styles.reviewTruthChoiceList}>
+          {options.map((option) => {
+            const isCorrect = matchesOptionAnswer(correctValues, option);
+            const isUserWrong =
+              status === "wrong" &&
+              matchesOptionAnswer(userValues, option) &&
+              !isCorrect;
+            const isUserCorrect = matchesOptionAnswer(userValues, option) && isCorrect;
+
+            return (
+              <div
+                key={`${question.id}-${option.label}`}
+                className={`${styles.reviewTruthChoiceItem} ${
+                  isCorrect ? styles.reviewTruthChoiceCorrect : ""
+                } ${isUserWrong ? styles.reviewTruthChoiceWrong : ""}`}
+              >
+                <span className={styles.reviewRadio} />
+                <span className={styles.reviewOptionText}>{option.content}</span>
+                {isUserCorrect && <em>Your answer</em>}
+                {isUserWrong && <em>Your answer</em>}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className={styles.reviewCorrectAnswerLine}>
+          <span>Correct answer</span>
+          <div className={styles.reviewCorrectAnswerValue}>
+            {renderExplanationButton(question)}
+            <strong>{getOptionDisplay(question.correctAnswer, options)}</strong>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const renderChoiceQuestion = (
+    question: IELTSReadingQuestion,
+    options: NonNullable<ReturnType<typeof getQuestionOptions>>
+  ) => {
+    const status = getQuestionStatus(question);
+    const userValues = splitAnswer(answers[question.id]);
+    const correctValues = splitAnswer(question.correctAnswer);
+    const type = getQuestionType(question);
+    const isSingleChoice = singleChoiceTypes.has(type ?? "");
+
+    if (truthChoiceTypes.has(type ?? "")) {
+      return renderTruthChoiceQuestion(question, options);
+    }
+
+    return (
+      <>
+        <div className={styles.reviewChoicePrompt}>
+          <span className={`${styles.reviewQuestionNumber} ${styles[status]}`}>
+            {formatQuestionLabel(question)}
+          </span>
+          <RichText html={question.text} />
+        </div>
+
+        <div className={styles.reviewChoiceList}>
+          {options.map((option, index) => {
+            const optionLabel = getReviewOptionLabel(option, index);
+            const optionContent = getReviewOptionContent(option);
+            const isCorrect = matchesOptionAnswer(correctValues, option);
+            const isUserWrong =
+              status === "wrong" &&
+              matchesOptionAnswer(userValues, option) &&
+              !isCorrect;
+            const checked = matchesOptionAnswer(userValues, option) || isCorrect;
+
+            return (
+              <div
+                key={`${question.id}-${option.label}`}
+                className={`${styles.reviewChoiceLine} ${
+                  isCorrect ? styles.reviewChoiceCorrectText : ""
+                } ${isUserWrong ? styles.reviewChoiceWrongText : ""}`}
+                title={optionContent}
+              >
+                <span className={styles.reviewOptionLabel}>{optionLabel}</span>
+                <span
+                  className={
+                    isSingleChoice
+                      ? styles.reviewCircleControl
+                      : styles.reviewSquareControl
+                  }
+                >
+                  {checked ? " " : ""}
+                </span>
+                <span className={styles.reviewOptionText}>{optionContent}</span>
+                {isCorrect && renderExplanationButton(question)}
+              </div>
+            );
+          })}
+        </div>
+
+        {status === "wrong" && (
+          <div className={styles.reviewUserAnswerLine}>
+            <span>Your answer</span>
+            <strong>{getOptionDisplay(answers[question.id], options)}</strong>
+          </div>
+        )}
+
+        <div className={styles.reviewCorrectAnswerLine}>
+          <span>Correct answer</span>
+          <strong>{getOptionDisplay(question.correctAnswer, options)}</strong>
+        </div>
+      </>
+    );
+  };
+
+  const renderQuestionReview = (
+    question: IELTSReadingQuestion,
+    passage = activePassage
+  ) => {
+    const questionGroup = getQuestionGroup(question, passage);
+    const rowOptions = getQuestionOptions(question, questionGroup, passage);
+
+    return (
+      <article
+        key={question.id}
+        className={`${styles.reviewPlainQuestion} ${
+          activeQuestionId === question.id ? styles.activeReviewQuestionCard : ""
+        }`}
+      >
+        {rowOptions?.length
+          ? renderChoiceQuestion(question, rowOptions)
+          : renderInputQuestion(question)}
+      </article>
+    );
+  };
+
+  const renderGridGroup = (
+    passage: IELTSMockTest["passages"][number],
+    questionGroup: IELTSReadingQuestionGroup
+  ) => {
+    const options = getQuestionOptions(
+      questionGroup.questions[0],
+      questionGroup,
+      passage
+    ) ?? [];
+
+    return (
+      <div className={styles.reviewGridWrap}>
+        <table className={styles.reviewGridTable}>
+          <thead>
+            <tr>
+              <th />
+              <th />
+              {options.map((option) => (
+                <th key={option.label}>{option.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {questionGroup.questions.map((question) => {
+              const correctValues = splitAnswer(question.correctAnswer);
+              const userValues = splitAnswer(answers[question.id]);
+
+              return (
+                <tr key={question.id}>
+                  <td>{formatQuestionLabel(question)}</td>
+                  <td>
+                    <RichText html={question.text} />
+                    {renderExplanationButton(question)}
+                  </td>
+                  {options.map((option) => {
+                    const isCorrect = matchesOptionAnswer(correctValues, option);
+                    const isWrong =
+                      matchesOptionAnswer(userValues, option) && !isCorrect;
+
+                    return (
+                      <td
+                        key={`${question.id}-${option.label}`}
+                        className={`${isCorrect ? styles.correctAnswerCell : ""} ${
+                          isWrong ? styles.wrongAnswerCell : ""
+                        }`}
+                      >
+                        <span
+                          className={`${styles.reviewRadio} ${
+                            isCorrect ? styles.correctRadio : ""
+                          } ${isWrong ? styles.wrongRadio : ""}`}
+                        />
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderSummaryCompletionGroup = (
+    questionGroup: IELTSReadingQuestionGroup
+  ) => {
+    const options = getQuestionOptions(questionGroup.questions[0], questionGroup) ?? [];
+    const firstQuestionText = questionGroup.questions[0]?.text ?? "";
+    const hasTemplate =
+      firstQuestionText &&
+      questionGroup.questions.some((question) =>
+        firstQuestionText.includes(`{Q${question.number}}`)
+      );
+    const promptTemplate = hasTemplate
+      ? firstQuestionText
+      : questionGroup.questions
+          .map((question) => question.text || `{Q${question.number}}`)
+          .join(" ");
+    const templateParts = promptTemplate.split(/(\{q?\d+\}|\{blank\})/i);
+    const questionByNumber = new Map(
+      questionGroup.questions.map((question) => [question.number, question])
+    );
+    const explicitQuestionNumbers = new Set(
+      templateParts
+        .map((part) => part.match(/\{q?(\d+)\}/i)?.[1])
+        .filter(Boolean)
+        .map(Number)
+    );
+    const sequentialBlankQuestions = questionGroup.questions.filter(
+      (question) => !explicitQuestionNumbers.has(question.number)
+    );
+    let blankIndex = 0;
+
+    const renderSummaryPart = (part: string, index: number) => {
+      const match = part.match(/\{q?(\d+)\}/i);
+      const isSequentialBlank = /\{blank\}/i.test(part);
+
+      if (!match && !isSequentialBlank) {
+        return <Fragment key={`${questionGroup.id}-text-${index}`}>{part}</Fragment>;
       }
-    }, 0);
+
+      const question = match
+        ? questionByNumber.get(Number(match[1]))
+        : sequentialBlankQuestions[blankIndex++];
+
+      if (!question) {
+        return <Fragment key={`${questionGroup.id}-missing-${index}`}>{part}</Fragment>;
+      }
+
+      const status = getQuestionStatus(question);
+      const userAnswer = answers[question.id];
+      const displayAnswer = getOptionDisplay(userAnswer, options) || "x";
+
+      return (
+        <span
+          key={question.id}
+          className={`${styles.reviewSummaryBlank} ${styles[`${status}SummaryBlank`]}`}
+          onClick={() => setActiveQuestionId(question.id)}
+        >
+          <strong>{question.number}</strong>
+          <span>{displayAnswer}</span>
+        </span>
+      );
+    };
+
+    return (
+      <div className={styles.reviewSummaryBlock}>
+        {questionGroup.heading && (
+          <h3 className={styles.reviewSummaryHeading}>{questionGroup.heading}</h3>
+        )}
+
+        <div className={styles.reviewSummaryText}>
+          {templateParts.map(renderSummaryPart)}
+        </div>
+
+        <div className={styles.reviewSummaryOptions}>
+          <strong>List of options</strong>
+          <div>
+            {options.map((option) => (
+              <span key={option.label}>{option.content}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.reviewSummaryAnswers}>
+          {questionGroup.questions.map((question) => (
+            <div key={`${question.id}-answer`}>
+              <span className={`${styles.reviewQuestionNumber} ${styles.correct}`}>
+                {formatQuestionLabel(question)}
+              </span>
+              <strong>
+                Dap an: {getOptionDisplay(question.correctAnswer, options)}
+              </strong>
+              {renderExplanationButton(question)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderReviewGroup = (
+    passage: IELTSMockTest["passages"][number],
+    questionGroup: IELTSMockTest["passages"][number]["questionGroups"][number]
+  ) => {
+    const questions = questionGroup.questions;
+
+    if (!questions.length) {
+      return null;
+    }
+
+    const firstQuestion = questions[0];
+    const type = getQuestionType(firstQuestion, questionGroup);
+    const instruction =
+      questionGroup.instruction ?? firstQuestion?.instruction ?? passage.instruction;
+
+    return (
+      <section
+        key={`${passage.id}-${questionGroup.id}`}
+        className={styles.reviewGroupBlock}
+      >
+        <div className={styles.reviewMatrixHeader}>
+          <div>
+            <span>{firstQuestion?.type}</span>
+            <h2>{questionGroup.title}</h2>
+            <RichText className={styles.reviewInstructionText} html={instruction} />
+          </div>
+
+        </div>
+
+        {gridChoiceTypes.has(type ?? "") ? (
+          renderGridGroup(passage, questionGroup)
+        ) : summaryOptionTypes.has(type ?? "") ? (
+          renderSummaryCompletionGroup(questionGroup)
+        ) : (
+          <div className={styles.reviewQuestionList}>
+            {questions.map((question) => renderQuestionReview(question, passage))}
+          </div>
+        )}
+      </section>
+    );
   };
 
   const handleResizeStart = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -138,27 +666,43 @@ export function RealExamReviewView({
     <div className={styles.reviewPage}>
       <header className={styles.reviewHeader}>
         <div>
-          <button onClick={onBackToResult}>←</button>
+          <button onClick={onBackToResult} aria-label="Back to result">
+            <ArrowLeft size={22} />
+          </button>
           <div>
             <span>Review answers</span>
             <h1>{test.title}</h1>
           </div>
         </div>
 
-        <div className={styles.reviewStats}>
-          <div>
-            <span>Score</span>
-            <strong>{result.bandScore.toFixed(1)}</strong>
+        <div className={styles.reviewHeaderMeta}>
+          <div className={styles.reviewHeaderLegend}>
+            <span>
+              <i className={styles.correctDot} /> Correct
+            </span>
+            <span>
+              <i className={styles.wrongDot} /> Wrong
+            </span>
+            <span>
+              <i className={styles.skipDot} /> Skipped
+            </span>
           </div>
-          <div>
-            <span>Time</span>
-            <strong>{time}</strong>
-          </div>
-          <div>
-            <span>Correct</span>
-            <strong>
-              {result.correctQuestions}/{result.totalQuestions}
-            </strong>
+
+          <div className={styles.reviewStats}>
+            <div>
+              <span>Score</span>
+              <strong>{result.bandScore.toFixed(1)}</strong>
+            </div>
+            <div>
+              <span>Time</span>
+              <strong>{time}</strong>
+            </div>
+            <div>
+              <span>Correct</span>
+              <strong>
+                {result.correctQuestions}/{result.totalQuestions}
+              </strong>
+            </div>
           </div>
         </div>
       </header>
@@ -198,153 +742,100 @@ export function RealExamReviewView({
           role="separator"
           aria-orientation="vertical"
         >
-          <span>⋮</span>
+          <span>
+            <GripVertical size={14} />
+          </span>
         </div>
 
         <section
           className={styles.reviewQuestions}
           style={{ flexBasis: `${100 - passageWidth}%` }}
         >
-          <div className={styles.reviewMatrixHeader}>
-            <div>
-              <span>{activeQuestion?.type}</span>
-              <h2>{groupTitle}</h2>
-              <p>{groupInstruction}</p>
-            </div>
+          <div className={styles.reviewAllParts}>
+            <section key={activePassage.id} className={styles.reviewPartBlock}>
+              <div className={styles.reviewPartHeader}>
+                <span>Part {activePassage.part}</span>
+                {shouldShowPassageTitle(activePassage) && (
+                  <strong>{activePassage.title}</strong>
+                )}
+              </div>
 
-            <div className={styles.reviewLegend}>
-              <span>
-                <i className={styles.correctDot} /> Correct
-              </span>
-              <span>
-                <i className={styles.wrongDot} /> Wrong
-              </span>
-              <span>
-                <i className={styles.skipDot} /> Skipped
-              </span>
-            </div>
+              {activePassage.questionGroups.map((questionGroup) =>
+                renderReviewGroup(activePassage, questionGroup)
+              )}
+            </section>
           </div>
 
-          <div className={styles.reviewAnswerTableWrap}>
-            <table className={styles.reviewAnswerTable}>
-              <thead>
-                <tr>
-                  <th />
-                  <th />
-                  <th />
-                  {reviewOptions.length > 0 ? (
-                    reviewOptions.map((option) => <th key={option}>{option}</th>)
-                  ) : (
-                    <th>Answer</th>
-                  )}
-                </tr>
-              </thead>
-
-              <tbody>
-                {getPassageQuestions(activePassage).map((question) => {
-                  const status = getQuestionStatus(question);
-                  const isActive = activeQuestionId === question.id;
-                  const rowOptions = getQuestionOptions(
-                    question,
-                    activeGroup,
-                    activePassage
-                  );
-
-                  return (
-                    <tr
-                      key={question.id}
-                      className={isActive ? styles.activeReviewRow : ""}
-                    >
-                      <td>
-                        <button
-                          className={`${styles.reviewQuestionPill} ${styles[status]}`}
-                          onClick={() => setActiveQuestionId(question.id)}
-                        >
-                          {question.number}
-                        </button>
-                      </td>
-                      <td>{question.text}</td>
-                      <td>
-                        <button
-                          className={styles.explanationIconButton}
-                          onClick={() => handleShowExplanation(question)}
-                          title="Xem giải thích trong bài đọc"
-                        >
-                          💬
-                        </button>
-                      </td>
-                      {rowOptions?.length ? (
-                        rowOptions.map((option) => {
-                          const userAnswer = answers[question.id];
-                          const isSelected = userAnswer === option.label;
-                          const isCorrectOption = question.correctAnswer === option.label;
-
-                          return (
-                            <td
-                              key={option.label}
-                              className={getCellClassName(question, option.label)}
-                            >
-                              <span
-                                className={`${styles.reviewRadio} ${
-                                  isCorrectOption ? styles.correctRadio : ""
-                                } ${
-                                  isSelected && !isCorrectOption
-                                    ? styles.wrongRadio
-                                    : ""
-                                }`}
-                              />
-                            </td>
-                          );
-                        })
-                      ) : (
-                        <td colSpan={Math.max(reviewOptions.length, 1)}>
-                          <strong>{answers[question.id] || "Skipped"}</strong>
-                          <span> / {question.correctAnswer}</span>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {activeQuestion && (
-            <article className={styles.inlineExplanation}>
-              <strong>Question {activeQuestion.number}</strong>
-              <span>
-                Your answer: {answers[activeQuestion.id] || "Skipped"} · Correct
-                answer: {activeQuestion.correctAnswer}
-              </span>
-              <p>{activeQuestion.explanation}</p>
-            </article>
-          )}
         </section>
       </main>
 
-      <footer className={styles.reviewFooter}>
-        <div>
-          {getPassageQuestions(activePassage).map((question) => {
-            const status = getQuestionStatus(question);
-
-            return (
-              <button
-                key={question.id}
-                className={`${styles.reviewNavButton} ${styles[status]} ${
-                  activeQuestionId === question.id
-                    ? styles.activeReviewQuestion
-                    : ""
-                }`}
-                onClick={() => setActiveQuestionId(question.id)}
-              >
-                {question.number}
-              </button>
-            );
-          })}
+      {explanationTooltip && (
+        <div
+          className={styles.reviewExplanationOverlay}
+          onClick={() => setExplanationTooltip(null)}
+        >
+          <article
+            className={`${styles.reviewExplanationTooltip} ${
+              explanationTooltip.placement === "top"
+                ? styles.tooltipTop
+                : styles.tooltipBottom
+            }`}
+            style={{
+              left: explanationTooltip.left,
+              top: explanationTooltip.top,
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <strong>
+              Question {formatQuestionLabel(explanationTooltip.question)}
+            </strong>
+            <span>
+              Your answer:{" "}
+              {getQuestionDisplayAnswer(
+                explanationTooltip.question,
+                answers[explanationTooltip.question.id]
+              )}{" "}
+              | Correct answer:{" "}
+              {getQuestionDisplayAnswer(
+                explanationTooltip.question,
+                explanationTooltip.question.correctAnswer
+              )}
+            </span>
+            <p>
+              {explanationTooltip.question.explanation?.trim() ||
+                "Chưa có giải thích cho câu hỏi này."}
+            </p>
+          </article>
         </div>
+      )}
 
-        <button>Xem lịch sử làm bài</button>
-        <button onClick={onBackToPractice}>Làm bài khác</button>
+      <footer className={styles.reviewFooter}>
+        <div className={styles.reviewFooterParts}>
+          {passagesWithQuestions.map((passage) => (
+            <div key={`${passage.id}-footer`} className={styles.reviewFooterPart}>
+              <strong>Part {passage.part}</strong>
+              <div>
+                {getPassageQuestions(passage).map((question) => {
+                  const status = getQuestionStatus(question);
+
+                  return (
+                    <button
+                      key={question.id}
+                      className={`${styles.reviewNavButton} ${styles[status]} ${
+                        activeQuestionId === question.id
+                          ? styles.activeReviewQuestion
+                          : ""
+                      }`}
+                      onClick={() => setActiveQuestionId(question.id)}
+                    >
+                      {formatQuestionLabel(question)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       </footer>
     </div>
   );

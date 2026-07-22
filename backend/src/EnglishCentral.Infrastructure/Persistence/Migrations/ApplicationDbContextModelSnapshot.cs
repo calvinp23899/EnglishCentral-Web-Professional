@@ -1348,6 +1348,106 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.ToTable("exam_answer_options", "exam");
                 });
 
+            modelBuilder.Entity("EnglishCentral.Domain.Entities.Exam.ExamAsset", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("AssetType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BucketName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Checksum")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("DeletedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("Provider")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PublicId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PublicUrl")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("UpdatedBy")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetType");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("Provider");
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("Provider", "BucketName", "ObjectKey")
+                        .IsUnique();
+
+                    b.ToTable("exam_assets", "exam");
+                });
+
             modelBuilder.Entity("EnglishCentral.Domain.Entities.Exam.ExamAttempt", b =>
                 {
                     b.Property<long>("Id")
@@ -1398,6 +1498,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<int>("Mode")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(1);
 
@@ -2100,6 +2201,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.Property<long?>("DeletedBy")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("ExamAssetId")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("ExamPartId")
                         .HasColumnType("bigint");
 
@@ -2132,6 +2236,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExamAssetId");
 
                     b.HasIndex("PublicId")
                         .IsUnique();
@@ -3929,11 +4035,18 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("EnglishCentral.Domain.Entities.Exam.ExamStimulus", b =>
                 {
+                    b.HasOne("EnglishCentral.Domain.Entities.Exam.ExamAsset", "ExamAsset")
+                        .WithMany("Stimuli")
+                        .HasForeignKey("ExamAssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("EnglishCentral.Domain.Entities.Exam.ExamPart", "ExamPart")
                         .WithMany("Stimuli")
                         .HasForeignKey("ExamPartId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ExamAsset");
 
                     b.Navigation("ExamPart");
                 });
@@ -4292,6 +4405,11 @@ namespace EnglishCentral.Infrastructure.Persistence.Migrations
                     b.Navigation("AnswerKeys");
 
                     b.Navigation("Responses");
+                });
+
+            modelBuilder.Entity("EnglishCentral.Domain.Entities.Exam.ExamAsset", b =>
+                {
+                    b.Navigation("Stimuli");
                 });
 
             modelBuilder.Entity("EnglishCentral.Domain.Entities.Exam.ExamAttempt", b =>

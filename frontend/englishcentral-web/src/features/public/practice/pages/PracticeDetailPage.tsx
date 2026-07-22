@@ -11,7 +11,7 @@ import { toastDanger } from "@/components/ui";
 import {
   getAuthErrorMessage,
   getStoredAuthSession,
-  getStoredStudentIdFromAccessToken,
+  getStudentIdWithRefresh,
 } from "@/features/public/auth/api/auth-api";
 import { SubmitResultModal } from "../components/SubmitResultModal/SubmitResultModal";
 import { getAllQuestions } from "../components/QuestionBlock";
@@ -347,6 +347,7 @@ export function PracticeDetailPage() {
       const attemptMode = await publicPracticeApi.getExamAttemptModeValue(
         mode === "real" ? "real" : "practice",
       );
+      const studentId = await getStudentIdWithRefresh();
       const response = await publicPracticeApi.submitAttemptWithAnswers({
         answers: buildAttemptAnswers(test, answers),
         candidateEmail: currentUser?.email?.trim() || null,
@@ -354,7 +355,7 @@ export function PracticeDetailPage() {
         examVersionId,
         mode: attemptMode,
         startedAt,
-        studentId: getStoredStudentIdFromAccessToken(),
+        studentId,
       });
 
       setSubmitResult(normalizeSubmitResult(response, getExamResult()));

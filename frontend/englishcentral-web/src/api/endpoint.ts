@@ -9,6 +9,7 @@ export const ENDPOINTS = {
 
   ADMIN_AUTH: {
     ME_PROFILE: "/admin/Auth/me-profile",
+    REFRESH: "/admin/Auth/refresh",
   },
 
   STUDENTS: {
@@ -152,10 +153,19 @@ export const ENDPOINTS = {
     CLONE_DRAFT: (id: string | number) => `/admin/exam/versions/${id}/clone-draft`,
   },
 
+  ADMIN_EXAM_ASSETS: {
+    GET_LIST: "/admin/exam/assets/get-list",
+    GET_BY_ID: (id: string | number) => `/admin/exam/assets/${id}/get-by-id`,
+    UPLOAD: "/admin/exam/assets/upload",
+    UPDATE: (id: string | number) => `/admin/exam/assets/${id}/update`,
+    DELETE: (id: string | number) => `/admin/exam/assets/${id}/delete`,
+  },
+
   EXAM_PRACTICES: {
     TEST_GET_LIST: "/ExamPractices/test/get-list",
     TEST_GET_BY_ID: (id: string | number) => `/ExamPractices/test/${id}/get-by-id`,
     HISTORY: "/ExamPractices/get-history",
+    DETAIL_EXAM: (id: string | number) => `/ExamPractices/detail-exam/${id}/get-by-id`,
     TEMPLATE_GET_LIST: "/ExamPractices/template/get-list",
     TEMPLATE_GET_BY_ID: (id: string | number) => `/ExamPractices/template/${id}/get-by-id`,
   },
@@ -189,6 +199,9 @@ export const ENDPOINTS = {
     EXAM_FAMILY: "/admin/metadata/get-exam-family",
     EXAM_TEMPLATE_STATUS: "/admin/metadata/get-exam-template-status",
     EXAM_VERSION_STATUS: "/admin/metadata/get-exam-version-status",
+    EXAM_ASSET_TYPE: "/admin/metadata/get-exam-asset-type",
+    EXAM_ASSET_PROVIDER: "/admin/metadata/get-exam-asset-provider",
+    EXAM_ASSET_STATUS: "/admin/metadata/get-exam-asset-status",
     ROLE: "/admin/metadata/role-dropdown",
   },
 };

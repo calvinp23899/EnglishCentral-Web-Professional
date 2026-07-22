@@ -5,6 +5,7 @@ using EnglishCentral.Application.Interfaces.Documents;
 using EnglishCentral.Application.Interfaces.Exam;
 using EnglishCentral.Application.Interfaces.Finance;
 using EnglishCentral.Application.Interfaces.Identity;
+using EnglishCentral.Application.Interfaces.Storage;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Infrastructure.Persistence;
 using EnglishCentral.Infrastructure.Persistence.Context;
@@ -18,6 +19,7 @@ using EnglishCentral.Infrastructure.Services.CurrentUser;
 using EnglishCentral.Infrastructure.Services.Identity;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
 using EnglishCentral.Infrastructure.Services.Pdf;
+using EnglishCentral.Infrastructure.Services.Storage;
 using EnglishCentral.Shared.Constants;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -88,6 +90,11 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped<IPdfGenerator, PdfGenerator>();
             services.AddScoped<IPaymentPdfService, PaymentPdfService>();
             services.AddScoped<IBillingPdfService, BillingPdfService>();
+            #endregion
+
+            #region Storage
+            services.Configure<CloudflareR2Options>(configuration.GetSection("Cloudflare"));
+            services.AddHttpClient<ICloudflareR2StorageService, CloudflareR2StorageService>();
             #endregion
 
             #region JWT Setting

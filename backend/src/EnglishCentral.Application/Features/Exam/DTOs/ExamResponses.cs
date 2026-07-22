@@ -80,6 +80,24 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
         int OrderIndex,
         string? MetadataJson);
 
+    public record ExamAssetResponse(
+        Guid PublicId,
+        long Id,
+        EExamAssetType AssetType,
+        EExamAssetProvider Provider,
+        EExamAssetStatus Status,
+        string BucketName,
+        string ObjectKey,
+        string PublicUrl,
+        string OriginalFileName,
+        string ContentType,
+        long FileSize,
+        string? Checksum,
+        int? DurationSeconds,
+        string? MetadataJson,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset? UpdatedAt);
+
     public record ExamQuestionGroupResponse(
         Guid PublicId,
         long Id,
@@ -270,6 +288,24 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
             entity.Transcript,
             entity.OrderIndex,
             entity.MetadataJson);
+
+        public static ExamAssetResponse ToResponse(this ExamAsset entity) => new(
+            entity.PublicId,
+            entity.Id,
+            entity.AssetType,
+            entity.Provider,
+            entity.Status,
+            entity.BucketName,
+            entity.ObjectKey,
+            entity.PublicUrl,
+            entity.OriginalFileName,
+            entity.ContentType,
+            entity.FileSize,
+            entity.Checksum,
+            entity.DurationSeconds,
+            entity.MetadataJson,
+            entity.CreatedAt,
+            entity.UpdatedAt);
 
         public static ExamQuestionGroupResponse ToResponse(this ExamQuestionGroup entity) => new(
             entity.PublicId,

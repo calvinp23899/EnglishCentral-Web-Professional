@@ -33,7 +33,10 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CloneEx
             if (source.Status != EExamTemplateStatus.Published && source.Status != EExamTemplateStatus.Archived)
                 return Result<ExamVersionResponse>.Failure("Only published or archived versions can be cloned.", 400);
 
-            var versionNumber = await ExamVersionIdentityHelper.GetNextVersionNumberAsync(_repository, source.ExamTemplateId, ct);
+            if (await ExamVersionIdentityHelper.IsNameUsedAsync(_repository, source.ExamTemplateId, request.Name, excludeVersionId: null, ct))
+                return Result<ExamVersionResponse>.Failure("Exam version name already exists.", 409);
+
+            const int versionNumber = ExamVersionIdentityHelper.InitialVersionNumber;
             var slug = await ExamVersionIdentityHelper.CreateUniqueSlugAsync(
                 _repository,
                 source.ExamTemplateId,

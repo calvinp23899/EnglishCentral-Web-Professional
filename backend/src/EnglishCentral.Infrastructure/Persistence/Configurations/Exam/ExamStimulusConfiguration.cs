@@ -13,6 +13,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Exam
             builder.HasKey(x => x.Id);
             builder.HasIndex(x => x.PublicId).IsUnique();
             builder.HasIndex(x => new { x.ExamPartId, x.OrderIndex });
+            builder.HasIndex(x => x.ExamAssetId);
             builder.HasIndex(x => x.Type);
 
             builder.Property(x => x.Type).HasConversion<int>();
@@ -25,6 +26,11 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Exam
             builder.HasOne(x => x.ExamPart)
                 .WithMany(x => x.Stimuli)
                 .HasForeignKey(x => x.ExamPartId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(x => x.ExamAsset)
+                .WithMany(x => x.Stimuli)
+                .HasForeignKey(x => x.ExamAssetId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

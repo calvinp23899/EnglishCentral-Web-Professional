@@ -10,34 +10,54 @@ import {
 import { publicPracticeApi } from "../api/public-practice-api";
 
 import styles from "./PracticePage.module.scss";
-const PAGE_SIZE = 4;
+
+const PAGE_SIZE = 20;
 
 export function PracticePage() {
   const [practices, setPractices] = useState<PublicPractice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedCategory, setSelectedCategory] =
     useState<PracticeCategory | "all">("ielts");
-
   const [selectedSkill, setSelectedSkill] =
     useState<PracticeSkill | "all">("all");
-
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let isMounted = true;
 
+    if (selectedCategory !== "ielts") {
+      setPractices([]);
+      setTotalItems(0);
+      setTotalPages(1);
+      setIsLoading(false);
+
+      return () => {
+        isMounted = false;
+      };
+    }
+
     setIsLoading(true);
     publicPracticeApi
-      .getPublishedIeltsPractices()
-      .then((items) => {
+      .getPublishedIeltsPractices({
+        keyword: searchTerm,
+        page: currentPage,
+        pageSize: PAGE_SIZE,
+      })
+      .then((result) => {
         if (isMounted) {
-          setPractices(items);
+          setPractices(result.items);
+          setTotalItems(result.totalItems);
+          setTotalPages(Math.max(result.totalPages, 1));
         }
       })
       .catch(() => {
         if (isMounted) {
           setPractices([]);
+          setTotalItems(0);
+          setTotalPages(1);
         }
       })
       .finally(() => {
@@ -49,34 +69,23 @@ export function PracticePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [currentPage, searchTerm, selectedCategory]);
 
   const filteredPractices = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
-
     return practices.filter((item) => {
       const matchCategory =
         selectedCategory === "all" || item.category === selectedCategory;
-
       const matchSkill =
         selectedSkill === "all" || item.skill === selectedSkill;
 
-      const matchSearch =
-        !keyword ||
-        (item.title ?? "").toLowerCase().includes(keyword) ||
-        (item.description ?? "").toLowerCase().includes(keyword) ||
-        (item.level ?? "").toLowerCase().includes(keyword);
-
-      return matchCategory && matchSkill && matchSearch;
+      return matchCategory && matchSkill;
     });
-  }, [practices, selectedCategory, selectedSkill, searchTerm]);
+  }, [practices, selectedCategory, selectedSkill]);
 
-  const totalPages = Math.ceil(filteredPractices.length / PAGE_SIZE);
-
-  const paginatedPractices = filteredPractices.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
+  const totalDisplayItems =
+    selectedCategory === "ielts" && selectedSkill === "all"
+      ? totalItems
+      : filteredPractices.length;
 
   const handleCategoryChange = (category: PracticeCategory | "all") => {
     setSelectedCategory(category);
@@ -88,13 +97,15 @@ export function PracticePage() {
     setSelectedSkill(skill);
     setCurrentPage(1);
   };
+
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
         <Container>
           <span>Luyện tập & thi thử</span>
           <h1>
-            Cập nhật liên tục các bài kiểm tra chuyên sâu về IELTS, TOEIC, kỹ năng học tập và giáo dục.
+            Cập nhật liên tục các bài kiểm tra chuyên sâu về IELTS, TOEIC, kỹ
+            năng học tập và giáo dục.
           </h1>
         </Container>
       </section>
@@ -140,8 +151,8 @@ export function PracticePage() {
                 <div>
                   <h2>Nội dung luyện tập</h2>
                   <p>
-                    Hiển thị <strong>{paginatedPractices.length}</strong> /{" "}
-                    <strong>{filteredPractices.length}</strong> nội dung
+                    Hiển thị <strong>{filteredPractices.length}</strong> /{" "}
+                    <strong>{totalDisplayItems}</strong> nội dung
                   </p>
                 </div>
 
@@ -149,8 +160,8 @@ export function PracticePage() {
                   type="text"
                   placeholder="Tìm IELTS Reading, TOEIC ETS..."
                   value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value);
                     setCurrentPage(1);
                   }}
                 />
@@ -161,9 +172,9 @@ export function PracticePage() {
                   <h3>Đang tải nội dung IELTS...</h3>
                   <p>Hệ thống đang lấy các bài IELTS đã được publish.</p>
                 </div>
-              ) : paginatedPractices.length > 0 ? (
+              ) : filteredPractices.length > 0 ? (
                 <div className={styles.practiceGrid}>
-                  {paginatedPractices.map((item) => (
+                  {filteredPractices.map((item) => (
                     <PracticeCard practice={item} key={item.id} />
                   ))}
                 </div>
@@ -183,15 +194,9 @@ export function PracticePage() {
                     Trước
                   </button>
 
-                  {Array.from({ length: totalPages }).map((_, index) => (
-                    <button
-                      key={index}
-                      className={currentPage === index + 1 ? styles.activePage : ""}
-                      onClick={() => setCurrentPage(index + 1)}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
+                  <span>
+                    Trang <strong>{currentPage}</strong> / {totalPages}
+                  </span>
 
                   <button
                     disabled={currentPage === totalPages}

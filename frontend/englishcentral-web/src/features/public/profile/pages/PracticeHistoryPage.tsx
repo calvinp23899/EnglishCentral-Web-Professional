@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
+import { Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 
-import { Container } from "@/components/ui";
-import { getStoredStudentIdFromAccessToken } from "@/features/public/auth/api/auth-api";
+import { Container, Pagination } from "@/components/ui";
+import { getStudentIdWithRefresh } from "@/features/public/auth/api/auth-api";
 import {
   publicPracticeApi,
   type PracticeHistoryItem,
 } from "@/features/public/practice/api/public-practice-api";
 
 import styles from "./PracticeHistoryPage.module.scss";
+
+const DEFAULT_PAGE_SIZE = 10;
 
 const formatDate = (value: string | null) => {
   if (!value) return "-";
@@ -45,10 +49,31 @@ const isToday = (value: string | null) => {
   );
 };
 
+const getWeekStart = (date: Date) => {
+  const day = date.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const weekStart = new Date(date);
+
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(date.getDate() + mondayOffset);
+
+  return weekStart;
+};
+
+const isSameDate = (left: Date, right: Date) =>
+  left.getFullYear() === right.getFullYear() &&
+  left.getMonth() === right.getMonth() &&
+  left.getDate() === right.getDate();
+
+const toDateKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
 export function PracticeHistoryPage() {
   const [historyRows, setHistoryRows] = useState<PracticeHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   useEffect(() => {
     let isMounted = true;
@@ -58,7 +83,7 @@ export function PracticeHistoryPage() {
       setErrorMessage("");
 
       try {
-        const studentId = getStoredStudentIdFromAccessToken();
+        const studentId = await getStudentIdWithRefresh();
         const history = await publicPracticeApi.getPracticeHistory(studentId);
 
         if (isMounted) {
@@ -98,11 +123,88 @@ export function PracticeHistoryPage() {
     [historyRows],
   );
 
+  const weeklyChartData = useMemo(() => {
+    const weekStart = getWeekStart(new Date());
+
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + index);
+
+      const value = historyRows.filter((row) => {
+        if (!row.submittedAt) return false;
+
+        const submittedDate = new Date(row.submittedAt);
+
+        return !Number.isNaN(submittedDate.getTime()) && isSameDate(submittedDate, date);
+      }).length;
+
+      return {
+        label: new Intl.DateTimeFormat("vi-VN", { weekday: "short" }).format(date),
+        value,
+      };
+    });
+  }, [historyRows]);
+
+  const maxWeeklyValue = Math.max(1, ...weeklyChartData.map((item) => item.value));
+
+  const practiceStreakDays = useMemo(() => {
+    const submittedDateKeys = new Set(
+      historyRows
+        .map((row) => {
+          if (!row.submittedAt) return null;
+
+          const submittedDate = new Date(row.submittedAt);
+
+          return Number.isNaN(submittedDate.getTime()) ? null : toDateKey(submittedDate);
+        })
+        .filter((value): value is string => Boolean(value)),
+    );
+
+    let streakDays = 0;
+    const cursor = new Date();
+    cursor.setHours(0, 0, 0, 0);
+
+    while (submittedDateKeys.has(toDateKey(cursor))) {
+      streakDays += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    return streakDays;
+  }, [historyRows]);
+
+  const streakMessage =
+    practiceStreakDays >= 7
+      ? "Kiên trì đang dần trở thành thói quen, tiếp tục nhé"
+      : practiceStreakDays >= 3
+        ? "3 ngày liên tiếp, giữ vững phong độ nhé!"
+        : "";
+
+  const totalItems = historyRows.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePageNumber = Math.min(pageNumber, totalPages);
+
+  useEffect(() => {
+    if (pageNumber > totalPages) {
+      setPageNumber(totalPages);
+    }
+  }, [pageNumber, totalPages]);
+
+  const pagedHistoryRows = useMemo(() => {
+    const startIndex = (safePageNumber - 1) * pageSize;
+
+    return historyRows.slice(startIndex, startIndex + pageSize);
+  }, [historyRows, pageSize, safePageNumber]);
+
+  const handlePageSizeChange = (nextPageSize: number) => {
+    setPageSize(nextPageSize);
+    setPageNumber(1);
+  };
+
   const renderTableBody = () => {
     if (isLoading) {
       return (
         <tr>
-          <td className={styles.statusMessage} colSpan={6}>
+          <td className={styles.statusMessage} colSpan={7}>
             Đang tải lịch sử bài làm...
           </td>
         </tr>
@@ -112,7 +214,7 @@ export function PracticeHistoryPage() {
     if (errorMessage) {
       return (
         <tr>
-          <td className={styles.errorMessage} colSpan={6}>
+          <td className={styles.errorMessage} colSpan={7}>
             {errorMessage}
           </td>
         </tr>
@@ -122,19 +224,29 @@ export function PracticeHistoryPage() {
     if (!historyRows.length) {
       return (
         <tr>
-          <td className={styles.statusMessage} colSpan={6}>
+          <td className={styles.statusMessage} colSpan={7}>
             Chưa có lịch sử bài làm.
           </td>
         </tr>
       );
     }
 
-    return historyRows.map((row) => (
+    return pagedHistoryRows.map((row) => (
       <tr key={row.id}>
         <td>{row.title}</td>
         <td>{row.mode}</td>
         <td>{row.resultDetail || row.result}</td>
         <td>{row.band}</td>
+        <td className={styles.actionCell}>
+          <Link
+            aria-label={`Xem bài làm ${row.title}`}
+            className={styles.actionButton}
+            title="Xem bài làm"
+            to={`/practice-history/${row.id}`}
+          >
+            <Eye size={16} />
+          </Link>
+        </td>
         <td>{row.status}</td>
         <td>{formatDate(row.submittedAt)}</td>
       </tr>
@@ -160,6 +272,27 @@ export function PracticeHistoryPage() {
                 </div>
               ))}
             </div>
+            <div className={styles.weeklyChart}>
+              <div className={styles.weeklyChartHeader}>
+                <h3>Tuần hiện tại</h3>
+                <span>Số bài đã làm theo ngày</span>
+              </div>
+              <div className={styles.chartBars}>
+                {weeklyChartData.map((item) => (
+                  <div className={styles.chartItem} key={item.label}>
+                    <div className={styles.chartValue}>{item.value}</div>
+                    <div className={styles.chartBarTrack}>
+                      <div
+                        className={styles.chartBarFill}
+                        style={{ height: item.value > 0 ? `${Math.max(8, (item.value / maxWeeklyValue) * 100)}%` : 0 }}
+                      />
+                    </div>
+                    <span>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+              {streakMessage ? <p className={styles.streakMessage}>{streakMessage}</p> : null}
+            </div>
           </section>
 
           <section className={styles.tableCard}>
@@ -175,6 +308,7 @@ export function PracticeHistoryPage() {
                     <th>Chế độ</th>
                     <th>Kết quả</th>
                     <th>Band</th>
+                    <th>Action</th>
                     <th>Trạng thái</th>
                     <th>Ngày làm</th>
                   </tr>
@@ -182,6 +316,17 @@ export function PracticeHistoryPage() {
                 <tbody>{renderTableBody()}</tbody>
               </table>
             </div>
+            {historyRows.length > 0 ? (
+              <div className={styles.paginationWrap}>
+                <Pagination
+                  pageNumber={safePageNumber}
+                  pageSize={pageSize}
+                  totalItems={totalItems}
+                  onPageChange={setPageNumber}
+                  onPageSizeChange={handlePageSizeChange}
+                />
+              </div>
+            ) : null}
           </section>
         </div>
       </Container>

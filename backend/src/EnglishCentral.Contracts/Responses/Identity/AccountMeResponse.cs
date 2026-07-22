@@ -10,7 +10,7 @@ namespace EnglishCentral.Contracts.Responses.Identity
     public record StudentProfileResponse(
         string StudentCode,
         DateOnly? DateOfBirth,
-        int Gender,
+        string Gender,
         string? Email,
         string? PhoneNumber,
         Guid PublicId

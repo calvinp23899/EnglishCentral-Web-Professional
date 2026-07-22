@@ -1,6 +1,8 @@
 using EnglishCentral.Application.Interfaces.Academic;
 using EnglishCentral.Application.Interfaces.Identity;
 using EnglishCentral.Contracts.Responses.Identity;
+using EnglishCentral.Domain.Enums.Academic;
+using EnglishCentral.Shared.Common.Helpers;
 using EnglishCentral.Shared.Results;
 using MediatR;
 
@@ -33,7 +35,7 @@ namespace EnglishCentral.Application.Features.Identity.Queries.GetMe
                 : new StudentProfileResponse(
                     student.StudentCode,
                     student.DateOfBirth,
-                    (int)student.Gender,
+                    student.Gender == EGender.Male ? EGender.Male.ToDescription() : EGender.Female.ToDescription(),
                     student.Email,
                     student.PhoneNumber,
                     student.PublicId);

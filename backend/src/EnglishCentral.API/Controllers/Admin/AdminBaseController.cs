@@ -11,6 +11,7 @@ namespace EnglishCentral.API.Controllers.Admin
     [Authorize]
     public class AdminBaseController : ControllerBase
     {
+        protected const string RefreshTokenCookieName = "refreshToken";
         protected Guid? CurrentUserPublicId
         {
             get
@@ -23,7 +24,31 @@ namespace EnglishCentral.API.Controllers.Admin
                     : null;
             }
         }
-
+        protected void SetRefreshTokenCookie(string refreshToken, DateTimeOffset expiresAt)
+        {
+            Response.Cookies.Append(
+                RefreshTokenCookieName,
+                refreshToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    Path = "/",
+                    Expires = expiresAt
+                });
+        }
+        protected void ClearRefreshTokenCookie()
+        {
+            Response.Cookies.Delete(
+                RefreshTokenCookieName,
+                new CookieOptions
+                {
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    Path = "/"
+                });
+        }
         protected List<MetadataOptionResponse> GetEnumMetadata<T>() where T : struct, Enum
         {
             return Enum.GetValues<T>()

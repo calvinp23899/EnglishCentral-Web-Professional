@@ -12,6 +12,10 @@ const USER_STORAGE_KEY = "englishcentral-user";
 const ACCESS_TOKEN_STORAGE_KEY = "englishcentral-access-token";
 const ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY =
   "englishcentral-access-token-expires-at";
+const ADMIN_USER_STORAGE_KEY = "englishcentral-admin-user";
+const ADMIN_ACCESS_TOKEN_STORAGE_KEY = "englishcentral-admin-access-token";
+const ADMIN_ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY =
+  "englishcentral-admin-access-token-expires-at";
 const AUTH_CHANGE_EVENT = "englishcentral-auth-change";
 
 export const api = axios.create({
@@ -31,6 +35,35 @@ type RetryableRequestConfig = NonNullable<
 };
 
 type RawObject = Record<string, unknown>;
+type AuthContext = "public" | "admin";
+type AuthStorageKeys = {
+  user: string;
+  accessToken: string;
+  accessTokenExpiresAt: string;
+};
+
+const PUBLIC_AUTH_KEYS: AuthStorageKeys = {
+  user: USER_STORAGE_KEY,
+  accessToken: ACCESS_TOKEN_STORAGE_KEY,
+  accessTokenExpiresAt: ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY,
+};
+
+const ADMIN_AUTH_KEYS: AuthStorageKeys = {
+  user: ADMIN_USER_STORAGE_KEY,
+  accessToken: ADMIN_ACCESS_TOKEN_STORAGE_KEY,
+  accessTokenExpiresAt: ADMIN_ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY,
+};
+
+const getAuthKeys = (context: AuthContext) =>
+  context === "admin" ? ADMIN_AUTH_KEYS : PUBLIC_AUTH_KEYS;
+
+const getAuthContext = (url?: string): AuthContext => {
+  if (url?.includes("/admin/") || window.location.pathname.startsWith("/admin")) {
+    return "admin";
+  }
+
+  return "public";
+};
 
 const isObject = (value: unknown): value is RawObject =>
   typeof value === "object" && value !== null;
@@ -50,26 +83,36 @@ const readString = (source: RawObject, keys: string[]) => {
   return undefined;
 };
 
-const getSessionStorageTarget = () =>
-  window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) ||
-  window.localStorage.getItem(USER_STORAGE_KEY)
+const getSessionStorageTarget = (context: AuthContext) => {
+  const keys = getAuthKeys(context);
+
+  return window.localStorage.getItem(keys.accessToken) ||
+    window.localStorage.getItem(keys.user)
     ? window.localStorage
     : window.sessionStorage;
+};
 
-const clearAuthStorage = () => {
+const clearAuthStorage = (context?: AuthContext) => {
+  const contexts: AuthContext[] = context ? [context] : ["public", "admin"];
+
   for (const storage of [window.localStorage, window.sessionStorage]) {
-    storage.removeItem(USER_STORAGE_KEY);
-    storage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-    storage.removeItem(ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY);
+    for (const authContext of contexts) {
+      const keys = getAuthKeys(authContext);
+
+      storage.removeItem(keys.user);
+      storage.removeItem(keys.accessToken);
+      storage.removeItem(keys.accessTokenExpiresAt);
+    }
   }
 
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
 };
 
-const getStoredUser = () => {
+const getStoredUser = (context: AuthContext) => {
+  const keys = getAuthKeys(context);
   const rawUser =
-    window.localStorage.getItem(USER_STORAGE_KEY) ??
-    window.sessionStorage.getItem(USER_STORAGE_KEY);
+    window.localStorage.getItem(keys.user) ??
+    window.sessionStorage.getItem(keys.user);
 
   if (!rawUser) {
     return {};
@@ -84,7 +127,7 @@ const getStoredUser = () => {
   }
 };
 
-const normalizeRefreshSession = (data: unknown) => {
+const normalizeRefreshSession = (data: unknown, context: AuthContext) => {
   const source = isObject(data) ? data : {};
   const nestedData = isObject(source.data) ? source.data : source;
   const accessToken = readString(nestedData, [
@@ -98,7 +141,7 @@ const normalizeRefreshSession = (data: unknown) => {
     "accessTokenExpiresAt",
     "AccessTokenExpiresAt",
   ]);
-  const storedUser = getStoredUser();
+  const storedUser = getStoredUser(context);
   const user = {
     ...storedUser,
     id:
@@ -120,23 +163,21 @@ const normalizeRefreshSession = (data: unknown) => {
   };
 };
 
-const saveRefreshedSession = (data: unknown) => {
-  const session = normalizeRefreshSession(data);
+const saveRefreshedSession = (data: unknown, context: AuthContext) => {
+  const session = normalizeRefreshSession(data, context);
 
   if (!session.accessToken) {
     throw new Error("Refresh response does not include an access token.");
   }
 
-  const storage = getSessionStorageTarget();
+  const storage = getSessionStorageTarget(context);
+  const keys = getAuthKeys(context);
 
-  storage.setItem(USER_STORAGE_KEY, JSON.stringify(session.user));
-  storage.setItem(ACCESS_TOKEN_STORAGE_KEY, session.accessToken);
+  storage.setItem(keys.user, JSON.stringify(session.user));
+  storage.setItem(keys.accessToken, session.accessToken);
 
   if (session.accessTokenExpiresAt) {
-    storage.setItem(
-      ACCESS_TOKEN_EXPIRES_AT_STORAGE_KEY,
-      session.accessTokenExpiresAt
-    );
+    storage.setItem(keys.accessTokenExpiresAt, session.accessTokenExpiresAt);
   }
 
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
@@ -144,17 +185,23 @@ const saveRefreshedSession = (data: unknown) => {
   return session.accessToken;
 };
 
-let refreshPromise: Promise<string> | null = null;
+const refreshPromises: Record<AuthContext, Promise<string> | null> = {
+  public: null,
+  admin: null,
+};
 
-const refreshAccessToken = () => {
-  refreshPromise ??= refreshApi
-    .post(ENDPOINTS.AUTH.REFRESH)
-    .then((response) => saveRefreshedSession(response.data))
+const refreshAccessToken = (context: AuthContext) => {
+  const refreshEndpoint =
+    context === "admin" ? ENDPOINTS.ADMIN_AUTH.REFRESH : ENDPOINTS.AUTH.REFRESH;
+
+  refreshPromises[context] ??= refreshApi
+    .post(refreshEndpoint)
+    .then((response) => saveRefreshedSession(response.data, context))
     .finally(() => {
-      refreshPromise = null;
+      refreshPromises[context] = null;
     });
 
-  return refreshPromise;
+  return refreshPromises[context];
 };
 
 const redirectToLogin = () => {
@@ -168,9 +215,11 @@ const redirectToLogin = () => {
 };
 
 api.interceptors.request.use((config) => {
+  const context = getAuthContext(config.url);
+  const keys = getAuthKeys(context);
   const accessToken =
-    window.localStorage.getItem("englishcentral-access-token") ??
-    window.sessionStorage.getItem("englishcentral-access-token");
+    window.localStorage.getItem(keys.accessToken) ??
+    window.sessionStorage.getItem(keys.accessToken);
 
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
@@ -193,13 +242,15 @@ api.interceptors.response.use(
     }
 
     const requestUrl = originalRequest?.url ?? "";
+    const authContext = getAuthContext(requestUrl);
     const isAuthRequest =
       requestUrl.includes(ENDPOINTS.AUTH.LOGIN) ||
       requestUrl.includes(ENDPOINTS.AUTH.LOGOUT) ||
-      requestUrl.includes(ENDPOINTS.AUTH.REFRESH);
+      requestUrl.includes(ENDPOINTS.AUTH.REFRESH) ||
+      requestUrl.includes(ENDPOINTS.ADMIN_AUTH.REFRESH);
 
     if (!originalRequest || originalRequest._retry || isAuthRequest) {
-      clearAuthStorage();
+      clearAuthStorage(authContext);
       redirectToLogin();
 
       return Promise.reject(error);
@@ -208,13 +259,13 @@ api.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      const accessToken = await refreshAccessToken();
+      const accessToken = await refreshAccessToken(authContext);
       originalRequest.headers = originalRequest.headers ?? {};
       originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
       return api.request(originalRequest);
     } catch (refreshError) {
-      clearAuthStorage();
+      clearAuthStorage(authContext);
       redirectToLogin();
 
       return Promise.reject(refreshError);

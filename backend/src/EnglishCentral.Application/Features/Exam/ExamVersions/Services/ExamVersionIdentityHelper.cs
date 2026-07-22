@@ -7,6 +7,8 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Services
 {
     public static class ExamVersionIdentityHelper
     {
+        public const int InitialVersionNumber = 1;
+
         public static async Task<int> GetNextVersionNumberAsync(
             IExamRepository<ExamVersion> repository,
             long examTemplateId,
@@ -17,6 +19,21 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Services
                 ct);
 
             return versions.Count == 0 ? 1 : versions.Max(x => x.VersionNumber) + 1;
+        }
+
+        public static async Task<bool> IsNameUsedAsync(
+            IExamRepository<ExamVersion> repository,
+            long examTemplateId,
+            string name,
+            long? excludeVersionId,
+            CancellationToken ct)
+        {
+            var normalizedName = name.Trim().ToLower();
+            return await repository.ExistsAsync(
+                x => x.ExamTemplateId == examTemplateId
+                     && x.Name.ToLower() == normalizedName
+                     && (!excludeVersionId.HasValue || x.Id != excludeVersionId.Value),
+                ct);
         }
 
         public static async Task<string> CreateUniqueSlugAsync(

@@ -1,0 +1,290 @@
+.page {
+  min-height: calc(100vh - 78px);
+  padding: 40px 0 72px;
+  background: #f8fbff;
+  color: #102033;
+}
+
+.backLink {
+  margin-bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.header {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+
+  span {
+    color: #0f766e;
+    font-size: 13px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  h1 {
+    margin: 8px 0;
+    font-size: 34px;
+    line-height: 1.15;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-weight: 700;
+  }
+}
+
+.resultBadge {
+  min-width: 96px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.summaryGrid,
+.questionCard,
+.stateCard,
+.errorCard {
+  border: 1px solid #dbe5f2;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.08);
+}
+
+.summaryGrid {
+  margin-bottom: 24px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+
+  div {
+    min-width: 0;
+    padding: 14px;
+    border-radius: 14px;
+    background: #f8fafc;
+  }
+
+  span {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  strong {
+    margin-top: 6px;
+    display: block;
+    overflow: hidden;
+    color: #0f172a;
+    font-size: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.questionList {
+  display: grid;
+  gap: 16px;
+}
+
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 {
+    margin: 0;
+    font-size: 22px;
+  }
+
+  span {
+    color: #64748b;
+    font-weight: 800;
+  }
+}
+
+.questionCard {
+  overflow: hidden;
+}
+
+.questionHeader {
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  background: #f8fafc;
+
+  span {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  h3 {
+    margin: 4px 0 0;
+    font-size: 18px;
+  }
+}
+
+.correctStatus,
+.wrongStatus,
+.skippedStatus {
+  padding: 8px 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.correctStatus {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.wrongStatus {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.skippedStatus {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.prompt {
+  padding: 18px 18px 0;
+  color: #0f172a;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.options {
+  padding: 14px 18px 0;
+  display: grid;
+  gap: 8px;
+}
+
+.optionItem {
+  padding: 10px 12px;
+  border: 1px solid #dbe5f2;
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: #ffffff;
+
+  strong {
+    flex: 0 0 28px;
+    color: #2563eb;
+  }
+
+  span {
+    min-width: 0;
+    color: #334155;
+    line-height: 1.45;
+  }
+}
+
+.answerGrid {
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px;
+  gap: 12px;
+
+  div {
+    min-width: 0;
+    padding: 12px;
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+
+  span {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  strong {
+    margin-top: 6px;
+    display: block;
+    color: #0f172a;
+    line-height: 1.4;
+  }
+}
+
+.explanation {
+  margin: 0 18px 18px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #eff6ff;
+
+  span {
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  p {
+    margin: 8px 0 0;
+    color: #1e293b;
+    line-height: 1.6;
+  }
+}
+
+.stateCard,
+.errorCard {
+  padding: 48px 20px;
+  color: #64748b;
+  font-weight: 800;
+  text-align: center;
+}
+
+.errorCard {
+  color: #dc2626;
+}
+
+@media (max-width: 1100px) {
+  .summaryGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .answerGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .header {
+    display: block;
+  }
+
+  .resultBadge {
+    margin-top: 14px;
+    display: inline-block;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+}

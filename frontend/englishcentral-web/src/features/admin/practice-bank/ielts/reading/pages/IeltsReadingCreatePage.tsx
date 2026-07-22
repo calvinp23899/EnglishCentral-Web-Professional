@@ -28,6 +28,14 @@ const steps = [
   { id: 3, label: "Questions", icon: ListChecks },
 ];
 
+const createClientId = () => {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return `tmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+};
+
 type TestSetup = {
   description: string;
   durationMinutes: number;
@@ -118,7 +126,7 @@ type ReadingQuestionSubtype = {
 const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
   {
     label: "Multiple Choice - One Answer",
-    questionType: "MultipleChoiceSingle",
+    questionType: "SingleChoice",
     displayType: "multiple_choice_single",
     interaction: "select",
     description: "Chọn một đáp án đúng cho mỗi câu hỏi.",
@@ -407,7 +415,7 @@ const getMatchingHeadingParagraphLabels = (passage: ReadingPassage, group: Quest
 
 const createSharedOption = (label: string, content = ""): GroupSharedOption => ({
   content,
-  id: crypto.randomUUID(),
+  id: createClientId(),
   label,
 });
 
@@ -440,7 +448,7 @@ const toQuestionTypeValue = (type: string | number, configJson?: string | null):
 
   const normalizedType = normalizeQuestionType(type);
   if (normalizedType === "singlechoice") return "SingleChoice";
-  if (normalizedType === "1" || normalizedType === "multiplechoicesingle") return "MultipleChoiceSingle";
+  if (normalizedType === "1" || normalizedType === "multiplechoicesingle") return "SingleChoice";
   if (normalizedType === "multiplechoice") return "MultipleChoice";
   if (normalizedType === "2" || normalizedType === "multiplechoicemultiple") return "MultipleChoiceMultiple";
   if (normalizedType === "3" || normalizedType === "truefalsenotgiven") return "TrueFalseNotGiven";
@@ -451,7 +459,7 @@ const toQuestionTypeValue = (type: string | number, configJson?: string | null):
   if (normalizedType === "5" || normalizedType === "matching") return "Matching";
   if (normalizedType === "6" || normalizedType === "gapfill") return "GapFill";
   if (normalizedType === "7" || normalizedType === "shortanswer") return "ShortAnswer";
-  return String(type || "MultipleChoiceSingle");
+  return String(type || "SingleChoice");
 };
 
 const parseJson = <T,>(value: string | null | undefined, fallback: T): T => {
@@ -473,7 +481,7 @@ const defaultSetup: TestSetup = {
 
 const createParagraph = (index: number): PassageParagraph => ({
   content: "",
-  id: crypto.randomUUID(),
+  id: createClientId(),
   isHiddenLabel: false,
   label: String.fromCharCode(65 + index),
 });
@@ -481,7 +489,7 @@ const createParagraph = (index: number): PassageParagraph => ({
 const createQuestionOption = (option: string): QuestionOption => ({
   content: "",
   explanation: "",
-  id: crypto.randomUUID(),
+  id: createClientId(),
   isCorrectAnswer: false,
   option,
 });
@@ -554,7 +562,7 @@ const getCorrectAnswerFromOptions = (questionOptions: QuestionOption[]) =>
 
 const createQuestion = (
   number: number,
-  type = "MultipleChoiceSingle",
+  type = "SingleChoice",
   paragraphLabel?: string,
 ): QuestionItem => {
   const isMultiAnswer = isMultipleChoiceMultipleType(type);
@@ -569,7 +577,7 @@ const createQuestion = (
     choiceLimit: isMultiAnswer ? 2 : undefined,
     correctAnswer: "",
     explanation: "",
-    id: crypto.randomUUID(),
+    id: createClientId(),
     number,
     numberLabel: answerSlots ? formatAnswerSlots(answerSlots) : undefined,
     paragraphLabel: isMatchingHeading ? paragraphLabel : undefined,
@@ -590,14 +598,14 @@ const createQuestionGroup = (order: number, questionNumber: number): QuestionGro
   const subtype = fallbackReadingQuestionSubtype;
 
   return {
-    id: crypto.randomUUID(),
+    id: createClientId(),
     answerLimit: subtype.answerLimit,
     displayType: subtype.displayType,
     groupLabel: `Group ${order}`,
     instruction: "",
     interaction: subtype.interaction,
     optionsReusable: subtype.optionsReusable,
-    questions: [createQuestion(questionNumber, "MultipleChoiceSingle")],
+    questions: [createQuestion(questionNumber, subtype.questionType)],
     sharedOptions: createDefaultSharedOptions(subtype),
     title: `Questions ${questionNumber}-${questionNumber}`,
     type: subtype.questionType,
@@ -605,7 +613,7 @@ const createQuestionGroup = (order: number, questionNumber: number): QuestionGro
 };
 
 const createPassage = (part: number, firstQuestionNumber?: number): ReadingPassage => ({
-  id: crypto.randomUUID(),
+  id: createClientId(),
   instruction: `Read Passage ${part} and answer the questions.`,
   isDragHeadingOnParagraph: false,
   paragraphs: [createParagraph(0)],
@@ -660,14 +668,14 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
     const paragraphs = metadata.paragraphs?.length
       ? metadata.paragraphs
       : [{
-        id: stimulus?.publicId ?? crypto.randomUUID(),
+        id: stimulus?.publicId ?? createClientId(),
         label: "A",
         content: stimulus?.content ?? "",
         isHiddenLabel: false,
       }];
 
     return {
-      id: part.publicId ?? crypto.randomUUID(),
+      id: part.publicId ?? createClientId(),
       instruction: part.instructions ?? "",
       isDragHeadingOnParagraph: false,
       paragraphs,
@@ -700,7 +708,7 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
               )
           : createDefaultSharedOptions(subtype);
         return {
-          id: group.publicId ?? crypto.randomUUID(),
+          id: group.publicId ?? createClientId(),
           answerLimit: groupConfig.answerLimit ?? subtype.answerLimit,
           choiceLimit: groupConfig.choiceLimit,
           displayType: groupConfig.displayType ?? subtype.displayType,
@@ -745,7 +753,7 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
               : question.answerKeys.map((answer) => answer.correctValue).filter(Boolean).join(" | ");
 
             return {
-              id: question.publicId ?? crypto.randomUUID(),
+              id: question.publicId ?? createClientId(),
               answerSlots: isMultipleChoiceMultipleType(questionType) ? answerSlots : undefined,
               blankLabel: questionMetadata.blankLabel ?? String(Number(question.code.replace(/\D/g, "")) || question.orderIndex),
               caseSensitive: questionMetadata.caseSensitive ?? question.answerKeys.some((answer) => answer.caseSensitive),
@@ -759,7 +767,7 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
               explanation: question.explanation ?? "",
               passageRef: questionMetadata.passageRef ?? "",
               questionOptions: question.answerOptions.map((option) => ({
-                id: option.publicId ?? crypto.randomUUID(),
+                id: option.publicId ?? createClientId(),
                 content: option.content ?? "",
                 option: option.label,
                 explanation: option.metadataJson ? parseJson<{ explanation?: string }>(option.metadataJson, {}).explanation ?? "" : "",
@@ -1550,7 +1558,7 @@ export function IeltsReadingCreatePage() {
       return;
     }
 
-    const nextQuestionId = crypto.randomUUID();
+    const nextQuestionId = createClientId();
     const paragraphLabels = isMatchingHeadingGroup(targetGroup)
       ? getMatchingHeadingParagraphLabels(targetPassage, targetGroup)
       : [];

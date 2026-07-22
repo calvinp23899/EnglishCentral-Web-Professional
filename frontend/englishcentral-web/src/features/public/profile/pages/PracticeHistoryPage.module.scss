@@ -109,6 +109,7 @@
 
 table {
   width: 100%;
+  min-width: 860px;
   border-collapse: collapse;
 }
 
@@ -128,6 +129,114 @@ th {
 
 td {
   font-weight: 600;
+}
+
+.actionCell {
+  width: 76px;
+  text-align: center;
+}
+
+.actionButton {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: #2563eb;
+  text-decoration: none;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+
+  &:hover {
+    border-color: #60a5fa;
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+}
+
+.weeklyChart {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.weeklyChartHeader {
+  display: none;
+}
+
+.chartBars {
+  height: 142px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+
+.chartItem {
+  min-width: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 18px 1fr 18px;
+  gap: 5px;
+  align-items: end;
+  text-align: center;
+
+  span {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: capitalize;
+  }
+}
+
+.chartValue {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.chartBarTrack {
+  width: 100%;
+  max-width: 34px;
+  height: 96px;
+  margin: 0 auto;
+  border-radius: 8px 8px 4px 4px;
+  display: flex;
+  align-items: flex-end;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.chartBarFill {
+  width: 100%;
+  min-height: 4px;
+  border-radius: 8px 8px 4px 4px;
+  background: #10b981;
+  transition: height 0.2s ease;
+}
+
+.streakMessage {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.paginationWrap {
+  padding: 14px 18px 18px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .statusMessage,

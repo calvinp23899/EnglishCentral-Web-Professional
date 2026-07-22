@@ -234,7 +234,9 @@ npm run dev
 * Advanced analytics & reporting
 
 ---
-
+#Public Page and Admin Page
+http://englishcentral.local:5173
+http://admin.englishcentral.local:5173/admin/login
 # Author
 
 Da Nang - EnglishCentral Team
