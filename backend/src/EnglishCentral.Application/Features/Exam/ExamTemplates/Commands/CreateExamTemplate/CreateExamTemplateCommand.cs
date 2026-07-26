@@ -1,4 +1,5 @@
 using EnglishCentral.Application.Features.Exam.DTOs;
+using EnglishCentral.Application.Features.Exam.ExamTemplates.DTOs;
 using EnglishCentral.Shared.Results;
 using MediatR;
 
@@ -11,6 +12,6 @@ namespace EnglishCentral.Application.Features.Exam.ExamTemplates.Commands.Create
         string? Description,
         int? DurationMinutes,
         decimal? TotalScore,
-        string? TemplateConfigJson,
+        ExamTemplateConfig? TemplateConfigJson,
         bool IsActive) : IRequest<Result<ExamTemplateResponse>>;
 }

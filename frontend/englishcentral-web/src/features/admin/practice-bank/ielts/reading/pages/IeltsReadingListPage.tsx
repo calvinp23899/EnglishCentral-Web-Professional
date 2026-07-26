@@ -7,6 +7,7 @@ import crudStyles from "@/features/admin/shared/components/AdminCrud/AdminCrudPa
 import listStyles from "@/features/admin/students/pages/StudentListPage.module.scss";
 import teacherStyles from "@/features/admin/teachers/pages/TeacherListPage.module.scss";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
+import compactStyles from "./IeltsReadingListPage.module.scss";
 
 import {
   adminIeltsReadingApi,
@@ -249,22 +250,22 @@ export function IeltsReadingListPage({ skill = "reading" }: IeltsReadingListPage
 
   return (
     <div className={listStyles.page}>
-      <section className={listStyles.header}>
+      <section className={`${listStyles.header} ${compactStyles.headerCompact}`}>
         <div>
           <h1>{config.title}</h1>
           <p>{config.description}</p>
         </div>
 
         {(config.audioListPath || config.createPath) && (
-          <div className={teacherStyles.toolbarActions}>
+          <div className={`${teacherStyles.toolbarActions} ${compactStyles.headerActionsCompact}`}>
             {config.audioListPath && config.audioListLabel && (
-              <Link className={teacherStyles.columnsButton} to={config.audioListPath}>
+              <Link className={`${teacherStyles.columnsButton} ${compactStyles.headerButtonCompact}`} to={config.audioListPath}>
                 <Headphones aria-hidden="true" size={18} />
                 {config.audioListLabel}
               </Link>
             )}
             {config.createPath && config.createLabel && (
-              <Link className={listStyles.createButton} to={config.createPath}>
+              <Link className={`${listStyles.createButton} ${compactStyles.createButtonCompact}`} to={config.createPath}>
                 <Plus aria-hidden="true" size={18} />
                 {config.createLabel}
               </Link>
@@ -273,8 +274,8 @@ export function IeltsReadingListPage({ skill = "reading" }: IeltsReadingListPage
         )}
       </section>
 
-      <section className={`${listStyles.toolbar} ${teacherStyles.toolbar}`}>
-        <label className={listStyles.searchBox}>
+      <section className={`${listStyles.toolbar} ${teacherStyles.toolbar} ${compactStyles.toolbarCompact}`}>
+        <label className={`${listStyles.searchBox} ${compactStyles.searchBoxCompact}`}>
           <Search aria-hidden="true" size={18} />
           <input
             placeholder="Tìm theo version number hoặc tên đề"
@@ -286,15 +287,15 @@ export function IeltsReadingListPage({ skill = "reading" }: IeltsReadingListPage
           />
         </label>
 
-        <div className={teacherStyles.toolbarActions}>
-          <button className={teacherStyles.filterButton} type="button">
+        <div className={`${teacherStyles.toolbarActions} ${compactStyles.headerActionsCompact}`}>
+          <button className={`${teacherStyles.filterButton} ${compactStyles.toolbarButtonCompact}`} type="button">
             <Funnel aria-hidden="true" size={18} />
             Filter
           </button>
           <div className={teacherStyles.menuWrap}>
             <button
               aria-expanded={isColumnsMenuOpen}
-              className={teacherStyles.columnsButton}
+              className={`${teacherStyles.columnsButton} ${compactStyles.toolbarButtonCompact}`}
               type="button"
               onClick={() => setIsColumnsMenuOpen((current) => !current)}
             >
@@ -319,9 +320,9 @@ export function IeltsReadingListPage({ skill = "reading" }: IeltsReadingListPage
         </div>
       </section>
 
-      <section className={listStyles.tablePanel}>
+      <section className={`${listStyles.tablePanel} ${compactStyles.tablePanelCompact}`}>
         <div className={listStyles.tableScroll}>
-          <table className={listStyles.table}>
+          <table className={`${listStyles.table} ${compactStyles.tableCompact}`}>
             <thead>
               <tr>
                 {columns.filter((column) => visibleColumns[column]).map((column) => (
@@ -423,14 +424,14 @@ export function IeltsReadingListPage({ skill = "reading" }: IeltsReadingListPage
               {(isLoading || records.length === 0) && (
                 <tr>
                   <td colSpan={visibleColumnCount}>
-                    <div className={listStyles.emptyState}>
+                    <div className={`${listStyles.emptyState} ${compactStyles.emptyCompact}`}>
                       <p>{emptyMessage}</p>
                       {!isLoading && !template && (
-                        <div className={teacherStyles.toolbarActions}>
-                          <Link className={teacherStyles.columnsButton} to="/admin/exam-types/create">
+                        <div className={`${teacherStyles.toolbarActions} ${compactStyles.headerActionsCompact}`}>
+                          <Link className={`${teacherStyles.columnsButton} ${compactStyles.toolbarButtonCompact}`} to="/admin/exam-types/create">
                             Tạo dạng bài kiểm tra
                           </Link>
-                          <Link className={teacherStyles.columnsButton} to="/admin/exams/create">
+                          <Link className={`${teacherStyles.columnsButton} ${compactStyles.toolbarButtonCompact}`} to="/admin/exams/create">
                             Tạo mẫu đề kiểm tra
                           </Link>
                         </div>

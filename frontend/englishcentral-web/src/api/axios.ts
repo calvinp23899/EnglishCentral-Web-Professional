@@ -83,15 +83,6 @@ const readString = (source: RawObject, keys: string[]) => {
   return undefined;
 };
 
-const getSessionStorageTarget = (context: AuthContext) => {
-  const keys = getAuthKeys(context);
-
-  return window.localStorage.getItem(keys.accessToken) ||
-    window.localStorage.getItem(keys.user)
-    ? window.localStorage
-    : window.sessionStorage;
-};
-
 const clearAuthStorage = (context?: AuthContext) => {
   const contexts: AuthContext[] = context ? [context] : ["public", "admin"];
 
@@ -110,9 +101,7 @@ const clearAuthStorage = (context?: AuthContext) => {
 
 const getStoredUser = (context: AuthContext) => {
   const keys = getAuthKeys(context);
-  const rawUser =
-    window.localStorage.getItem(keys.user) ??
-    window.sessionStorage.getItem(keys.user);
+  const rawUser = window.localStorage.getItem(keys.user);
 
   if (!rawUser) {
     return {};
@@ -170,14 +159,13 @@ const saveRefreshedSession = (data: unknown, context: AuthContext) => {
     throw new Error("Refresh response does not include an access token.");
   }
 
-  const storage = getSessionStorageTarget(context);
   const keys = getAuthKeys(context);
 
-  storage.setItem(keys.user, JSON.stringify(session.user));
-  storage.setItem(keys.accessToken, session.accessToken);
+  window.localStorage.setItem(keys.user, JSON.stringify(session.user));
+  window.localStorage.setItem(keys.accessToken, session.accessToken);
 
   if (session.accessTokenExpiresAt) {
-    storage.setItem(keys.accessTokenExpiresAt, session.accessTokenExpiresAt);
+    window.localStorage.setItem(keys.accessTokenExpiresAt, session.accessTokenExpiresAt);
   }
 
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
@@ -217,9 +205,7 @@ const redirectToLogin = () => {
 api.interceptors.request.use((config) => {
   const context = getAuthContext(config.url);
   const keys = getAuthKeys(context);
-  const accessToken =
-    window.localStorage.getItem(keys.accessToken) ??
-    window.sessionStorage.getItem(keys.accessToken);
+  const accessToken = window.localStorage.getItem(keys.accessToken);
 
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
@@ -247,6 +233,8 @@ api.interceptors.response.use(
       requestUrl.includes(ENDPOINTS.AUTH.LOGIN) ||
       requestUrl.includes(ENDPOINTS.AUTH.LOGOUT) ||
       requestUrl.includes(ENDPOINTS.AUTH.REFRESH) ||
+      requestUrl.includes(ENDPOINTS.ADMIN_AUTH.LOGIN) ||
+      requestUrl.includes(ENDPOINTS.ADMIN_AUTH.LOGOUT) ||
       requestUrl.includes(ENDPOINTS.ADMIN_AUTH.REFRESH);
 
     if (!originalRequest || originalRequest._retry || isAuthRequest) {

@@ -12,6 +12,11 @@ export type RoleMetadataOption = {
   roleName: string;
 };
 
+export type ExamQuestionTypeFilter = {
+  family?: string | number;
+  skill?: string | number;
+};
+
 export const adminMetadataApi = {
   async getStatusOptions() {
     const response = await api.get<MetadataOption[]>(
@@ -77,9 +82,10 @@ export const adminMetadataApi = {
     return response.data;
   },
 
-  async getExamQuestionTypeOptions() {
+  async getExamQuestionTypeOptions(params: ExamQuestionTypeFilter = {}) {
     const response = await api.get<MetadataOption[]>(
-      ENDPOINTS.ADMIN_METADATA.EXAM_QUESTION_TYPE
+      ENDPOINTS.ADMIN_METADATA.EXAM_QUESTION_TYPE,
+      { params }
     );
 
     return response.data;

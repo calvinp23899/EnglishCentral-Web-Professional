@@ -26,11 +26,12 @@ export type ExamAsset = {
   assetType?: string | number | null;
   provider?: string | number | null;
   status?: string | number | null;
+  publicUrl?: string | null;
   url?: string | null;
   assetUrl?: string | null;
   fileUrl?: string | null;
   durationSeconds?: number | null;
-  metadataJson?: string | null;
+  metadataJson?: string | Record<string, unknown> | null;
   contentType?: string | null;
   fileSize?: number | null;
   createdAt?: string | null;

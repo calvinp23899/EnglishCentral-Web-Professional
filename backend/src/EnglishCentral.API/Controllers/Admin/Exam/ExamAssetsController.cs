@@ -31,6 +31,9 @@ namespace EnglishCentral.API.Controllers.Admin.Exam
             if (request.File is null)
                 return BadRequest("Asset file is required.");
 
+            if (Request.Form.Files.Count != 1)
+                return BadRequest("Only one asset file can be uploaded per request.");
+
             await using var stream = request.File.OpenReadStream();
             var result = await _mediator.Send(new UploadExamAssetCommand(
                 stream,

@@ -49,7 +49,7 @@ namespace EnglishCentral.Domain.Enums.Exam
 
     public enum EExamQuestionType
     {
-        #region IELTS Type
+        #region IELTS Reading
         SingleChoice = 1,
         MultipleChoice = 2,
         TrueFalseNotGiven = 3,
@@ -108,6 +108,14 @@ namespace EnglishCentral.Domain.Enums.Exam
         Linked = 2,
         Orphaned = 3,
         Deleted = 4
+    }
+
+    public enum EExamTypeUpload
+    {
+        IELTS = 1,
+        TOEIC = 2,
+        CAMBRIDGE = 3,
+        OTHER = 99
     }
 
     public enum EExamAttemptStatus

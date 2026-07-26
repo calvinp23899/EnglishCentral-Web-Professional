@@ -35,6 +35,7 @@ export type ExamTemplate = {
   templateConfigJson?: string | null;
   status: string | number;
   isActive: boolean;
+  sections?: ExamSection[];
 };
 
 export type ExamAnswerOption = {
@@ -176,7 +177,7 @@ export type ExamVersionPayload = {
   sections: Array<{
     code: string;
     name: string;
-    skill: "Reading";
+    skill: "Reading" | "Listening";
     orderIndex: number;
     durationMinutes?: number | null;
     maxScore?: number | null;
@@ -190,7 +191,7 @@ export type ExamVersionPayload = {
       layoutConfigJson?: string | null;
       stimuli?: Array<{
         clientKey: string;
-        type: "Text";
+        type: "Text" | "Audio";
         title?: string | null;
         content?: string | null;
         assetUrl?: string | null;
