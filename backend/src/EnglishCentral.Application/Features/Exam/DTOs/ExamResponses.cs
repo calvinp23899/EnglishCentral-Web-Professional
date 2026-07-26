@@ -1,5 +1,6 @@
 ﻿using EnglishCentral.Domain.Entities.Exam;
 using EnglishCentral.Application.Features.Exam.ExamAttempts.Services;
+using EnglishCentral.Application.Features.Exam.ExamTemplates.DTOs;
 using EnglishCentral.Domain.Enums.Exam;
 using DomainExamQuestionResponse = EnglishCentral.Domain.Entities.Exam.ExamQuestionResponse;
 
@@ -25,7 +26,8 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
         int? DurationMinutes,
         decimal? TotalScore,
         EExamTemplateStatus Status,
-        bool IsActive);
+        bool IsActive,
+        ExamTemplateConfig? TemplateConfigJson);
 
     public record ExamVersionResponse(
         Guid PublicId,
@@ -94,7 +96,7 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
         long FileSize,
         string? Checksum,
         int? DurationSeconds,
-        string? MetadataJson,
+        ExamAssetMetadataResponse? MetadataJson,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt);
 
@@ -234,7 +236,8 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
             entity.DurationMinutes,
             entity.TotalScore,
             entity.Status,
-            entity.IsActive);
+            entity.IsActive,
+            ExamTemplateConfigJson.Deserialize(entity.TemplateConfigJson));
 
         public static ExamVersionResponse ToResponse(this ExamVersion entity) => new(
             entity.PublicId,
@@ -303,7 +306,7 @@ namespace EnglishCentral.Application.Features.Exam.DTOs
             entity.FileSize,
             entity.Checksum,
             entity.DurationSeconds,
-            entity.MetadataJson,
+            ExamAssetMetadataHelper.ToResponse(entity.MetadataJson),
             entity.CreatedAt,
             entity.UpdatedAt);
 

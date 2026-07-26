@@ -19,12 +19,16 @@ import {
 } from "@/features/admin/shared/api/admin-metadata-api";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
+import {
+  adminExamAssetsApi,
+  type ExamAsset,
+} from "../../assets/api/admin-exam-assets-api";
 import { adminIeltsReadingApi, type ExamTemplate, type ExamVersion } from "../api/admin-ielts-reading-api";
-import styles from "./IeltsReadingCreatePage.module.scss";
+import styles from "./IeltsListeningCreatePage.module.scss";
 
 const steps = [
   { id: 1, label: "Setup", icon: Settings },
-  { id: 2, label: "Passages", icon: FileText },
+  { id: 2, label: "Parts", icon: FileText },
   { id: 3, label: "Questions", icon: ListChecks },
 ];
 
@@ -44,7 +48,7 @@ type TestSetup = {
   title: string;
 };
 
-type PassageParagraph = {
+type PartParagraph = {
   content: string;
   id: string;
   isHiddenLabel: boolean;
@@ -77,7 +81,7 @@ type QuestionItem = {
   number: number;
   numberLabel?: string;
   paragraphLabel?: string;
-  passageRef: string;
+  PartRef: string;
   questionOptions: QuestionOption[];
   sectionTitle?: string;
   text: string;
@@ -103,17 +107,24 @@ type QuestionGroup = {
   type: string;
 };
 
-type ReadingPassage = {
+type LISTENINGPart = {
+  audioAssetId: number | null;
+  audioName: string;
+  audioResults: ExamAsset[];
+  audioSearchTerm: string;
+  audioUrl: string;
   id: string;
   instruction: string;
+  isSearchingAudio: boolean;
   isDragHeadingOnParagraph: boolean;
-  paragraphs: PassageParagraph[];
+  paragraphs: PartParagraph[];
   part: number;
   questionGroups: QuestionGroup[];
   title: string;
+  transcript: string;
 };
 
-type ReadingQuestionSubtype = {
+type LISTENINGQuestionSubtype = {
   answerLimit?: string;
   description: string;
   displayType: string;
@@ -123,20 +134,20 @@ type ReadingQuestionSubtype = {
   questionType: string;
 };
 
-const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
+const LISTENINGQuestionSubtypes: LISTENINGQuestionSubtype[] = [
   {
     label: "Multiple Choice - One Answer",
     questionType: "SingleChoice",
     displayType: "multiple_choice_single",
     interaction: "select",
-    description: "Chọn một đáp án đúng cho mỗi câu hỏi.",
+    description: "Ch?n m?t dáp án dúng cho m?i câu h?i.",
   },
   {
     label: "Multiple Choice - Multiple Answers",
     questionType: "MultipleChoiceMultiple",
     displayType: "multiple_choice_multiple",
     interaction: "checkbox",
-    description: "Tạo 1 question cho mỗi cặp số, ví dụ 23-24. User chọn nhiều đáp án đúng bằng checkbox.",
+    description: "T?o 1 question cho m?i c?p s?, ví d? 23-24. User ch?n nhi?u dáp án dúng b?ng checkbox.",
   },
   {
     label: "Matching Information Table Select Grid",
@@ -144,7 +155,7 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
     displayType: "matching_information_table_select_grid",
     interaction: "select",
     optionsReusable: true,
-    description: "Chọn đáp án trong bảng matching information. Có thể bật reuse để dùng lại option nhiều lần.",
+    description: "Ch?n dáp án trong b?ng matching information. Có th? b?t reuse d? dùng l?i option nhi?u l?n.",
   },
   {
     label: "Summary Completion With Options",
@@ -152,7 +163,7 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
     displayType: "summary_completion_with_options",
     interaction: "drag_drop",
     optionsReusable: false,
-    description: "Hoàn thành summary bằng cách chọn/kéo phrase A-J vào từng blank. Mỗi blank là một question.",
+    description: "Hoàn thành summary b?ng cách ch?n/kéo phrase A-J vào t?ng blank. M?i blank là m?t question.",
   },
   {
     label: "Matching Headings",
@@ -160,7 +171,7 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
     displayType: "matching_headings",
     interaction: "drag_drop",
     optionsReusable: false,
-    description: "Tạo danh sách headings dùng chung và chọn heading đúng cho từng đoạn/câu.",
+    description: "T?o danh sách headings dùng chung và ch?n heading dúng cho t?ng do?n/câu.",
   },
   {
     label: "Matching Information",
@@ -168,7 +179,7 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
     displayType: "matching_information",
     interaction: "drag_drop",
     optionsReusable: true,
-    description: "Matching thông tin; một lựa chọn có thể dùng lại nhiều lần.",
+    description: "Matching thông tin; m?t l?a ch?n có th? dùng l?i nhi?u l?n.",
   },
   {
     label: "Matching Features",
@@ -176,7 +187,7 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
     displayType: "matching_features",
     interaction: "drag_drop",
     optionsReusable: true,
-    description: "Matching features/names/statements trong passage.",
+    description: "Matching features/names/statements trong Part.",
   },
   {
     label: "Matching Sentence Endings",
@@ -184,21 +195,21 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
     displayType: "matching_sentence_endings",
     interaction: "drag_drop",
     optionsReusable: false,
-    description: "Ghép nửa câu với ending phù hợp.",
+    description: "Ghép n?a câu v?i ending phù h?p.",
   },
   {
     label: "True / False / Not Given",
     questionType: "TrueFalseNotGiven",
     displayType: "true_false_not_given",
     interaction: "select",
-    description: "FE tự tạo 3 lựa chọn True, False, Not Given.",
+    description: "FE t? t?o 3 l?a ch?n True, False, Not Given.",
   },
   {
     label: "Yes / No / Not Given",
     questionType: "YesNoNotGiven",
     displayType: "yes_no_not_given",
     interaction: "select",
-    description: "FE tự tạo 3 lựa chọn Yes, No, Not Given.",
+    description: "FE t? t?o 3 l?a ch?n Yes, No, Not Given.",
   },
   {
     label: "Short Answer",
@@ -206,7 +217,7 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
     displayType: "short_answer",
     interaction: "text_input",
     answerLimit: "NO_MORE_THAN_THREE_WORDS",
-    description: "Nhập đáp án ngắn. Có thể nhập nhiều đáp án đúng cách nhau bằng dấu |.",
+    description: "Nh?p dáp án ng?n. Có th? nh?p nhi?u dáp án dúng cách nhau b?ng d?u |.",
   },
   {
     label: "Sentence / Summary / Table Completion",
@@ -214,12 +225,12 @@ const readingQuestionSubtypes: ReadingQuestionSubtype[] = [
     displayType: "gap_fill",
     interaction: "text_input",
     answerLimit: "ONE_WORD_ONLY",
-    description: "Nhập đáp án text. Có thể nhập nhiều đáp án đúng cách nhau bằng dấu |.",
+    description: "Nh?p dáp án text. Có th? nh?p nhi?u dáp án dúng cách nhau b?ng d?u |.",
   },
 ];
 
-const fallbackReadingQuestionSubtype = readingQuestionSubtypes[0];
-const maxReadingQuestions = 40;
+const fallbackLISTENINGQuestionSubtype = LISTENINGQuestionSubtypes[0];
+const maxLISTENINGQuestions = 40;
 const gapFillAnswerLimitOptions = [
   { label: "ONE WORD ONLY", value: "ONE_WORD_ONLY" },
   { label: "NO MORE THAN TWO WORDS", value: "NO_MORE_THAN_TWO_WORDS" },
@@ -339,14 +350,14 @@ const findQuestionSubtype = (
   questionType?: string | number | null,
   displayType?: string | null,
 ) =>
-  readingQuestionSubtypes.find((subtype) => subtype.displayType === displayType) ??
-  readingQuestionSubtypes.find(
+  LISTENINGQuestionSubtypes.find((subtype) => subtype.displayType === displayType) ??
+  LISTENINGQuestionSubtypes.find(
     (subtype) => normalizeQuestionType(subtype.questionType) === normalizeQuestionType(questionType),
   ) ??
-  readingQuestionSubtypes.find(
+  LISTENINGQuestionSubtypes.find(
     (subtype) => subtype.displayType === getDefaultDisplayTypeForQuestionType(questionType),
   ) ??
-  fallbackReadingQuestionSubtype;
+  fallbackLISTENINGQuestionSubtype;
 
 const getQuestionRange = (group: Pick<QuestionGroup, "questions">) => {
   const numbers = group.questions.flatMap((question) => getQuestionAnswerSlots(question)).filter(Number.isFinite);
@@ -401,8 +412,8 @@ const getQuestionRangeCountFromText = (value: string) => {
   return matches.length === 1 ? 1 : 0;
 };
 
-const getMatchingHeadingParagraphLabels = (passage: ReadingPassage, group: QuestionGroup) => {
-  const explicitParagraphLabels = passage.paragraphs
+const getMatchingHeadingParagraphLabels = (Part: LISTENINGPart, group: QuestionGroup) => {
+  const explicitParagraphLabels = Part.paragraphs
     .map((paragraph) => paragraph.label)
     .filter(Boolean);
   const rangeCount = getQuestionRangeCountFromText(group.title || getQuestionRange(group));
@@ -419,7 +430,7 @@ const createSharedOption = (label: string, content = ""): GroupSharedOption => (
   label,
 });
 
-const createDefaultSharedOptions = (subtype: ReadingQuestionSubtype): GroupSharedOption[] => {
+const createDefaultSharedOptions = (subtype: LISTENINGQuestionSubtype): GroupSharedOption[] => {
   if (!isMatchingType(subtype.questionType)) return [];
 
   if (subtype.displayType === "matching_headings") {
@@ -462,8 +473,17 @@ const toQuestionTypeValue = (type: string | number, configJson?: string | null):
   return String(type || "SingleChoice");
 };
 
-const parseJson = <T,>(value: string | null | undefined, fallback: T): T => {
+const parseJson = <T,>(value: unknown, fallback: T): T => {
   if (!value) return fallback;
+
+  if (typeof value === "object") {
+    return value as T;
+  }
+
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
   try {
     return JSON.parse(value) as T;
   } catch {
@@ -481,7 +501,7 @@ const getMetadataFilterValue = (options: MetadataOption[], expected: string) => 
   return option?.value ?? expected;
 };
 
-const getIeltsReadingQuestionTypeOptions = async () => {
+const getIeltsListeningQuestionTypeOptions = async () => {
   const [familyOptions, skillOptions] = await Promise.all([
     adminMetadataApi.getExamFamilyOptions(),
     adminMetadataApi.getExamSkillOptions(),
@@ -489,19 +509,78 @@ const getIeltsReadingQuestionTypeOptions = async () => {
 
   return adminMetadataApi.getExamQuestionTypeOptions({
     family: getMetadataFilterValue(familyOptions, "IELTS"),
-    skill: getMetadataFilterValue(skillOptions, "Reading"),
+    skill: getMetadataFilterValue(skillOptions, "Listening"),
   });
 };
 
+const getAssetName = (asset: ExamAsset) =>
+  asset.originalFileName ?? asset.fileName ?? asset.displayName ?? asset.name ?? `Audio #${asset.id}`;
+
+const getAssetUrl = (asset: ExamAsset) => asset.publicUrl ?? asset.url ?? asset.assetUrl ?? asset.fileUrl ?? "";
+
+type TemplatePartSeed = {
+  instruction: string;
+  orderIndex: number;
+  title: string;
+};
+
+const getListeningTemplateParts = (template: ExamTemplate | null): TemplatePartSeed[] => {
+  const config = parseJson<{
+    PartCount?: number | string;
+    Parts?: Array<{ instruction?: string; instructions?: string; Instruction?: string; Instructions?: string; name?: string; Name?: string; title?: string; Title?: string }>;
+    TotalParts?: number | string;
+    partCount?: number;
+    parts?: Array<{ instruction?: string; instructions?: string; Instruction?: string; Instructions?: string; name?: string; Name?: string; title?: string; Title?: string }>;
+    totalParts?: number;
+  }>(template?.templateConfigJson, {});
+  const configParts = config.Parts?.length ? config.Parts : config.parts;
+
+  if (configParts?.length) {
+    return configParts.map((part, partIndex) => ({
+      instruction: part.Instructions ?? part.instructions ?? part.Instruction ?? part.instruction ?? "",
+      orderIndex: partIndex + 1,
+      title: part.Title ?? part.title ?? part.Name ?? part.name ?? `Part ${partIndex + 1}`,
+    }));
+  }
+
+  const configPartCount = Number(config.TotalParts ?? config.totalParts ?? config.PartCount ?? config.partCount);
+
+  if (Number.isFinite(configPartCount) && configPartCount > 0) {
+    return Array.from({ length: configPartCount }, (_, partIndex) => ({
+      instruction: "",
+      orderIndex: partIndex + 1,
+      title: `Part ${partIndex + 1}`,
+    }));
+  }
+
+  const sectionParts = template?.sections?.flatMap((section) => section.parts ?? []) ?? [];
+
+  if (sectionParts.length) {
+    return [...sectionParts]
+      .sort((left, right) => (left.orderIndex ?? 0) - (right.orderIndex ?? 0))
+      .map((part, partIndex) => ({
+        instruction: part.instructions ?? "",
+        orderIndex: part.orderIndex || partIndex + 1,
+        title: part.name || `Part ${partIndex + 1}`,
+      }));
+  }
+
+  return Array.from({ length: 4 }, (_, partIndex) => ({
+    instruction: "",
+    orderIndex: partIndex + 1,
+    title: `Part ${partIndex + 1}`,
+  }));
+};
+
 const defaultSetup: TestSetup = {
-  description: "A full IELTS Reading mock test with 3 passages and 40 questions.",
+  description: "A full IELTS Listening mock test with 3 Parts and 40 questions.",
   durationMinutes: 60,
   status: "draft",
   testCode: "",
-  title: "IELTS Reading Full Mock Test",
+  title: "IELTS Listening Full Mock Test",
 };
 
-const createParagraph = (index: number): PassageParagraph => ({
+const createParagraph = (index: number): PartParagraph => ({
   content: "",
   id: createClientId(),
   isHiddenLabel: false,
@@ -603,7 +682,7 @@ const createQuestion = (
     number,
     numberLabel: answerSlots ? formatAnswerSlots(answerSlots) : undefined,
     paragraphLabel: isMatchingHeading ? paragraphLabel : undefined,
-    passageRef: isMatchingHeading ? paragraphLabel ?? "" : "",
+    PartRef: isMatchingHeading ? paragraphLabel ?? "" : "",
     questionOptions: createQuestionOptions(type),
     sectionTitle: "",
     text: isMultiAnswer
@@ -617,7 +696,7 @@ const createQuestion = (
 };
 
 const createQuestionGroup = (order: number, questionNumber: number): QuestionGroup => {
-  const subtype = fallbackReadingQuestionSubtype;
+  const subtype = fallbackLISTENINGQuestionSubtype;
 
   return {
     id: createClientId(),
@@ -634,42 +713,59 @@ const createQuestionGroup = (order: number, questionNumber: number): QuestionGro
   };
 };
 
-const createPassage = (part: number, firstQuestionNumber?: number): ReadingPassage => ({
+const createPart = (
+  part: number,
+  firstQuestionNumber?: number,
+  seed?: Partial<TemplatePartSeed>,
+): LISTENINGPart => ({
+  audioAssetId: null,
+  audioName: "",
+  audioResults: [],
+  audioSearchTerm: "",
+  audioUrl: "",
   id: createClientId(),
-  instruction: `Read Passage ${part} and answer the questions.`,
+  instruction: seed?.instruction ?? "",
+  isSearchingAudio: false,
   isDragHeadingOnParagraph: false,
   paragraphs: [createParagraph(0)],
   part,
   questionGroups:
     firstQuestionNumber === undefined ? [] : [createQuestionGroup(1, firstQuestionNumber)],
-  title: `Reading Passage ${part}`,
+  title: seed?.title ?? `Part ${part}`,
+  transcript: "",
 });
 
-const getAllQuestionNumbers = (readingPassages: ReadingPassage[]) =>
-  readingPassages.flatMap((passage) =>
-    passage.questionGroups.flatMap((group) => group.questions.flatMap((question) => getQuestionAnswerSlots(question))),
+const createPartsFromTemplate = (template: ExamTemplate | null): LISTENINGPart[] => {
+  const seeds = getListeningTemplateParts(template);
+
+  return seeds.map((seed, index) => createPart(seed.orderIndex || index + 1, index === 0 ? 1 : undefined, seed));
+};
+
+const getAllQuestionNumbers = (LISTENINGParts: LISTENINGPart[]) =>
+  LISTENINGParts.flatMap((Part) =>
+    Part.questionGroups.flatMap((group) => group.questions.flatMap((question) => getQuestionAnswerSlots(question))),
   );
 
-const getQuestionCount = (readingPassages: ReadingPassage[]) =>
-  readingPassages.reduce(
-    (total, passage) =>
+const getQuestionCount = (LISTENINGParts: LISTENINGPart[]) =>
+  LISTENINGParts.reduce(
+    (total, Part) =>
       total +
-      passage.questionGroups.reduce(
-        (passageTotal, group) =>
-          passageTotal + group.questions.reduce((groupTotal, question) => groupTotal + getQuestionAnswerSlots(question).length, 0),
+      Part.questionGroups.reduce(
+        (PartTotal, group) =>
+          PartTotal + group.questions.reduce((groupTotal, question) => groupTotal + getQuestionAnswerSlots(question).length, 0),
         0,
       ),
     0,
   );
 
-const getNextQuestionNumber = (readingPassages: ReadingPassage[]) => {
-  if (getQuestionCount(readingPassages) >= maxReadingQuestions) {
+const getNextQuestionNumber = (LISTENINGParts: LISTENINGPart[]) => {
+  if (getQuestionCount(LISTENINGParts) >= maxLISTENINGQuestions) {
     return null;
   }
 
-  const usedQuestionNumbers = new Set(getAllQuestionNumbers(readingPassages));
+  const usedQuestionNumbers = new Set(getAllQuestionNumbers(LISTENINGParts));
 
-  for (let questionNumber = 1; questionNumber <= maxReadingQuestions; questionNumber += 1) {
+  for (let questionNumber = 1; questionNumber <= maxLISTENINGQuestions; questionNumber += 1) {
     if (!usedQuestionNumbers.has(questionNumber)) {
       return questionNumber;
     }
@@ -678,15 +774,16 @@ const getNextQuestionNumber = (readingPassages: ReadingPassage[]) => {
   return null;
 };
 
-const getPassageContent = (passage: ReadingPassage) =>
-  passage.paragraphs.map((paragraph) => paragraph.content).filter(Boolean).join("\n\n");
-
-const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
-  const section = version.sections.find((item) => String(item.skill).toLowerCase() === "reading" || String(item.skill) === "2") ?? version.sections[0];
+const toVersionParts = (version: ExamVersion): LISTENINGPart[] => {
+  const section = version.sections.find((item) => String(item.skill).toLowerCase() === "LISTENING" || String(item.skill) === "2") ?? version.sections[0];
 
   return (section?.parts ?? []).map((part, partIndex) => {
     const stimulus = part.stimuli[0];
-    const metadata = parseJson<{ paragraphs?: PassageParagraph[] }>(stimulus?.metadataJson, {});
+    const metadata = parseJson<{
+      audioAssetId?: number | null;
+      audioName?: string | null;
+      paragraphs?: PartParagraph[];
+    }>(stimulus?.metadataJson, {});
     const paragraphs = metadata.paragraphs?.length
       ? metadata.paragraphs
       : [{
@@ -697,12 +794,19 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
       }];
 
     return {
+      audioAssetId: metadata.audioAssetId ?? null,
+      audioName: metadata.audioName ?? "",
+      audioResults: [],
+      audioSearchTerm: metadata.audioName ?? stimulus?.assetUrl ?? "",
+      audioUrl: stimulus?.assetUrl ?? "",
       id: part.publicId ?? createClientId(),
       instruction: part.instructions ?? "",
+      isSearchingAudio: false,
       isDragHeadingOnParagraph: false,
       paragraphs,
       part: part.orderIndex || partIndex + 1,
       title: stimulus?.title ?? part.name,
+      transcript: stimulus?.transcript ?? "",
       questionGroups: part.questionGroups.map((group, groupIndex) => {
         const questionType = toQuestionTypeValue(group.questionType, group.configJson);
         const groupConfig = parseJson<{
@@ -750,7 +854,7 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
               evidence?: string;
               numberLabel?: string;
               paragraph?: string;
-              passageRef?: string;
+              PartRef?: string;
               promptTemplate?: string;
               sectionTitle?: string;
               statementLabel?: string;
@@ -787,7 +891,7 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
               text: questionMetadata.promptTemplate ?? question.prompt ?? "",
               correctAnswer,
               explanation: question.explanation ?? "",
-              passageRef: questionMetadata.passageRef ?? "",
+              PartRef: questionMetadata.PartRef ?? "",
               questionOptions: question.answerOptions.map((option) => ({
                 id: option.publicId ?? createClientId(),
                 content: option.content ?? "",
@@ -814,32 +918,33 @@ const toVersionPassages = (version: ExamVersion): ReadingPassage[] => {
   });
 };
 
-export function IeltsReadingCreatePage() {
+export function IeltsListeningCreatePage() {
   const { recordId } = useParams();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [setup, setSetup] = useState<TestSetup>(defaultSetup);
-  const [passages, setPassages] = useState<ReadingPassage[]>([
-    createPassage(1, 1),
-    createPassage(2),
-    createPassage(3),
+  const [Parts, setParts] = useState<LISTENINGPart[]>([
+    createPart(1, 1),
+    createPart(2),
+    createPart(3),
+    createPart(4),
   ]);
-  const [activePassageId, setActivePassageId] = useState(() => passages[0].id);
-  const [activeGroupId, setActiveGroupId] = useState(() => passages[0].questionGroups[0].id);
+  const [activePartId, setActivePartId] = useState(() => Parts[0].id);
+  const [activeGroupId, setActiveGroupId] = useState(() => Parts[0].questionGroups[0].id);
   const [isGroupEditorOpen, setGroupEditorOpen] = useState(true);
   const [openQuestionIds, setOpenQuestionIds] = useState<Record<string, boolean>>({});
-  const [readingTemplate, setReadingTemplate] = useState<ExamTemplate | null>(null);
+  const [listeningTemplate, setListeningTemplate] = useState<ExamTemplate | null>(null);
   const [questionTypeOptions, setQuestionTypeOptions] = useState<MetadataOption[]>([]);
   const [editingVersion, setEditingVersion] = useState<ExamVersion | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(recordId));
   const [isSaving, setIsSaving] = useState(false);
 
-  const activePassage = useMemo(
-    () => passages.find((passage) => passage.id === activePassageId) ?? passages[0],
-    [activePassageId, passages],
+  const activePart = useMemo(
+    () => Parts.find((Part) => Part.id === activePartId) ?? Parts[0],
+    [activePartId, Parts],
   );
-  const activeGroup = activePassage?.questionGroups.find((group) => group.id === activeGroupId);
-  const activeGroupSubtype = activeGroup ? getGroupSubtype(activeGroup) : fallbackReadingQuestionSubtype;
+  const activeGroup = activePart?.questionGroups.find((group) => group.id === activeGroupId);
+  const activeGroupSubtype = activeGroup ? getGroupSubtype(activeGroup) : fallbackLISTENINGQuestionSubtype;
   const activeGroupIsMatching = activeGroup ? isMatchingType(activeGroup.type) : false;
   const activeGroupIsMatchingHeading = activeGroup ? isMatchingHeadingGroup(activeGroup) : false;
   const activeGroupIsSummaryCompletionWithOptions = activeGroup
@@ -858,8 +963,8 @@ export function IeltsReadingCreatePage() {
   const questionTypeSelectOptions = useMemo(() => {
     return questionTypeOptions;
   }, [questionTypeOptions]);
-  const totalQuestions = getQuestionCount(passages);
-  const hasReachedQuestionLimit = totalQuestions >= maxReadingQuestions;
+  const totalQuestions = getQuestionCount(Parts);
+  const hasReachedQuestionLimit = totalQuestions >= maxLISTENINGQuestions;
 
   useEffect(() => {
     let isMounted = true;
@@ -867,23 +972,27 @@ export function IeltsReadingCreatePage() {
     const loadInitialData = async () => {
       setIsLoading(Boolean(recordId));
       try {
-        const [readingType, questionTypes] = await Promise.all([
-          adminIeltsReadingApi.getReadingTemplate(),
-          getIeltsReadingQuestionTypeOptions().catch(() => []),
+        const [listeningType, questionTypes] = await Promise.all([
+          adminIeltsReadingApi.getTemplateById(2),
+          getIeltsListeningQuestionTypeOptions().catch(() => []),
         ]);
         if (!isMounted) return;
-        setReadingTemplate(readingType);
+        setListeningTemplate(listeningType);
         setQuestionTypeOptions(questionTypes);
 
         if (!recordId) {
-          if (readingType) {
+          if (listeningType) {
+            const nextParts = createPartsFromTemplate(listeningType);
             setSetup((current) => ({
               ...current,
-              description: readingType.description ?? current.description,
-              durationMinutes: readingType.durationMinutes ?? current.durationMinutes,
+              description: listeningType.description ?? current.description,
+              durationMinutes: listeningType.durationMinutes ?? current.durationMinutes,
               testCode: current.testCode,
-              title: readingType.name || current.title,
+              title: listeningType.name || current.title,
             }));
+            setParts(nextParts);
+            setActivePartId(nextParts[0]?.id ?? "");
+            setActiveGroupId(nextParts[0]?.questionGroups[0]?.id ?? "");
           }
           setIsLoading(false);
           return;
@@ -901,16 +1010,16 @@ export function IeltsReadingCreatePage() {
             const draftVersion = await adminIeltsReadingApi.cloneDraftVersion(version.id);
             if (isMounted) {
               toastSuccess("Đã tạo bản draft mới từ đề hiện tại.");
-              navigate(`/admin/practice-bank/ielts/reading/${draftVersion.id}/edit`, { replace: true });
+              navigate(`/admin/practice-bank/ielts/listening/${draftVersion.id}/edit`, { replace: true });
             }
           } else if (isMounted) {
-            navigate(`/admin/practice-bank/ielts/reading/${version.id}/view`, { replace: true });
+            navigate(`/admin/practice-bank/ielts/listening/${version.id}/view`, { replace: true });
           }
           return;
         }
 
-        const template = readingType ?? await adminIeltsReadingApi.getTemplateById(version.examTemplateId);
-        setReadingTemplate(template);
+        const template = listeningType ?? await adminIeltsReadingApi.getTemplateById(version.examTemplateId);
+        setListeningTemplate(template);
         setEditingVersion(version);
         setSetup((current) => ({
           ...current,
@@ -922,10 +1031,10 @@ export function IeltsReadingCreatePage() {
         }));
 
         if (version && isMounted) {
-          setPassages(toVersionPassages(version));
-          const nextPassages = toVersionPassages(version);
-          setActivePassageId(nextPassages[0]?.id ?? "");
-          setActiveGroupId(nextPassages[0]?.questionGroups[0]?.id ?? "");
+          setParts(toVersionParts(version));
+          const nextParts = toVersionParts(version);
+          setActivePartId(nextParts[0]?.id ?? "");
+          setActiveGroupId(nextParts[0]?.questionGroups[0]?.id ?? "");
         }
       } catch (error) {
         toastDanger(getAuthErrorMessage(error));
@@ -943,9 +1052,9 @@ export function IeltsReadingCreatePage() {
 
   const buildVersionPayload = (templateId?: number) => {
     const nextSlug = setup.testCode.trim() || null;
-    const nextVersionName = setup.title.trim() || editingVersion?.name || "IELTS Reading Draft";
-    const templateDurationMinutes = readingTemplate?.durationMinutes ?? setup.durationMinutes ?? 60;
-    const templateTotalScore = readingTemplate?.totalScore ?? 40;
+    const nextVersionName = setup.title.trim() || editingVersion?.name || "IELTS Listening Draft";
+    const templateDurationMinutes = listeningTemplate?.durationMinutes ?? setup.durationMinutes ?? 60;
+    const templateTotalScore = listeningTemplate?.totalScore ?? 40;
     const buildAnswerOptions = (group: QuestionGroup, question: QuestionItem) => {
       if (isChoiceType(group.type)) {
         const isMultiAnswer = isMultipleChoiceMultipleType(group.type);
@@ -1043,34 +1152,37 @@ export function IeltsReadingCreatePage() {
       durationMinutes: templateDurationMinutes,
       totalScore: templateTotalScore,
       scoringMode: "Auto" as const,
-      runtimeConfigJson: readingTemplate?.templateConfigJson ?? null,
+      runtimeConfigJson: listeningTemplate?.templateConfigJson ?? null,
       scoringConfigJson: JSON.stringify({ scorePerCorrect: 1 }),
       sections: [{
-        code: "READING",
-        name: "Reading",
-        skill: "Reading" as const,
+        code: "LISTENING",
+        name: "LISTENING",
+        skill: "Listening" as const,
         orderIndex: 1,
         durationMinutes: templateDurationMinutes,
         maxScore: templateTotalScore,
         instructions: setup.description,
-        runtimeConfigJson: JSON.stringify({ expectedQuestionCount: maxReadingQuestions, module: "Reading" }),
-        parts: passages.map((passage, passageIndex) => ({
-          code: `PASSAGE_${passageIndex + 1}`,
-          name: passage.title || `Reading Passage ${passageIndex + 1}`,
-          orderIndex: passageIndex + 1,
-          instructions: passage.instruction || null,
-          layoutConfigJson: JSON.stringify({ layout: "split_reading_question", part: passage.part }),
+        runtimeConfigJson: JSON.stringify({ expectedQuestionCount: maxLISTENINGQuestions, module: "LISTENING" }),
+        parts: Parts.map((Part, PartIndex) => ({
+          code: `Part_${PartIndex + 1}`,
+          name: Part.title || `Listening Part ${PartIndex + 1}`,
+          orderIndex: PartIndex + 1,
+          instructions: Part.instruction || null,
+          layoutConfigJson: JSON.stringify({ layout: "listening_audio_question", part: Part.part }),
           stimuli: [{
-            clientKey: `passage_${passageIndex + 1}_text`,
-            type: "Text" as const,
-            title: passage.title,
-            content: getPassageContent(passage),
-            assetUrl: null,
-            transcript: null,
+            clientKey: `Part_${PartIndex + 1}_audio`,
+            type: "Audio" as const,
+            title: Part.title,
+            content: null,
+            assetUrl: Part.audioUrl || null,
+            transcript: Part.transcript || null,
             orderIndex: 1,
-            metadataJson: JSON.stringify({ paragraphs: passage.paragraphs }),
+            metadataJson: JSON.stringify({
+              audioAssetId: Part.audioAssetId,
+              audioName: Part.audioName,
+            }),
           }],
-          questionGroups: passage.questionGroups.map((group, groupIndex) => {
+          questionGroups: Part.questionGroups.map((group, groupIndex) => {
             const subtype = getGroupSubtype(group);
             const isMultiAnswerGroup = isMultipleChoiceMultipleType(group.type);
             const isMatchingHeading = isMatchingHeadingGroup(group);
@@ -1078,8 +1190,8 @@ export function IeltsReadingCreatePage() {
             const groupChoiceLimit = group.choiceLimit ?? 2;
 
             return {
-              code: group.groupLabel || `GROUP-${passageIndex + 1}-${groupIndex + 1}`,
-              stimulusClientKey: `passage_${passageIndex + 1}_text`,
+              code: group.groupLabel || `GROUP-${PartIndex + 1}-${groupIndex + 1}`,
+              stimulusClientKey: `Part_${PartIndex + 1}_audio`,
               title: group.title,
               instruction: group.instruction || null,
               instructions: group.instruction || null,
@@ -1116,7 +1228,7 @@ export function IeltsReadingCreatePage() {
               questions: group.questions.map((question, questionIndex) => {
                 const answerSlots = getQuestionAnswerSlots(question);
                 const choiceLimit = question.choiceLimit ?? groupChoiceLimit;
-                const paragraphLabel = question.paragraphLabel || question.passageRef || "";
+                const paragraphLabel = question.paragraphLabel || question.PartRef || "";
 
                 return {
                   code: isMultiAnswerGroup ? getQuestionCode(question) : `Q${question.number}`,
@@ -1145,7 +1257,7 @@ export function IeltsReadingCreatePage() {
                     number: question.number,
                     numberLabel: isMultiAnswerGroup ? question.numberLabel || formatAnswerSlots(answerSlots) : undefined,
                     paragraph: isMatchingHeading ? paragraphLabel || null : undefined,
-                    passageRef: question.passageRef,
+                    PartRef: question.PartRef,
                     promptTemplate: question.text,
                     sectionTitle: question.sectionTitle || null,
                     statementLabel: isMatchingHeading ? String(question.number) : undefined,
@@ -1160,9 +1272,9 @@ export function IeltsReadingCreatePage() {
         })),
       }],
       scoringRules: [{
-        ruleCode: "IELTS_READING_DEFAULT",
-        name: "IELTS Reading objective scoring",
-        skill: "Reading",
+        ruleCode: "IELTS_LISTENING_DEFAULT",
+        name: "IELTS Listening objective scoring",
+        skill: "LISTENING",
         questionType: null,
         maxScore: 40,
         configJson: JSON.stringify({ scorePerCorrect: 1 }),
@@ -1177,35 +1289,101 @@ export function IeltsReadingCreatePage() {
     }));
   };
 
-  const updatePassage = <Key extends keyof ReadingPassage>(
-    passageId: string,
+  const updatePart = <Key extends keyof LISTENINGPart>(
+    PartId: string,
     key: Key,
-    value: ReadingPassage[Key],
+    value: LISTENINGPart[Key],
   ) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) =>
-        passage.id === passageId
+    setParts((currentParts) =>
+      currentParts.map((Part) =>
+        Part.id === PartId
           ? {
-              ...passage,
+              ...Part,
               [key]: value,
             }
-          : passage,
+          : Part,
+      ),
+    );
+  };
+
+  const searchAudioForPart = async (PartId: string, keyword: string) => {
+    updatePart(PartId, "audioSearchTerm", keyword);
+
+    if (!keyword.trim()) {
+      setParts((currentParts) =>
+        currentParts.map((Part) =>
+          Part.id === PartId
+            ? { ...Part, audioResults: [], isSearchingAudio: false }
+            : Part,
+        ),
+      );
+      return;
+    }
+
+    setParts((currentParts) =>
+      currentParts.map((Part) =>
+        Part.id === PartId ? { ...Part, isSearchingAudio: true } : Part,
+      ),
+    );
+
+    try {
+      const result = await adminExamAssetsApi.getAssets({
+        assetType: "Audio",
+        keyword,
+        page: 1,
+        pageSize: 8,
+      });
+
+      setParts((currentParts) =>
+        currentParts.map((Part) =>
+          Part.id === PartId
+            ? { ...Part, audioResults: result.items, isSearchingAudio: false }
+            : Part,
+        ),
+      );
+    } catch (error) {
+      setParts((currentParts) =>
+        currentParts.map((Part) =>
+          Part.id === PartId ? { ...Part, isSearchingAudio: false } : Part,
+        ),
+      );
+      toastDanger(getAuthErrorMessage(error));
+    }
+  };
+
+  const selectAudioForPart = (PartId: string, asset: ExamAsset) => {
+    const audioName = getAssetName(asset);
+    const audioUrl = getAssetUrl(asset);
+
+    setParts((currentParts) =>
+      currentParts.map((Part) =>
+        Part.id === PartId
+          ? {
+              ...Part,
+              audioAssetId: asset.id,
+              audioName,
+              audioResults: [],
+              audioSearchTerm: audioName,
+              audioUrl,
+              isSearchingAudio: false,
+            }
+          : Part,
       ),
     );
   };
 
   const updateParagraph = (
-    passageId: string,
+    PartId: string,
     paragraphId: string,
-    key: keyof PassageParagraph,
-    value: PassageParagraph[keyof PassageParagraph],
+    key: keyof PartParagraph,
+    value: PartParagraph[keyof PartParagraph],
   ) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) =>
-        passage.id === passageId
+    setParts((currentParts) =>
+      currentParts.map((Part) =>
+        Part.id === PartId
           ? {
-              ...passage,
-              paragraphs: passage.paragraphs.map((paragraph) =>
+              ...Part,
+              paragraphs: Part.paragraphs.map((paragraph) =>
                 paragraph.id === paragraphId
                   ? {
                       ...paragraph,
@@ -1214,37 +1392,37 @@ export function IeltsReadingCreatePage() {
                   : paragraph,
               ),
             }
-          : passage,
+          : Part,
       ),
     );
   };
 
-  const addParagraph = (passageId: string) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) =>
-        passage.id === passageId
+  const addParagraph = (PartId: string) => {
+    setParts((currentParts) =>
+      currentParts.map((Part) =>
+        Part.id === PartId
           ? {
-              ...passage,
+              ...Part,
               paragraphs: [
-                ...passage.paragraphs,
-                createParagraph(passage.paragraphs.length),
+                ...Part.paragraphs,
+                createParagraph(Part.paragraphs.length),
               ],
             }
-          : passage,
+          : Part,
         ),
     );
     toastInfo("Đã thêm paragraph.");
   };
 
-  const removeParagraph = (passageId: string, paragraphId: string) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) =>
-        passage.id === passageId
+  const removeParagraph = (PartId: string, paragraphId: string) => {
+    setParts((currentParts) =>
+      currentParts.map((Part) =>
+        Part.id === PartId
           ? {
-              ...passage,
-              paragraphs: passage.paragraphs.filter((paragraph) => paragraph.id !== paragraphId),
+              ...Part,
+              paragraphs: Part.paragraphs.filter((paragraph) => paragraph.id !== paragraphId),
             }
-          : passage,
+          : Part,
         ),
     );
     toastDanger("Đã xóa paragraph.");
@@ -1254,14 +1432,14 @@ export function IeltsReadingCreatePage() {
   void addParagraph;
   void removeParagraph;
 
-  const updatePassageContent = (passageId: string, value: string) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => {
-        if (passage.id !== passageId) {
-          return passage;
+  const updatePartContent = (PartId: string, value: string) => {
+    setParts((currentParts) =>
+      currentParts.map((Part) => {
+        if (Part.id !== PartId) {
+          return Part;
         }
 
-        const [firstParagraph, ...restParagraphs] = passage.paragraphs;
+        const [firstParagraph, ...restParagraphs] = Part.paragraphs;
         const nextFirstParagraph = firstParagraph
           ? {
               ...firstParagraph,
@@ -1274,25 +1452,27 @@ export function IeltsReadingCreatePage() {
         }
 
         return {
-          ...passage,
+          ...Part,
           paragraphs: [nextFirstParagraph, ...restParagraphs],
         };
       }),
     );
   };
 
-  const selectPassage = (passage: ReadingPassage) => {
-    setActivePassageId(passage.id);
-    setActiveGroupId(passage.questionGroups[0]?.id ?? "");
+  void updatePartContent;
+
+  const selectPart = (Part: LISTENINGPart) => {
+    setActivePartId(Part.id);
+    setActiveGroupId(Part.questionGroups[0]?.id ?? "");
     setGroupEditorOpen(true);
   };
 
   const addQuestionGroup = () => {
-    if (!activePassage) {
+    if (!activePart) {
       return;
     }
 
-    const nextQuestionNumber = getNextQuestionNumber(passages);
+    const nextQuestionNumber = getNextQuestionNumber(Parts);
 
     if (!nextQuestionNumber) {
       toastWarning("Đã đạt giới hạn số câu hỏi.");
@@ -1300,19 +1480,19 @@ export function IeltsReadingCreatePage() {
     }
 
     const nextGroup = createQuestionGroup(
-      activePassage.questionGroups.length + 1,
+      activePart.questionGroups.length + 1,
       nextQuestionNumber,
     );
 
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => {
-        if (passage.id !== activePassage.id) {
-          return passage;
+    setParts((currentParts) =>
+      currentParts.map((Part) => {
+        if (Part.id !== activePart.id) {
+          return Part;
         }
 
         return {
-          ...passage,
-          questionGroups: [...passage.questionGroups, nextGroup],
+          ...Part,
+          questionGroups: [...Part.questionGroups, nextGroup],
         };
       }),
     );
@@ -1327,10 +1507,10 @@ export function IeltsReadingCreatePage() {
     key: Key,
     value: QuestionGroup[Key],
   ) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) =>
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) =>
           group.id === groupId
             ? {
                 ...group,
@@ -1345,10 +1525,10 @@ export function IeltsReadingCreatePage() {
   const updateMultipleChoiceGroupChoiceLimit = (groupId: string, choiceLimit: number) => {
     const normalizedChoiceLimit = Math.max(1, choiceLimit);
 
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) =>
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) =>
           group.id === groupId
             ? {
                 ...group,
@@ -1377,10 +1557,10 @@ export function IeltsReadingCreatePage() {
     const answerSlots = parseAnswerSlots(slotValue);
     const firstSlot = answerSlots[0];
 
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) =>
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) =>
           group.id === groupId
             ? {
                 ...group,
@@ -1410,16 +1590,16 @@ export function IeltsReadingCreatePage() {
     const isMultiAnswer = isMultipleChoiceMultipleType(questionType);
     const isSummaryCompletion = normalizeQuestionType(questionType) === "summarycompletionwithoptions";
 
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) => {
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) => {
           if (group.id !== groupId) {
             return group;
           }
           const isMatchingHeading = isMatchingHeadingDragDropType(questionType);
           const paragraphLabels = isMatchingHeading
-            ? getMatchingHeadingParagraphLabels(passage, group)
+            ? getMatchingHeadingParagraphLabels(Part, group)
             : [];
 
           return {
@@ -1452,7 +1632,7 @@ export function IeltsReadingCreatePage() {
                 correctAnswer: "",
                 numberLabel: answerSlots ? formatAnswerSlots(answerSlots) : undefined,
                 paragraphLabel,
-                passageRef: paragraphLabel ?? question.passageRef,
+                PartRef: paragraphLabel ?? question.PartRef,
                 questionOptions,
                 text: isMultiAnswer
                   ? `Questions ${formatAnswerSlots(answerSlots ?? [question.number])}`
@@ -1470,10 +1650,10 @@ export function IeltsReadingCreatePage() {
   };
 
   const addSharedOption = (groupId: string) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) => {
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) => {
           if (group.id !== groupId) return group;
 
           const nextLabel = group.displayType === "matching_headings"
@@ -1495,10 +1675,10 @@ export function IeltsReadingCreatePage() {
     key: keyof GroupSharedOption,
     value: string,
   ) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) =>
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) =>
           group.id === groupId
             ? {
                 ...group,
@@ -1513,10 +1693,10 @@ export function IeltsReadingCreatePage() {
   };
 
   const removeSharedOption = (groupId: string, optionId: string) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) =>
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) =>
           group.id === groupId
             ? {
                 ...group,
@@ -1534,21 +1714,21 @@ export function IeltsReadingCreatePage() {
   };
 
   const removeQuestionGroup = (groupId: string) => {
-    if (!activePassage) {
+    if (!activePart) {
       return;
     }
 
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => {
-        if (passage.id !== activePassage.id) {
-          return passage;
+    setParts((currentParts) =>
+      currentParts.map((Part) => {
+        if (Part.id !== activePart.id) {
+          return Part;
         }
 
-        const nextGroups = passage.questionGroups.filter((group) => group.id !== groupId);
+        const nextGroups = Part.questionGroups.filter((group) => group.id !== groupId);
         setActiveGroupId(nextGroups[0]?.id ?? "");
 
         return {
-          ...passage,
+          ...Part,
           questionGroups: nextGroups,
         };
       }),
@@ -1557,32 +1737,32 @@ export function IeltsReadingCreatePage() {
   };
 
   const addQuestion = (groupId: string) => {
-    const targetGroup = passages
-      .flatMap((passage) => passage.questionGroups)
+    const targetGroup = Parts
+      .flatMap((Part) => Part.questionGroups)
       .find((group) => group.id === groupId);
-    const targetPassage = passages.find((passage) =>
-      passage.questionGroups.some((group) => group.id === groupId),
+    const targetPart = Parts.find((Part) =>
+      Part.questionGroups.some((group) => group.id === groupId),
     );
 
-    if (!targetGroup || !targetPassage) {
+    if (!targetGroup || !targetPart) {
       return;
     }
 
-    const nextQuestionNumber = getNextQuestionNumber(passages);
+    const nextQuestionNumber = getNextQuestionNumber(Parts);
 
     if (!nextQuestionNumber) {
       toastWarning("Đã đạt giới hạn 40 câu hỏi.");
       return;
     }
 
-    if (isMultipleChoiceMultipleType(targetGroup.type) && nextQuestionNumber + (targetGroup.choiceLimit ?? 2) - 1 > maxReadingQuestions) {
+    if (isMultipleChoiceMultipleType(targetGroup.type) && nextQuestionNumber + (targetGroup.choiceLimit ?? 2) - 1 > maxLISTENINGQuestions) {
       toastWarning("Không đủ slot để tạo câu hỏi nhiều đáp án trong giới hạn 40 câu.");
       return;
     }
 
     const nextQuestionId = createClientId();
     const paragraphLabels = isMatchingHeadingGroup(targetGroup)
-      ? getMatchingHeadingParagraphLabels(targetPassage, targetGroup)
+      ? getMatchingHeadingParagraphLabels(targetPart, targetGroup)
       : [];
     const nextParagraphLabel = paragraphLabels[targetGroup.questions.length] ?? "";
     const nextQuestion = {
@@ -1590,10 +1770,10 @@ export function IeltsReadingCreatePage() {
       id: nextQuestionId,
     };
 
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) => {
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) => {
           if (group.id !== groupId) {
             return group;
           }
@@ -1619,10 +1799,10 @@ export function IeltsReadingCreatePage() {
     key: keyof QuestionItem,
     value: QuestionItem[keyof QuestionItem],
   ) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) =>
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) =>
           group.id === groupId
             ? {
                 ...group,
@@ -1642,10 +1822,10 @@ export function IeltsReadingCreatePage() {
   };
 
   const removeQuestion = (groupId: string, questionId: string) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) =>
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) =>
           group.id === groupId
             ? {
                 ...group,
@@ -1659,10 +1839,10 @@ export function IeltsReadingCreatePage() {
   };
 
   const addQuestionOption = (groupId: string, questionId: string) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) =>
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) =>
           group.id === groupId
             ? {
                 ...group,
@@ -1694,10 +1874,10 @@ export function IeltsReadingCreatePage() {
     key: keyof QuestionOption,
     value: string | boolean,
   ) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) =>
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) =>
           group.id === groupId
             ? {
                 ...group,
@@ -1756,10 +1936,10 @@ export function IeltsReadingCreatePage() {
     questionId: string,
     optionId: string,
   ) => {
-    setPassages((currentPassages) =>
-      currentPassages.map((passage) => ({
-        ...passage,
-        questionGroups: passage.questionGroups.map((group) =>
+    setParts((currentParts) =>
+      currentParts.map((Part) => ({
+        ...Part,
+        questionGroups: Part.questionGroups.map((group) =>
           group.id === groupId
             ? {
                 ...group,
@@ -1788,10 +1968,10 @@ export function IeltsReadingCreatePage() {
 
   const goToStep = (step: number) => {
     if (step === 3) {
-      const firstPassage = passages[0];
+      const firstPart = Parts[0];
 
-      setActivePassageId(firstPassage.id);
-      setActiveGroupId(firstPassage.questionGroups[0]?.id ?? "");
+      setActivePartId(firstPart.id);
+      setActiveGroupId(firstPart.questionGroups[0]?.id ?? "");
       setGroupEditorOpen(true);
     }
 
@@ -1800,8 +1980,8 @@ export function IeltsReadingCreatePage() {
 
   const handlePrimaryAction = async () => {
     if (currentStep === 3) {
-      if (!readingTemplate) {
-        toastDanger("Chưa có ExamTemplate IELTS Reading. Vui lòng tạo Dạng bài kiểm tra và Mẫu đề kiểm tra trước.");
+      if (!listeningTemplate) {
+        toastDanger("Chưa có ExamTemplate IELTS Listening. Vui lòng tạo Dạng bài kiểm tra và Mẫu đề kiểm tra trước.");
         return;
       }
       if (!setup.title.trim()) {
@@ -1822,10 +2002,10 @@ export function IeltsReadingCreatePage() {
             buildVersionPayload(),
           );
         } else {
-          await adminIeltsReadingApi.createVersion(buildVersionPayload(readingTemplate.id));
+          await adminIeltsReadingApi.createVersion(buildVersionPayload(listeningTemplate.id));
         }
-        toastSuccess(recordId ? "Cập nhật draft IELTS Reading thành công." : "Tạo đề IELTS Reading thành công.");
-        navigate("/admin/practice-bank/ielts/reading");
+        toastSuccess(recordId ? "Cập nhật draft IELTS Listening thành công." : "Tạo đề IELTS Listening thành công.");
+        navigate("/admin/practice-bank/ielts/listening");
       } catch (error) {
         toastDanger(getAuthErrorMessage(error));
       } finally {
@@ -1841,12 +2021,12 @@ export function IeltsReadingCreatePage() {
     <div className={styles.page}>
       <section className={styles.header}>
         <div>
-          <Link className={styles.backLink} to="/admin/practice-bank/ielts/reading">
+          <Link className={styles.backLink} to="/admin/practice-bank/ielts/listening">
             <ArrowLeft aria-hidden="true" size={16} />
             Quay lại danh sách
           </Link>
-          <h1>{recordId ? "Chỉnh sửa đề IELTS Reading" : "Tạo đề IELTS Reading"}</h1>
-          <p>Flow tạo đề theo cấu trúc mock: test metadata, passages, paragraphs và question groups.</p>
+          <h1>{recordId ? "Chỉnh sửa đề IELTS Listening" : "Tạo đề IELTS Listening"}</h1>
+          <p>Flow tạo đề gồm Set up, Parts và Questions giống IELTS Reading.</p>
         </div>
       </section>
 
@@ -1854,18 +2034,18 @@ export function IeltsReadingCreatePage() {
         <section className={styles.contentPanel}>
           <div className={styles.questionState}>
             <FileText aria-hidden="true" size={34} />
-            <h2>Đang tải đề IELTS Reading...</h2>
+            <h2>Đang tải đề IELTS Listening...</h2>
             <p>FE đang lấy template và version hiện tại từ API Exam.</p>
           </div>
         </section>
-      ) : !readingTemplate ? (
+      ) : !listeningTemplate ? (
         <section className={styles.contentPanel}>
           <div className={styles.questionState}>
             <FileText aria-hidden="true" size={34} />
-            <h2>Chưa có template IELTS Reading</h2>
+            <h2>Chưa có template IELTS Listening</h2>
             <p>
-              Vui lòng tạo ExamType IELTS ở “Dạng Bài Kiểm Tra”, sau đó tạo
-              ExamTemplate IELTS Academic Reading ở “Mẫu Đề Kiểm Tra” trước khi tạo đề.
+              Vui lòng t?o ExamType IELTS ? “D?ng Bài Ki?m Tra”, sau dó t?o
+              ExamTemplate IELTS Academic LISTENING ? “M?u Ð? Ki?m Tra” tru?c khi t?o d?.
             </p>
             <div className={styles.headerActions}>
               <Link to="/admin/exam-types/create">Tạo dạng bài kiểm tra</Link>
@@ -1875,7 +2055,7 @@ export function IeltsReadingCreatePage() {
         </section>
       ) : (
       <section className={styles.builder}>
-        <nav className={styles.stepper} aria-label="IELTS Reading create steps">
+        <nav className={styles.stepper} aria-label="IELTS Listening create steps">
           {steps.map((step) => {
             const Icon = step.icon;
             const isDone = currentStep > step.id;
@@ -1943,7 +2123,7 @@ export function IeltsReadingCreatePage() {
                   <input
                     disabled
                     readOnly
-                    value={readingTemplate?.totalScore ?? 40}
+                    value={listeningTemplate?.totalScore ?? 40}
                   />
                 </label>
                 <label className={styles.fullField}>
@@ -1958,25 +2138,25 @@ export function IeltsReadingCreatePage() {
             </div>
           )}
 
-          {currentStep === 2 && activePassage && (
+          {currentStep === 2 && activePart && (
             <div className={styles.panelBody}>
               <div className={styles.sectionHeading}>
                 <div>
-                  <span>Passages</span>
-                  <h2>Nội dung bài đọc</h2>
+                  <span>Parts</span>
+                  <h2>Nội dung bài nghe</h2>
                 </div>
-                <strong>{passages.length} passages</strong>
+                <strong>{Parts.length} Parts</strong>
               </div>
 
               <div className={styles.passageTabs}>
-                {passages.map((passage) => (
+                {Parts.map((Part) => (
                   <button
-                    className={passage.id === activePassage.id ? styles.activeTab : ""}
-                    key={passage.id}
+                    className={Part.id === activePart.id ? styles.activeTab : ""}
+                    key={Part.id}
                     type="button"
-                    onClick={() => selectPassage(passage)}
+                    onClick={() => selectPart(Part)}
                   >
-                    Passage {passage.part}
+                    Part {Part.part}
                   </button>
                 ))}
               </div>
@@ -1984,45 +2164,84 @@ export function IeltsReadingCreatePage() {
               <div className={styles.passageEditor}>
                 <div className={styles.formGrid}>
                   <label>
-                    <span>Passage title</span>
+                    <span>Part title</span>
                     <input
-                      value={activePassage.title}
+                      value={activePart.title}
                       onChange={(event) =>
-                        updatePassage(activePassage.id, "title", event.target.value)
+                        updatePart(activePart.id, "title", event.target.value)
                       }
                     />
                   </label>
                   <label className={styles.fullField}>
-                    <span>Passage instruction</span>
+                    <span>Part instruction</span>
                     <textarea
                       rows={3}
-                      value={activePassage.instruction}
+                      value={activePart.instruction}
                       onChange={(event) =>
-                        updatePassage(activePassage.id, "instruction", event.target.value)
+                        updatePart(activePart.id, "instruction", event.target.value)
                       }
                     />
                   </label>
                 </div>
 
-                <div className={styles.singleContentEditor}>
+                <div className={styles.audioPicker}>
+                  <label className={styles.audioField}>
+                    <span>Audio</span>
+                    <input
+                      placeholder="Tìm theo tên audio..."
+                      value={activePart.audioSearchTerm}
+                      onChange={(event) => void searchAudioForPart(activePart.id, event.target.value)}
+                    />
+                  </label>
+
+                  {activePart.audioUrl && (
+                    <div className={styles.selectedAudio}>
+                      <strong>{activePart.audioName || "Audio đã chọn"}</strong>
+                      <a href={activePart.audioUrl} target="_blank" rel="noreferrer">
+                        Mở audio
+                      </a>
+                    </div>
+                  )}
+
+                  {(activePart.isSearchingAudio || activePart.audioResults.length > 0) && (
+                    <div className={styles.audioResults}>
+                      {activePart.isSearchingAudio ? (
+                        <p>Đang tìm audio...</p>
+                      ) : (
+                        activePart.audioResults.map((asset) => (
+                          <button
+                            key={asset.publicId ?? asset.id}
+                            type="button"
+                            onClick={() => selectAudioForPart(activePart.id, asset)}
+                          >
+                            <strong>{getAssetName(asset)}</strong>
+                            <span>{getAssetUrl(asset) || "Chưa có URL"}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className={styles.transcriptField}>
                   <RichTextEditor
-                    key={`passage-content-${activePassage.id}`}
-                    label="Content"
+                    key={`transcript-${activePart.id}`}
+                    label="Transcript"
                     minHeight={260}
-                    value={activePassage.paragraphs[0]?.content ?? ""}
-                    onChange={(value) => updatePassageContent(activePassage.id, value)}
+                    value={activePart.transcript}
+                    onChange={(value) => updatePart(activePart.id, "transcript", value)}
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {currentStep === 3 && activePassage && (
+          {currentStep === 3 && activePart && (
             <div className={styles.panelBody}>
               <div className={styles.sectionHeading}>
                 <div>
                   <span>Question groups</span>
-                  <h2>Câu hỏi theo passage</h2>
+                  <h2>Câu hỏi theo Part</h2>
                 </div>
                 <strong>{totalQuestions} questions</strong>
               </div>
@@ -2030,14 +2249,14 @@ export function IeltsReadingCreatePage() {
               <div className={styles.questionLayout}>
                 <aside className={styles.groupSidebar}>
                   <div className={styles.passageTabs}>
-                    {passages.map((passage) => (
+                    {Parts.map((Part) => (
                       <button
-                        className={passage.id === activePassage.id ? styles.activeTab : ""}
-                        key={passage.id}
+                        className={Part.id === activePart.id ? styles.activeTab : ""}
+                        key={Part.id}
                         type="button"
-                        onClick={() => selectPassage(passage)}
+                        onClick={() => selectPart(Part)}
                       >
-                        Passage {passage.part}
+                        Part {Part.part}
                       </button>
                     ))}
                   </div>
@@ -2055,7 +2274,7 @@ export function IeltsReadingCreatePage() {
                   </div>
 
                   <div className={styles.groupList}>
-                    {activePassage.questionGroups.map((group) => (
+                    {activePart.questionGroups.map((group) => (
                       <button
                         className={group.id === activeGroupId ? styles.activeGroup : ""}
                         key={group.id}
@@ -2078,7 +2297,7 @@ export function IeltsReadingCreatePage() {
                     <div className={styles.questionState}>
                       <ListChecks aria-hidden="true" size={34} />
                       <h2>Question Groups</h2>
-                      <p>Thêm group theo từng passage để dữ liệu giống mockPracticeTests.ts.</p>
+                      <p>Thêm group theo từng Part để dữ liệu giống cấu trúc Reading.</p>
                       <button
                         type="button"
                         disabled={hasReachedQuestionLimit}
@@ -2258,15 +2477,15 @@ export function IeltsReadingCreatePage() {
                                     Instruction
                                     <span className={styles.infoTooltip}>
                                       <span
-                                        aria-label="Hướng dẫn instruction"
+                                        aria-label="Hu?ng d?n instruction"
                                         className={styles.infoIcon}
                                         tabIndex={0}
                                       >
                                         i
                                       </span>
                                       <span className={styles.infoTooltipContent}>
-                                        Nhập hướng dẫn cho dạng summary completion. Nội dung summary
-                                        và blank được cấu hình ở từng question bên dưới.
+                                        Nh?p hu?ng d?n cho d?ng summary completion. N?i dung summary
+                                        và blank du?c c?u hình ? t?ng question bên du?i.
                                       </span>
                                     </span>
                                   </span>
@@ -2289,16 +2508,16 @@ export function IeltsReadingCreatePage() {
                                     Summary text
                                     <span className={styles.infoTooltip}>
                                       <span
-                                        aria-label="Hướng dẫn Summary text"
+                                        aria-label="Hu?ng d?n Summary text"
                                         className={styles.infoIcon}
                                         tabIndex={0}
                                       >
                                         i
                                       </span>
                                       <span className={styles.infoTooltipContent}>
-                                        Nhập đoạn summary hoàn chỉnh và đặt blank bằng placeholder
-                                        theo số câu, ví dụ {"{Q27}"}, {"{Q28}"}. Khi thi thật FE sẽ
-                                        thay các placeholder này bằng ô kéo thả đáp án.
+                                        Nh?p do?n summary hoàn ch?nh và d?t blank b?ng placeholder
+                                        theo s? câu, ví d? {"{Q27}"}, {"{Q28}"}. Khi thi th?t FE s?
+                                        thay các placeholder này b?ng ô kéo th? dáp án.
                                       </span>
                                     </span>
                                   </span>
@@ -2324,10 +2543,10 @@ export function IeltsReadingCreatePage() {
                                   </strong>
                                   <p>
                                     {activeGroupIsMatchingHeading
-                                      ? "Label là số La Mã học viên nhìn thấy. Heading text là nội dung đáp án heading sẽ gửi xuống BE."
+                                      ? "Label là s? La Mã h?c viên nhìn th?y. Heading text là n?i dung dáp án heading s? g?i xu?ng BE."
                                       : activeGroupIsSummaryCompletionWithOptions
-                                        ? "Danh sách phrase A-J để học viên kéo/chọn vào các blank trong summary. Mặc định không dùng lại option."
-                                      : "Dùng chung cho toàn bộ câu trong group. FE sẽ duplicate options vào từng question khi gửi payload."}
+                                        ? "Danh sách phrase A-J d? h?c viên kéo/ch?n vào các blank trong summary. M?c d?nh không dùng l?i option."
+                                      : "Dùng chung cho toàn b? câu trong group. FE s? duplicate options vào t?ng question khi g?i payload."}
                                   </p>
                                 </div>
                                 <button type="button" onClick={() => addSharedOption(activeGroup.id)}>
@@ -2553,9 +2772,9 @@ export function IeltsReadingCreatePage() {
                                     )}
                                     {activeGroupIsMatchingHeading && (
                                       <label>
-                                        <span>Paragraph in passage</span>
+                                        <span>Paragraph in Part</span>
                                         <select
-                                          value={question.paragraphLabel || question.passageRef || ""}
+                                          value={question.paragraphLabel || question.PartRef || ""}
                                           onChange={(event) => {
                                             const paragraphLabel = event.target.value;
                                             updateQuestionItem(
@@ -2567,7 +2786,7 @@ export function IeltsReadingCreatePage() {
                                             updateQuestionItem(
                                               activeGroup.id,
                                               question.id,
-                                              "passageRef",
+                                              "PartRef",
                                               paragraphLabel,
                                             );
                                             updateQuestionItem(
@@ -2579,7 +2798,7 @@ export function IeltsReadingCreatePage() {
                                           }}
                                         >
                                           <option value="">Select paragraph</option>
-                                          {getMatchingHeadingParagraphLabels(activePassage, activeGroup).map((paragraphLabel) => (
+                                          {getMatchingHeadingParagraphLabels(activePart, activeGroup).map((paragraphLabel) => (
                                             <option key={paragraphLabel} value={paragraphLabel}>
                                               Paragraph {paragraphLabel}
                                             </option>
@@ -2660,12 +2879,12 @@ export function IeltsReadingCreatePage() {
                                   )}
                                   {activeGroupIsMatchingHeading && (
                                     <div className={styles.helperText}>
-                                      Paragraph được gợi ý từ range của group, ví dụ Questions 14-20 tương ứng Paragraph A-G.
+                                      Paragraph du?c g?i ý t? range c?a group, ví d? Questions 14-20 tuong ?ng Paragraph A-G.
                                     </div>
                                   )}
                                   {activeGroupIsSummaryCompletionWithOptions && (
                                     <div className={styles.helperText}>
-                                      Mỗi blank là một question. Prompt nên là câu ngắn chứa {"{blank}"} để preview và scoring dễ hiểu.
+                                      M?i blank là m?t question. Prompt nên là câu ng?n ch?a {"{blank}"} d? preview và scoring d? hi?u.
                                     </div>
                                   )}
                                   {activeGroupIsMatching ? (
@@ -2710,7 +2929,7 @@ export function IeltsReadingCreatePage() {
                                         <label>
                                           <span>Evidence</span>
                                           <textarea
-                                            placeholder="Short evidence from passage"
+                                            placeholder="Short evidence from Part"
                                             rows={2}
                                             value={question.evidence ?? ""}
                                             onChange={(event) =>
@@ -2996,4 +3215,8 @@ export function IeltsReadingCreatePage() {
     </div>
   );
 }
+
+
+
+
 

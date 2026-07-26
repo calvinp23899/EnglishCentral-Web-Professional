@@ -103,10 +103,10 @@ namespace EnglishCentral.Infrastructure.Services.Storage
             var canonicalRequest = $"{method}\n{canonicalUri}\n\n{canonicalHeaders}\n{signedHeaders}\n{payloadHash}";
             var canonicalRequestHash = ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonicalRequest)));
             var stringToSign = $"AWS4-HMAC-SHA256\n{amzDate}\n{credentialScope}\n{canonicalRequestHash}";
-            var signingKey = GetSignatureKey(_options.SecretKey, dateStamp, Region, Service);
+            var signingKey = GetSignatureKey(GetSecretKey(), dateStamp, Region, Service);
             var signature = ToHexString(HmacSha256(signingKey, stringToSign));
 
-            return $"AWS4-HMAC-SHA256 Credential={_options.AccessKey}/{credentialScope}, SignedHeaders={signedHeaders}, Signature={signature}";
+            return $"AWS4-HMAC-SHA256 Credential={GetAccessKey()}/{credentialScope}, SignedHeaders={signedHeaders}, Signature={signature}";
         }
 
         private string BuildPublicUrl(string objectKey)
@@ -133,6 +133,16 @@ namespace EnglishCentral.Infrastructure.Services.Storage
 
             if (string.IsNullOrWhiteSpace(_options.BucketName))
                 throw new InvalidOperationException("Cloudflare BucketName is not configured.");
+        }
+
+        private string GetAccessKey()
+        {
+            return _options.AccessKey.Trim();
+        }
+
+        private string GetSecretKey()
+        {
+            return _options.SecretKey.Trim();
         }
 
         private static async Task<byte[]> ReadPayloadAsync(Stream fileStream, CancellationToken ct)

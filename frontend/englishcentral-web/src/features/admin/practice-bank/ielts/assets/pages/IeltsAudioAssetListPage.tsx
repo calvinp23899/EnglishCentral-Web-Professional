@@ -1,11 +1,13 @@
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
-import { Edit3, Eye, Save, Search, Trash2, Upload, X } from "lucide-react";
+import { Columns3, Edit3, Eye, Funnel, Loader2, Plus, Save, Search, Trash2, Upload, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Pagination, toastDanger, toastSuccess } from "@/components/ui";
+import { ConfirmModal, Pagination, SidePanel, toastDanger, toastSuccess } from "@/components/ui";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
+import crudStyles from "@/features/admin/shared/components/AdminCrud/AdminCrudPage.module.scss";
 import listStyles from "@/features/admin/students/pages/StudentListPage.module.scss";
 import teacherStyles from "@/features/admin/teachers/pages/TeacherListPage.module.scss";
+import compactStyles from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingListPage.module.scss";
 
 import {
   adminExamAssetsApi,
@@ -42,7 +44,7 @@ const findOptionLabel = (options: MetadataOption[], value?: string | number | nu
 const getAssetName = (asset: ExamAsset) =>
   asset.displayName ?? asset.name ?? asset.originalFileName ?? asset.fileName ?? `Audio #${asset.id}`;
 
-const getAssetUrl = (asset: ExamAsset) => asset.url ?? asset.assetUrl ?? asset.fileUrl ?? "";
+const getAssetUrl = (asset: ExamAsset) => asset.publicUrl ?? asset.url ?? asset.assetUrl ?? asset.fileUrl ?? "";
 
 const formatDuration = (seconds?: number | null) => {
   if (!seconds || seconds < 0) return "-";
@@ -85,11 +87,25 @@ const formatDateTime = (value?: string | null) => {
 };
 
 type PanelMode = "upload" | "view" | "edit";
+type ColumnKey = "name" | "assetType" | "provider" | "status" | "duration" | "size" | "createdAt";
 
 type UploadFormState = {
   assetType: string;
   durationSeconds: string;
-  metadataJson: string;
+};
+
+type StopPointFormState = {
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+};
+
+type UploadMetadataFormState = {
+  speaker: string;
+  totalSection: string;
+  typeExam: "IELTS";
+  stopPoints: StopPointFormState[];
 };
 
 type EditFormState = {
@@ -98,16 +114,175 @@ type EditFormState = {
   status: string;
   durationSeconds: string;
   metadataJson: string;
+  speaker: string;
+  totalSection: string;
+  typeExam: string;
+  stopPoints: StopPointFormState[];
 };
 
-const buildEditForm = (asset: ExamAsset): EditFormState => ({
-  assetType: asset.assetType === undefined || asset.assetType === null ? "" : String(asset.assetType),
-  provider: asset.provider === undefined || asset.provider === null ? "" : String(asset.provider),
-  status: asset.status === undefined || asset.status === null ? "" : String(asset.status),
-  durationSeconds:
-    asset.durationSeconds === undefined || asset.durationSeconds === null ? "" : String(asset.durationSeconds),
-  metadataJson: asset.metadataJson ?? "",
+const columns: ColumnKey[] = ["name", "assetType", "provider", "status", "duration", "size", "createdAt"];
+
+const columnLabels: Record<ColumnKey, string> = {
+  name: "Tên audio",
+  assetType: "Asset type",
+  provider: "Provider",
+  status: "Trạng thái",
+  duration: "Duration",
+  size: "Size",
+  createdAt: "Ngày tạo",
+};
+
+const initialVisibleColumns: Record<ColumnKey, boolean> = {
+  name: true,
+  assetType: true,
+  provider: true,
+  status: true,
+  duration: false,
+  size: false,
+  createdAt: true,
+};
+
+type AssetFilters = {
+  provider: string;
+  status: string;
+};
+
+const emptyFilters: AssetFilters = {
+  provider: "",
+  status: "",
+};
+
+const createStopPoint = (): StopPointFormState => ({
+  id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  title: "",
+  startTime: "",
+  endTime: "",
 });
+
+const createUploadMetadataForm = (): UploadMetadataFormState => ({
+  speaker: "",
+  totalSection: "1",
+  typeExam: "IELTS",
+  stopPoints: [],
+});
+
+const emptyEditForm = (): EditFormState => ({
+  assetType: "",
+  provider: "",
+  status: "",
+  durationSeconds: "",
+  metadataJson: "",
+  speaker: "",
+  totalSection: "1",
+  typeExam: "IELTS",
+  stopPoints: [],
+});
+
+const stringifyMetadataJson = (metadataJson: ExamAsset["metadataJson"]) => {
+  if (metadataJson === undefined || metadataJson === null || metadataJson === "") return "";
+  if (typeof metadataJson === "string") return metadataJson;
+
+  return JSON.stringify(metadataJson, null, 2);
+};
+
+const parseMetadataJson = (metadataJson: ExamAsset["metadataJson"]) => {
+  const metadataText = stringifyMetadataJson(metadataJson);
+
+  if (!metadataText) return null;
+
+  try {
+    const parsed = JSON.parse(metadataText);
+
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+};
+
+const getMetadataString = (metadata: Record<string, unknown>, keys: string[], fallback = "") => {
+  const key = keys.find((candidate) => metadata[candidate] !== undefined && metadata[candidate] !== null);
+  const value = key ? metadata[key] : undefined;
+
+  return value === undefined || value === null ? fallback : String(value);
+};
+
+const createStopPointsFromMetadata = (value: unknown): StopPointFormState[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map((point) => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      title: getMetadataString(point, ["title", "Title"]),
+      startTime: getMetadataString(point, ["StartTime", "startTime"]),
+      endTime: getMetadataString(point, ["EndTime", "endTime"]),
+    }));
+};
+
+const buildEditForm = (asset: ExamAsset): EditFormState => {
+  const metadata = parseMetadataJson(asset.metadataJson);
+
+  return {
+    ...emptyEditForm(),
+    ...(metadata
+      ? {
+          speaker: getMetadataString(metadata, ["Speaker", "speaker"]),
+          totalSection: getMetadataString(metadata, ["TotalSection", "totalSection"], "1"),
+          typeExam: getMetadataString(metadata, ["TypeExam", "typeExam"], "IELTS"),
+          stopPoints: createStopPointsFromMetadata(metadata.StopPoint ?? metadata.stopPoint ?? metadata.stopPoints),
+        }
+      : {}),
+    assetType: asset.assetType === undefined || asset.assetType === null ? "" : String(asset.assetType),
+    provider: asset.provider === undefined || asset.provider === null ? "" : String(asset.provider),
+    status: asset.status === undefined || asset.status === null ? "" : String(asset.status),
+    durationSeconds:
+      asset.durationSeconds === undefined || asset.durationSeconds === null ? "" : String(asset.durationSeconds),
+    metadataJson: stringifyMetadataJson(asset.metadataJson),
+  };
+};
+
+const buildUploadMetadataJson = (metadata: UploadMetadataFormState) =>
+  JSON.stringify({
+    TypeExam: metadata.typeExam,
+    Speaker: metadata.speaker.trim(),
+    TotalSection: Math.max(1, Number(metadata.totalSection) || 1),
+    StopPoint: metadata.stopPoints
+      .filter((point) => point.title.trim() || point.startTime.trim() || point.endTime.trim())
+      .map((point) => ({
+        title: point.title.trim(),
+        StartTime: point.startTime.trim(),
+        EndTime: point.endTime.trim(),
+      })),
+  });
+
+const buildEditMetadataJson = (metadata: EditFormState) =>
+  buildUploadMetadataJson({
+    speaker: metadata.speaker,
+    totalSection: metadata.totalSection,
+    typeExam: "IELTS",
+    stopPoints: metadata.stopPoints,
+  });
+
+const getMetadataValue = (asset: ExamAsset, keys: string[], fallback = "-") => {
+  const metadata = parseMetadataJson(asset.metadataJson);
+
+  return metadata ? getMetadataString(metadata, keys, fallback) || fallback : fallback;
+};
+
+const getMetadataStopPoints = (asset: ExamAsset) => {
+  const metadata = parseMetadataJson(asset.metadataJson);
+  const stopPoints = metadata?.StopPoint ?? metadata?.stopPoint ?? metadata?.stopPoints;
+
+  if (!Array.isArray(stopPoints)) return [];
+
+  return stopPoints
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map((point) => ({
+      title: getMetadataString(point, ["title", "Title"], "-"),
+      startTime: getMetadataString(point, ["StartTime", "startTime"], "-"),
+      endTime: getMetadataString(point, ["EndTime", "endTime"], "-"),
+    }));
+};
 
 export const IeltsAudioAssetListPage = () => {
   const [assets, setAssets] = useState<ExamAsset[]>([]);
@@ -116,8 +291,11 @@ export const IeltsAudioAssetListPage = () => {
   const [statuses, setStatuses] = useState<MetadataOption[]>([]);
   const [audioAssetType, setAudioAssetType] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [providerFilter, setProviderFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [filters, setFilters] = useState<AssetFilters>(emptyFilters);
+  const [draftFilters, setDraftFilters] = useState<AssetFilters>(emptyFilters);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [isColumnsMenuOpen, setIsColumnsMenuOpen] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState(initialVisibleColumns);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -127,15 +305,11 @@ export const IeltsAudioAssetListPage = () => {
   const [uploadForm, setUploadForm] = useState<UploadFormState>({
     assetType: "",
     durationSeconds: "",
-    metadataJson: "",
   });
-  const [editForm, setEditForm] = useState<EditFormState>({
-    assetType: "",
-    provider: "",
-    status: "",
-    durationSeconds: "",
-    metadataJson: "",
-  });
+  const [uploadMetadata, setUploadMetadata] = useState<UploadMetadataFormState>(() => createUploadMetadataForm());
+  const [editForm, setEditForm] = useState<EditFormState>(() => emptyEditForm());
+  const [deletingAsset, setDeletingAsset] = useState<ExamAsset | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const audioLabel = useMemo(
@@ -154,8 +328,8 @@ export const IeltsAudioAssetListPage = () => {
         pageSize: DEFAULT_PAGE_SIZE,
         keyword: searchTerm.trim() || undefined,
         assetType: audioAssetType,
-        provider: providerFilter || undefined,
-        status: statusFilter || undefined,
+        provider: filters.provider || undefined,
+        status: filters.status || undefined,
       });
 
       setAssets(result.items);
@@ -206,14 +380,37 @@ export const IeltsAudioAssetListPage = () => {
   }, []);
 
   useEffect(() => {
-    void loadAssets();
+    const timeoutId = window.setTimeout(() => {
+      void loadAssets();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audioAssetType, page, providerFilter, statusFilter]);
+  }, [audioAssetType, filters, page]);
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPage(1);
     void loadAssets();
+  };
+
+  const handleApplyFilters = () => {
+    setFilters(draftFilters);
+    setPage(1);
+    setIsFilterPanelOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setDraftFilters(emptyFilters);
+    setFilters(emptyFilters);
+    setPage(1);
+  };
+
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const visibleColumnCount = Math.max(1, columns.filter((column) => visibleColumns[column]).length) + 1;
+
+  const toggleColumn = (column: ColumnKey) => {
+    setVisibleColumns((current) => ({ ...current, [column]: !current[column] }));
   };
 
   const closePanel = () => {
@@ -223,23 +420,17 @@ export const IeltsAudioAssetListPage = () => {
     setUploadForm({
       assetType: audioAssetType,
       durationSeconds: "",
-      metadataJson: "",
     });
-    setEditForm({
-      assetType: "",
-      provider: "",
-      status: "",
-      durationSeconds: "",
-      metadataJson: "",
-    });
+    setUploadMetadata(createUploadMetadataForm());
+    setEditForm(emptyEditForm());
   };
 
   const openUploadPanel = () => {
     setUploadForm({
       assetType: audioAssetType,
       durationSeconds: "",
-      metadataJson: "",
     });
+    setUploadMetadata(createUploadMetadataForm());
     setPanelMode("upload");
   };
 
@@ -269,8 +460,76 @@ export const IeltsAudioAssetListPage = () => {
     }
   };
 
+  const handleUploadTotalSectionChange = (value: string) => {
+    setUploadMetadata((current) => {
+      const currentValue = Math.max(1, Number(current.totalSection) || 1);
+      const nextValue = Math.max(1, Number(value) || 1);
+
+      return {
+        ...current,
+        totalSection: String(Math.max(currentValue, nextValue)),
+      };
+    });
+  };
+
+  const addStopPoint = () => {
+    setUploadMetadata((current) => ({
+      ...current,
+      stopPoints: [...current.stopPoints, createStopPoint()],
+    }));
+  };
+
+  const updateStopPoint = (id: string, field: keyof Omit<StopPointFormState, "id">, value: string) => {
+    setUploadMetadata((current) => ({
+      ...current,
+      stopPoints: current.stopPoints.map((point) => (point.id === id ? { ...point, [field]: value } : point)),
+    }));
+  };
+
+  const removeStopPoint = (id: string) => {
+    setUploadMetadata((current) => ({
+      ...current,
+      stopPoints: current.stopPoints.filter((point) => point.id !== id),
+    }));
+  };
+
+  const handleEditTotalSectionChange = (value: string) => {
+    setEditForm((current) => {
+      const currentValue = Math.max(1, Number(current.totalSection) || 1);
+      const nextValue = Math.max(1, Number(value) || 1);
+
+      return {
+        ...current,
+        totalSection: String(Math.max(currentValue, nextValue)),
+      };
+    });
+  };
+
+  const addEditStopPoint = () => {
+    setEditForm((current) => ({
+      ...current,
+      stopPoints: [...current.stopPoints, createStopPoint()],
+    }));
+  };
+
+  const updateEditStopPoint = (id: string, field: keyof Omit<StopPointFormState, "id">, value: string) => {
+    setEditForm((current) => ({
+      ...current,
+      stopPoints: current.stopPoints.map((point) => (point.id === id ? { ...point, [field]: value } : point)),
+    }));
+  };
+
+  const removeEditStopPoint = (id: string) => {
+    setEditForm((current) => ({
+      ...current,
+      stopPoints: current.stopPoints.filter((point) => point.id !== id),
+    }));
+  };
+
   const handleUploadSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (isSubmitting) return;
 
     if (!uploadFile) {
       toastDanger("Vui lòng chọn file audio.");
@@ -293,9 +552,7 @@ export const IeltsAudioAssetListPage = () => {
         formData.append("durationSeconds", uploadForm.durationSeconds.trim());
       }
 
-      if (uploadForm.metadataJson.trim()) {
-        formData.append("metadataJson", uploadForm.metadataJson.trim());
-      }
+      formData.append("metadataJson", buildUploadMetadataJson(uploadMetadata));
 
       await adminExamAssetsApi.uploadAsset(formData);
       toastSuccess("Upload audio thành công.");
@@ -312,6 +569,8 @@ export const IeltsAudioAssetListPage = () => {
   const handleUpdateSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (isSubmitting) return;
+
     if (!selectedAsset) return;
 
     setIsSubmitting(true);
@@ -319,10 +578,9 @@ export const IeltsAudioAssetListPage = () => {
     try {
       const payload: ExamAssetUpdatePayload = {
         assetType: editForm.assetType || audioAssetType,
-        provider: editForm.provider || null,
         status: editForm.status || null,
         durationSeconds: editForm.durationSeconds.trim() ? Number(editForm.durationSeconds) : null,
-        metadataJson: editForm.metadataJson.trim() || null,
+        metadataJson: buildEditMetadataJson(editForm),
       };
 
       await adminExamAssetsApi.updateAsset(selectedAsset.id, payload);
@@ -336,17 +594,23 @@ export const IeltsAudioAssetListPage = () => {
     }
   };
 
-  const handleDelete = async (asset: ExamAsset) => {
-    const isConfirmed = window.confirm(`Xóa audio "${getAssetName(asset)}"?`);
+  const handleDelete = (asset: ExamAsset) => {
+    setDeletingAsset(asset);
+  };
 
-    if (!isConfirmed) return;
+  const handleConfirmDelete = async () => {
+    if (!deletingAsset || isDeleting) return;
 
+    setIsDeleting(true);
     try {
-      await adminExamAssetsApi.deleteAsset(asset.id);
+      await adminExamAssetsApi.deleteAsset(deletingAsset.id);
       toastSuccess("Xóa audio thành công.");
+      setDeletingAsset(null);
       await loadAssets();
     } catch (error) {
       toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -383,22 +647,28 @@ export const IeltsAudioAssetListPage = () => {
             <form className={styles.panelBody} onSubmit={handleUploadSubmit}>
               <div className={styles.formGrid}>
                 <label className={`${styles.formField} ${styles.fullSpan}`}>
-                  File audio *
-                  <input
-                    accept="audio/*"
-                    className={styles.fileControl}
-                    onChange={handleFileChange}
-                    type="file"
-                  />
+                  <span>
+                    File audio <span className={styles.requiredMark}>*</span>
+                  </span>
+                  <span className={styles.filePicker}>
+                    <Upload aria-hidden="true" size={16} />
+                    <span className={styles.filePickerAction}>Chọn file</span>
+                    <span className={styles.filePickerName}>
+                      {uploadFile ? uploadFile.name : "Chưa chọn file audio"}
+                    </span>
+                    <input accept="audio/*" onChange={handleFileChange} type="file" />
+                  </span>
                 </label>
                 <label className={styles.formField}>
-                  Asset type
+                  <span>
+                    Asset type <span className={styles.requiredMark}>*</span>
+                  </span>
                   <select className={styles.selectControl} disabled value={uploadForm.assetType}>
                     <option value={uploadForm.assetType}>{audioLabel}</option>
                   </select>
                 </label>
                 <label className={styles.formField}>
-                  Duration seconds
+                  Total Duration Seconds
                   <input
                     className={styles.inputControl}
                     min={0}
@@ -410,32 +680,117 @@ export const IeltsAudioAssetListPage = () => {
                     value={uploadForm.durationSeconds}
                   />
                 </label>
-                <label className={`${styles.formField} ${styles.fullSpan}`}>
-                  Metadata JSON
-                  <textarea
-                    className={styles.textareaControl}
+                <label className={styles.formField}>
+                  Speaker
+                  <input
+                    className={styles.inputControl}
                     onChange={(event) =>
-                      setUploadForm((current) => ({ ...current, metadataJson: event.target.value }))
+                      setUploadMetadata((current) => ({ ...current, speaker: event.target.value }))
                     }
-                    placeholder='Ví dụ: {"section":"1","speaker":"native"}'
-                    value={uploadForm.metadataJson}
+                    placeholder="Speaker name"
+                    type="text"
+                    value={uploadMetadata.speaker}
                   />
                 </label>
+                <label className={styles.formField}>
+                  TotalSection
+                  <input
+                    className={styles.inputControl}
+                    min={1}
+                    onChange={(event) => handleUploadTotalSectionChange(event.target.value)}
+                    step={1}
+                    type="number"
+                    value={uploadMetadata.totalSection}
+                  />
+                </label>
+                <label className={styles.formField}>
+                  TypeExam
+                  <input className={styles.inputControl} readOnly type="text" value={uploadMetadata.typeExam} />
+                </label>
+                <div className={`${styles.stopPointSection} ${styles.fullSpan}`}>
+                  <div className={styles.stopPointHeader}>
+                    <div>
+                      <h3>StopPoint</h3>
+                      <p>Danh sách mốc nghe được lưu vào metadataJson khi upload audio.</p>
+                    </div>
+                    <button className={styles.addStopPointButton} onClick={addStopPoint} type="button">
+                      <Plus aria-hidden="true" size={16} />
+                      Thêm mốc
+                    </button>
+                  </div>
+                  {uploadMetadata.stopPoints.length === 0 ? (
+                    <p className={styles.stopPointEmpty}>Chưa có stop point.</p>
+                  ) : (
+                    <div className={styles.stopPointList}>
+                      {uploadMetadata.stopPoints.map((point, index) => (
+                        <div className={styles.stopPointItem} key={point.id}>
+                          <div className={styles.stopPointItemHeader}>
+                            <strong>Stop point {index + 1}</strong>
+                            <button
+                              className={styles.stopPointRemove}
+                              onClick={() => removeStopPoint(point.id)}
+                              title="Xóa stop point"
+                              type="button"
+                            >
+                              <Trash2 aria-hidden="true" size={15} />
+                            </button>
+                          </div>
+                          <label className={styles.formField}>
+                            Title
+                            <input
+                              className={styles.inputControl}
+                              onChange={(event) => updateStopPoint(point.id, "title", event.target.value)}
+                              placeholder="Section 1"
+                              type="text"
+                              value={point.title}
+                            />
+                          </label>
+                          <div className={styles.stopPointTimeGrid}>
+                            <label className={styles.formField}>
+                              StartTime
+                              <input
+                                className={styles.inputControl}
+                                onChange={(event) => updateStopPoint(point.id, "startTime", event.target.value)}
+                                placeholder="00:00"
+                                type="text"
+                                value={point.startTime}
+                              />
+                            </label>
+                            <label className={styles.formField}>
+                              EndTime
+                              <input
+                                className={styles.inputControl}
+                                onChange={(event) => updateStopPoint(point.id, "endTime", event.target.value)}
+                                placeholder="05:30"
+                                type="text"
+                                value={point.endTime}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <footer className={styles.panelFooter}>
-                <button className={teacherStyles.columnsButton} onClick={closePanel} type="button">
+                <button className={teacherStyles.columnsButton} disabled={isSubmitting} onClick={closePanel} type="button">
                   Hủy
                 </button>
                 <button className={listStyles.createButton} disabled={isSubmitting} type="submit">
-                  <Upload aria-hidden="true" size={18} />
-                  Upload audio
+                  {isSubmitting ? (
+                    <Loader2 aria-hidden="true" className={styles.loadingIcon} size={18} />
+                  ) : (
+                    <Upload aria-hidden="true" size={18} />
+                  )}
+                  {isSubmitting ? "Đang upload..." : "Upload audio"}
                 </button>
               </footer>
             </form>
           )}
 
           {panelMode === "view" && selectedAsset && (
-            <div className={styles.panelBody}>
+            <div className={`${styles.panelBody} ${styles.detailPanelBody}`}>
               {getAssetUrl(selectedAsset) ? (
                 <audio className={styles.audioPlayer} controls src={getAssetUrl(selectedAsset)}>
                   <track kind="captions" />
@@ -470,13 +825,70 @@ export const IeltsAudioAssetListPage = () => {
                 </div>
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>URL</span>
-                  <span className={styles.infoValue}>{getAssetUrl(selectedAsset) || "-"}</span>
+                  <span className={styles.infoValue}>
+                    {getAssetUrl(selectedAsset) ? (
+                      <a
+                        className={styles.urlLink}
+                        href={getAssetUrl(selectedAsset)}
+                        rel="noreferrer"
+                        target="_blank"
+                        title={getAssetUrl(selectedAsset)}
+                      >
+                        {getAssetUrl(selectedAsset)}
+                      </a>
+                    ) : "-"}
+                  </span>
                 </div>
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>Metadata</span>
-                  <span className={styles.infoValue}>{selectedAsset.metadataJson || "-"}</span>
+                  <span className={styles.infoValue}>{stringifyMetadataJson(selectedAsset.metadataJson) || "-"}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>TypeExam</span>
+                  <span className={styles.infoValue}>{getMetadataValue(selectedAsset, ["TypeExam", "typeExam"])}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Speaker</span>
+                  <span className={styles.infoValue}>{getMetadataValue(selectedAsset, ["Speaker", "speaker"])}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>TotalSection</span>
+                  <span className={styles.infoValue}>{getMetadataValue(selectedAsset, ["TotalSection", "totalSection"])}</span>
+                </div>
+                <div className={`${styles.infoRow} ${styles.stopPointDetailRow}`}>
+                  <span className={styles.infoLabel}>StopPoint</span>
+                  <span className={styles.infoValue}>
+                    {getMetadataStopPoints(selectedAsset).length === 0 ? "-" : (
+                      <span className={styles.stopPointDetailList}>
+                        {getMetadataStopPoints(selectedAsset).map((point, index) => (
+                          <span className={styles.stopPointDetailItem} key={`${point.title}-${index}`}>
+                            <strong>{point.title || `Stop point ${index + 1}`}</strong>
+                            <span>{point.startTime} - {point.endTime}</span>
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </span>
                 </div>
               </div>
+              <section className={styles.stopPointDetailPanel}>
+                <div className={styles.stopPointDetailPanelHeader}>
+                  <span>StopPoint</span>
+                  <strong>{getMetadataStopPoints(selectedAsset).length}</strong>
+                </div>
+                {getMetadataStopPoints(selectedAsset).length === 0 ? (
+                  <p className={styles.stopPointEmpty}>Chưa có stop point.</p>
+                ) : (
+                  <div className={styles.stopPointDetailList}>
+                    {getMetadataStopPoints(selectedAsset).map((point, index) => (
+                      <div className={styles.stopPointDetailItem} key={`${point.title}-${index}`}>
+                        <strong>{point.title || `Stop point ${index + 1}`}</strong>
+                        <span>{point.startTime} - {point.endTime}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
               <footer className={styles.panelFooter}>
                 <button className={teacherStyles.columnsButton} onClick={closePanel} type="button">
                   Đóng
@@ -486,20 +898,16 @@ export const IeltsAudioAssetListPage = () => {
           )}
 
           {panelMode === "edit" && selectedAsset && (
-            <form className={styles.panelBody} onSubmit={handleUpdateSubmit}>
+            <form className={`${styles.panelBody} ${styles.editPanelBody}`} onSubmit={handleUpdateSubmit}>
               <div className={styles.formGrid}>
                 <label className={styles.formField}>
                   Asset type
                   <select
                     className={styles.selectControl}
-                    onChange={(event) => setEditForm((current) => ({ ...current, assetType: event.target.value }))}
+                    disabled
                     value={editForm.assetType}
                   >
-                    {assetTypes.map((option) => (
-                      <option key={getOptionValue(option)} value={getOptionValue(option)}>
-                        {getOptionLabel(option)}
-                      </option>
-                    ))}
+                    <option value={editForm.assetType}>{findOptionLabel(assetTypes, editForm.assetType)}</option>
                   </select>
                 </label>
                 <label className={styles.formField}>
@@ -552,14 +960,108 @@ export const IeltsAudioAssetListPage = () => {
                     value={editForm.metadataJson}
                   />
                 </label>
+                <label className={`${styles.formField} ${styles.fullSpan}`}>
+                  Speaker
+                  <input
+                    className={styles.inputControl}
+                    onChange={(event) => setEditForm((current) => ({ ...current, speaker: event.target.value }))}
+                    placeholder="Speaker name"
+                    type="text"
+                    value={editForm.speaker}
+                  />
+                </label>
+                <label className={styles.formField}>
+                  TotalSection
+                  <input
+                    className={styles.inputControl}
+                    min={1}
+                    onChange={(event) => handleEditTotalSectionChange(event.target.value)}
+                    step={1}
+                    type="number"
+                    value={editForm.totalSection}
+                  />
+                </label>
+                <label className={styles.formField}>
+                  TypeExam
+                  <input className={styles.inputControl} readOnly type="text" value={editForm.typeExam || "IELTS"} />
+                </label>
+                <div className={`${styles.stopPointSection} ${styles.fullSpan}`}>
+                  <div className={styles.stopPointHeader}>
+                    <div>
+                      <h3>StopPoint</h3>
+                      <p>Danh sách mốc nghe được lưu vào metadataJson của audio.</p>
+                    </div>
+                    <button className={styles.addStopPointButton} onClick={addEditStopPoint} type="button">
+                      <Plus aria-hidden="true" size={16} />
+                      Thêm mốc
+                    </button>
+                  </div>
+                  {editForm.stopPoints.length === 0 ? (
+                    <p className={styles.stopPointEmpty}>Chưa có stop point.</p>
+                  ) : (
+                    <div className={styles.stopPointList}>
+                      {editForm.stopPoints.map((point, index) => (
+                        <div className={styles.stopPointItem} key={point.id}>
+                          <div className={styles.stopPointItemHeader}>
+                            <strong>Stop point {index + 1}</strong>
+                            <button
+                              className={styles.stopPointRemove}
+                              onClick={() => removeEditStopPoint(point.id)}
+                              title="Xóa stop point"
+                              type="button"
+                            >
+                              <Trash2 aria-hidden="true" size={15} />
+                            </button>
+                          </div>
+                          <label className={styles.formField}>
+                            Title
+                            <input
+                              className={styles.inputControl}
+                              onChange={(event) => updateEditStopPoint(point.id, "title", event.target.value)}
+                              placeholder="Section 1"
+                              type="text"
+                              value={point.title}
+                            />
+                          </label>
+                          <div className={styles.stopPointTimeGrid}>
+                            <label className={styles.formField}>
+                              StartTime
+                              <input
+                                className={styles.inputControl}
+                                onChange={(event) => updateEditStopPoint(point.id, "startTime", event.target.value)}
+                                placeholder="00:00"
+                                type="text"
+                                value={point.startTime}
+                              />
+                            </label>
+                            <label className={styles.formField}>
+                              EndTime
+                              <input
+                                className={styles.inputControl}
+                                onChange={(event) => updateEditStopPoint(point.id, "endTime", event.target.value)}
+                                placeholder="05:30"
+                                type="text"
+                                value={point.endTime}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <footer className={styles.panelFooter}>
                 <button className={teacherStyles.columnsButton} onClick={closePanel} type="button">
                   Hủy
                 </button>
                 <button className={listStyles.createButton} disabled={isSubmitting} type="submit">
-                  <Save aria-hidden="true" size={18} />
-                  Lưu thay đổi
+                  {isSubmitting ? (
+                    <Loader2 aria-hidden="true" className={styles.loadingIcon} size={18} />
+                  ) : (
+                    <Save aria-hidden="true" size={18} />
+                  )}
+                  {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
               </footer>
             </form>
@@ -570,6 +1072,7 @@ export const IeltsAudioAssetListPage = () => {
   };
 
   return (
+    <>
     <div className={styles.page}>
       <section className={styles.pageHero}>
         <div>
@@ -602,10 +1105,10 @@ export const IeltsAudioAssetListPage = () => {
           <select
             className={styles.selectControl}
             onChange={(event) => {
-              setProviderFilter(event.target.value);
+              setFilters((current) => ({ ...current, provider: event.target.value }));
               setPage(1);
             }}
-            value={providerFilter}
+            value={filters.provider}
           >
             <option value="">Provider: Tất cả</option>
             {providers.map((option) => (
@@ -617,10 +1120,10 @@ export const IeltsAudioAssetListPage = () => {
           <select
             className={styles.selectControl}
             onChange={(event) => {
-              setStatusFilter(event.target.value);
+              setFilters((current) => ({ ...current, status: event.target.value }));
               setPage(1);
             }}
-            value={statusFilter}
+            value={filters.status}
           >
             <option value="">Trạng thái: Tất cả</option>
             {statuses.map((option) => (
@@ -629,58 +1132,99 @@ export const IeltsAudioAssetListPage = () => {
               </option>
             ))}
           </select>
+          <div className={teacherStyles.toolbarActions}>
+            <button
+              className={teacherStyles.filterButton}
+              type="button"
+              onClick={() => {
+                setDraftFilters(filters);
+                setIsFilterPanelOpen(true);
+                setIsColumnsMenuOpen(false);
+              }}
+            >
+              <Funnel aria-hidden="true" size={17} />
+              Filter
+              {activeFilterCount > 0 && <span>{activeFilterCount}</span>}
+            </button>
+            <div className={teacherStyles.menuWrap}>
+              <button
+                aria-expanded={isColumnsMenuOpen}
+                className={teacherStyles.columnsButton}
+                type="button"
+                onClick={() => setIsColumnsMenuOpen((current) => !current)}
+              >
+                <Columns3 aria-hidden="true" size={17} />
+                Columns
+              </button>
+              {isColumnsMenuOpen && (
+                <div className={`${teacherStyles.dropdownMenu} ${teacherStyles.columnsMenu}`}>
+                  {columns.map((column) => (
+                    <label key={column}>
+                      <input
+                        checked={visibleColumns[column]}
+                        type="checkbox"
+                        onChange={() => toggleColumn(column)}
+                      />
+                      {columnLabels[column]}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </form>
       </section>
 
-      <section className={styles.tableCard}>
-        <div className={styles.tableScroller}>
-          <table className={styles.dataTable}>
+      <section className={`${listStyles.tablePanel} ${compactStyles.tablePanelCompact} ${styles.audioTablePanel}`}>
+        <div className={listStyles.tableScroll}>
+          <table className={`${listStyles.table} ${compactStyles.tableCompact} ${styles.audioTable}`}>
             <thead>
               <tr>
-                <th>Tên audio</th>
-                <th>Asset type</th>
-                <th>Provider</th>
-                <th>Trạng thái</th>
-                <th>Duration</th>
-                <th>Size</th>
-                <th>Ngày tạo</th>
+                <th className={!visibleColumns.name ? styles.hiddenColumn : undefined}>Tên audio</th>
+                <th className={!visibleColumns.assetType ? styles.hiddenColumn : undefined}>Asset type</th>
+                <th className={!visibleColumns.provider ? styles.hiddenColumn : undefined}>Provider</th>
+                <th className={!visibleColumns.status ? styles.hiddenColumn : undefined}>Trạng thái</th>
+                <th className={!visibleColumns.duration ? styles.hiddenColumn : undefined}>Duration</th>
+                <th className={!visibleColumns.size ? styles.hiddenColumn : undefined}>Size</th>
+                <th className={!visibleColumns.createdAt ? styles.hiddenColumn : undefined}>Ngày tạo</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={visibleColumnCount}>
                     <div className={styles.emptyState}>Đang tải danh sách audio...</div>
                   </td>
                 </tr>
               ) : assets.length === 0 ? (
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={visibleColumnCount}>
                     <div className={styles.emptyState}>Không có audio phù hợp.</div>
                   </td>
                 </tr>
               ) : (
                 assets.map((asset) => (
                   <tr key={asset.id}>
-                    <td>
+                    <td className={!visibleColumns.name ? styles.hiddenColumn : undefined}>
                       <div className={styles.assetName} title={getAssetName(asset)}>
                         <strong>{getAssetName(asset)}</strong>
                         <span className={styles.assetMeta}>{asset.contentType ?? getAssetUrl(asset) ?? "-"}</span>
                       </div>
                     </td>
-                    <td>{findOptionLabel(assetTypes, asset.assetType)}</td>
-                    <td>{findOptionLabel(providers, asset.provider)}</td>
-                    <td>
-                      <span className={styles.badge}>{findOptionLabel(statuses, asset.status)}</span>
+                    <td className={!visibleColumns.assetType ? styles.hiddenColumn : undefined}>{findOptionLabel(assetTypes, asset.assetType)}</td>
+                    <td className={!visibleColumns.provider ? styles.hiddenColumn : undefined}>{findOptionLabel(providers, asset.provider)}</td>
+                    <td className={!visibleColumns.status ? styles.hiddenColumn : undefined}>
+                      <span className={`${crudStyles.statusBadge} ${crudStyles.statusBadgePublished}`}>
+                        {findOptionLabel(statuses, asset.status)}
+                      </span>
                     </td>
-                    <td>{formatDuration(asset.durationSeconds)}</td>
-                    <td>{formatBytes(asset.fileSize)}</td>
-                    <td>{formatDateTime(asset.createdAt)}</td>
+                    <td className={!visibleColumns.duration ? styles.hiddenColumn : undefined}>{formatDuration(asset.durationSeconds)}</td>
+                    <td className={!visibleColumns.size ? styles.hiddenColumn : undefined}>{formatBytes(asset.fileSize)}</td>
+                    <td className={!visibleColumns.createdAt ? styles.hiddenColumn : undefined}>{formatDateTime(asset.createdAt)}</td>
                     <td>
-                      <div className={teacherStyles.actions}>
+                      <div className={listStyles.actions}>
                         <button
-                          className={teacherStyles.iconButton}
                           onClick={() => void openViewPanel(asset)}
                           title="Xem chi tiết"
                           type="button"
@@ -688,7 +1232,6 @@ export const IeltsAudioAssetListPage = () => {
                           <Eye aria-hidden="true" size={16} />
                         </button>
                         <button
-                          className={teacherStyles.iconButton}
                           onClick={() => void openEditPanel(asset)}
                           title="Chỉnh sửa"
                           type="button"
@@ -696,7 +1239,7 @@ export const IeltsAudioAssetListPage = () => {
                           <Edit3 aria-hidden="true" size={16} />
                         </button>
                         <button
-                          className={`${teacherStyles.iconButton} ${teacherStyles.deleteButton}`}
+                          className={listStyles.deleteAction}
                           onClick={() => void handleDelete(asset)}
                           title="Xóa audio"
                           type="button"
@@ -722,5 +1265,66 @@ export const IeltsAudioAssetListPage = () => {
 
       {renderPanel()}
     </div>
+
+    <SidePanel
+      description="Lọc danh sách audio theo provider và trạng thái."
+      footer={
+        <div className={teacherStyles.panelActions}>
+          <button type="button" onClick={handleClearFilters}>
+            Xóa bộ lọc
+          </button>
+          <button type="button" onClick={handleApplyFilters}>
+            Áp dụng
+          </button>
+        </div>
+      }
+      isOpen={isFilterPanelOpen}
+      title="Bộ lọc"
+      onClose={() => setIsFilterPanelOpen(false)}
+    >
+      <div className={teacherStyles.panelForm}>
+        <label>
+          <span>Provider</span>
+          <select
+            value={draftFilters.provider}
+            onChange={(event) => setDraftFilters((current) => ({ ...current, provider: event.target.value }))}
+          >
+            <option value="">Tất cả</option>
+            {providers.map((option) => (
+              <option key={getOptionValue(option)} value={getOptionValue(option)}>
+                {getOptionLabel(option)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Trạng thái</span>
+          <select
+            value={draftFilters.status}
+            onChange={(event) => setDraftFilters((current) => ({ ...current, status: event.target.value }))}
+          >
+            <option value="">Tất cả</option>
+            {statuses.map((option) => (
+              <option key={getOptionValue(option)} value={getOptionValue(option)}>
+                {getOptionLabel(option)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </SidePanel>
+
+    <ConfirmModal
+      cancelText="Hủy"
+      confirmText={isDeleting ? "Đang xóa..." : "Xóa"}
+      description={deletingAsset ? `Bạn có chắc muốn xóa audio "${getAssetName(deletingAsset)}"?` : ""}
+      isConfirmDisabled={isDeleting}
+      isOpen={Boolean(deletingAsset)}
+      title="Xác nhận xóa audio"
+      tone="danger"
+      onCancel={() => setDeletingAsset(null)}
+      onConfirm={handleConfirmDelete}
+    />
+    </>
   );
 };

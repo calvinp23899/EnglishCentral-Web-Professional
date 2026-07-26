@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+﻿import { Navigate } from "react-router-dom";
 
 import { AdminLayout } from "@/app/layouts/admin-layout/AdminLayout";
 import { AdminLoginPage } from "@/features/admin/auth/pages/AdminLoginPage/AdminLoginPage";
@@ -31,6 +31,7 @@ import { AdminChangePasswordPage } from "@/features/admin/profile/pages/AdminCha
 import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePage";
 import { IeltsAudioAssetListPage } from "@/features/admin/practice-bank/ielts/assets/pages/IeltsAudioAssetListPage";
 import { IeltsHubPage } from "@/features/admin/practice-bank/ielts/pages/IeltsHubPage";
+import { IeltsListeningCreatePage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsListeningCreatePage";
 import { IeltsReadingCreatePage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingCreatePage";
 import { IeltsReadingListPage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingListPage";
 import { IeltsReadingViewPage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingViewPage";
@@ -94,81 +95,81 @@ const adminModuleRoutes = [
 const financeRoutes = [
   {
     path: "finance/overview",
-    title: "Tổng quan tài chính",
+    title: "Tá»•ng quan tÃ i chÃ­nh",
     description:
-      "Theo dõi doanh thu, công nợ, dòng tiền, hóa đơn đến hạn và các chỉ số tài chính chính của trung tâm.",
+      "Theo dÃµi doanh thu, cÃ´ng ná»£, dÃ²ng tiá»n, hÃ³a Ä‘Æ¡n Ä‘áº¿n háº¡n vÃ  cÃ¡c chá»‰ sá»‘ tÃ i chÃ­nh chÃ­nh cá»§a trung tÃ¢m.",
   },
   {
     path: "finance/tuition-policies",
-    title: "Chính sách học phí",
+    title: "ChÃ­nh sÃ¡ch há»c phÃ­",
     description:
-      "Quản lý bảng học phí, quy tắc áp dụng theo khóa học, lớp học, kỳ học và nhóm học viên.",
+      "Quáº£n lÃ½ báº£ng há»c phÃ­, quy táº¯c Ã¡p dá»¥ng theo khÃ³a há»c, lá»›p há»c, ká»³ há»c vÃ  nhÃ³m há»c viÃªn.",
   },
   {
     path: "finance/payment-plans",
-    title: "Kế hoạch thanh toán",
+    title: "Káº¿ hoáº¡ch thanh toÃ¡n",
     description:
-      "Thiết lập lịch thanh toán, kỳ hạn, nhắc hạn và trạng thái thu tiền theo từng học viên hoặc đăng ký học.",
+      "Thiáº¿t láº­p lá»‹ch thanh toÃ¡n, ká»³ háº¡n, nháº¯c háº¡n vÃ  tráº¡ng thÃ¡i thu tiá»n theo tá»«ng há»c viÃªn hoáº·c Ä‘Äƒng kÃ½ há»c.",
   },
   {
     path: "finance/invoices",
-    title: "Hóa đơn",
+    title: "HÃ³a Ä‘Æ¡n",
     description:
-      "Tạo, phát hành, theo dõi và đối soát hóa đơn học phí, dịch vụ và các khoản thu liên quan.",
+      "Táº¡o, phÃ¡t hÃ nh, theo dÃµi vÃ  Ä‘á»‘i soÃ¡t hÃ³a Ä‘Æ¡n há»c phÃ­, dá»‹ch vá»¥ vÃ  cÃ¡c khoáº£n thu liÃªn quan.",
   },
   {
     path: "finance/payments",
-    title: "Thanh toán",
+    title: "Thanh toÃ¡n",
     description:
-      "Ghi nhận giao dịch thanh toán, phương thức thu tiền, trạng thái xử lý và kết quả đối soát.",
+      "Ghi nháº­n giao dá»‹ch thanh toÃ¡n, phÆ°Æ¡ng thá»©c thu tiá»n, tráº¡ng thÃ¡i xá»­ lÃ½ vÃ  káº¿t quáº£ Ä‘á»‘i soÃ¡t.",
   },
   {
     path: "finance/receipts",
-    title: "Biên lai",
+    title: "BiÃªn lai",
     description:
-      "Quản lý biên lai thu tiền, lịch sử phát hành, thông tin người nộp và chứng từ liên quan.",
+      "Quáº£n lÃ½ biÃªn lai thu tiá»n, lá»‹ch sá»­ phÃ¡t hÃ nh, thÃ´ng tin ngÆ°á»i ná»™p vÃ  chá»©ng tá»« liÃªn quan.",
   },
   {
     path: "finance/discounts",
-    title: "Giảm giá",
+    title: "Giáº£m giÃ¡",
     description:
-      "Cấu hình mã giảm giá, ưu đãi học phí, điều kiện áp dụng và hiệu lực theo chương trình.",
+      "Cáº¥u hÃ¬nh mÃ£ giáº£m giÃ¡, Æ°u Ä‘Ã£i há»c phÃ­, Ä‘iá»u kiá»‡n Ã¡p dá»¥ng vÃ  hiá»‡u lá»±c theo chÆ°Æ¡ng trÃ¬nh.",
   },
   {
     path: "finance/refunds",
-    title: "Hoàn tiền",
+    title: "HoÃ n tiá»n",
     description:
-      "Theo dõi yêu cầu hoàn tiền, khoản hoàn, lý do xử lý và trạng thái phê duyệt.",
+      "Theo dÃµi yÃªu cáº§u hoÃ n tiá»n, khoáº£n hoÃ n, lÃ½ do xá»­ lÃ½ vÃ  tráº¡ng thÃ¡i phÃª duyá»‡t.",
   },
   {
     path: "finance/credit-notes",
-    title: "Phiếu ghi có",
+    title: "Phiáº¿u ghi cÃ³",
     description:
-      "Quản lý phiếu ghi có, điều chỉnh công nợ, khoản bù trừ và liên kết với hóa đơn gốc.",
+      "Quáº£n lÃ½ phiáº¿u ghi cÃ³, Ä‘iá»u chá»‰nh cÃ´ng ná»£, khoáº£n bÃ¹ trá»« vÃ  liÃªn káº¿t vá»›i hÃ³a Ä‘Æ¡n gá»‘c.",
   },
   {
     path: "finance/ledger",
-    title: "Sổ cái",
+    title: "Sá»• cÃ¡i",
     description:
-      "Xem các bút toán, tài khoản, phát sinh nợ có và dữ liệu kế toán tổng hợp.",
+      "Xem cÃ¡c bÃºt toÃ¡n, tÃ i khoáº£n, phÃ¡t sinh ná»£ cÃ³ vÃ  dá»¯ liá»‡u káº¿ toÃ¡n tá»•ng há»£p.",
   },
   {
     path: "finance/background-jobs",
-    title: "Tác vụ nền",
+    title: "TÃ¡c vá»¥ ná»n",
     description:
-      "Theo dõi tác vụ tự động như nhắc thanh toán, đồng bộ giao dịch, phát hành hóa đơn và đối soát định kỳ.",
+      "Theo dÃµi tÃ¡c vá»¥ tá»± Ä‘á»™ng nhÆ° nháº¯c thanh toÃ¡n, Ä‘á»“ng bá»™ giao dá»‹ch, phÃ¡t hÃ nh hÃ³a Ä‘Æ¡n vÃ  Ä‘á»‘i soÃ¡t Ä‘á»‹nh ká»³.",
   },
 ];
 
 const lmsRoutes = [
-  { path: "lms/programs", title: "Chương trình học" },
-  { path: "lms/modules", title: "Module học" },
-  { path: "lms/lessons", title: "Bài học" },
+  { path: "lms/programs", title: "ChÆ°Æ¡ng trÃ¬nh há»c" },
+  { path: "lms/modules", title: "Module há»c" },
+  { path: "lms/lessons", title: "BÃ i há»c" },
   { path: "lms/videos", title: "Video" },
-  { path: "lms/documents", title: "Tài liệu" },
-  { path: "lms/exercises", title: "Bài tập" },
+  { path: "lms/documents", title: "TÃ i liá»‡u" },
+  { path: "lms/exercises", title: "BÃ i táº­p" },
   { path: "lms/quizzes", title: "Quiz" },
-  { path: "lms/progress", title: "Tiến độ học tập" },
+  { path: "lms/progress", title: "Tiáº¿n Ä‘á»™ há»c táº­p" },
 ];
 
 const crmSalesRoutes = [
@@ -186,8 +187,8 @@ const costExpenseRoutes = [
 ];
 
 const hrmRoutes = [
-  { path: "hrm/attendance", title: "Chấm Công" },
-  { path: "hrm/leave-requests", title: "Nghỉ Phép" },
+  { path: "hrm/attendance", title: "Cháº¥m CÃ´ng" },
+  { path: "hrm/leave-requests", title: "Nghá»‰ PhÃ©p" },
 ];
 
 export const adminRoutes = [
@@ -297,7 +298,7 @@ export const adminRoutes = [
         element: (
           <AdminPlaceholderPage
             title="IELTS Writing"
-            description="Quản lý đề IELTS Writing theo Task 1, Task 2, rubric và sample answers."
+            description="Quáº£n lÃ½ Ä‘á» IELTS Writing theo Task 1, Task 2, rubric vÃ  sample answers."
           />
         ),
       },
@@ -307,12 +308,7 @@ export const adminRoutes = [
       },
       {
         path: "practice-bank/ielts/listening/create",
-        element: (
-          <AdminPlaceholderPage
-            title="Tạo đề IELTS Listening"
-            description="Wizard tạo đề Listening sẽ được triển khai sau phần danh sách audio."
-          />
-        ),
+        element: <IeltsListeningCreatePage />,
       },
       {
         path: "practice-bank/ielts/listening/audio",
@@ -322,26 +318,21 @@ export const adminRoutes = [
         path: "practice-bank/ielts/listening/:recordId/view",
         element: (
           <AdminPlaceholderPage
-            title="Chi tiết đề IELTS Listening"
-            description="Màn hình chi tiết IELTS Listening sẽ được triển khai sau."
+            title="Chi tiáº¿t Ä‘á» IELTS Listening"
+            description="MÃ n hÃ¬nh chi tiáº¿t IELTS Listening sáº½ Ä‘Æ°á»£c triá»ƒn khai sau."
           />
         ),
       },
       {
         path: "practice-bank/ielts/listening/:recordId/edit",
-        element: (
-          <AdminPlaceholderPage
-            title="Chỉnh sửa đề IELTS Listening"
-            description="Màn hình chỉnh sửa IELTS Listening sẽ được triển khai sau."
-          />
-        ),
+        element: <IeltsListeningCreatePage />,
       },
       {
         path: "practice-bank/ielts/speaking",
         element: (
           <AdminPlaceholderPage
             title="IELTS Speaking"
-            description="Quản lý đề IELTS Speaking theo part, cue card, rubric và sample answers."
+            description="Quáº£n lÃ½ Ä‘á» IELTS Speaking theo part, cue card, rubric vÃ  sample answers."
           />
         ),
       },
@@ -350,7 +341,7 @@ export const adminRoutes = [
         element: (
           <AdminPlaceholderPage
             title="TOEIC Practice Bank"
-            description="Quản lý ngân hàng bài tập TOEIC theo part, bộ đề, câu hỏi và đáp án."
+            description="Quáº£n lÃ½ ngÃ¢n hÃ ng bÃ i táº­p TOEIC theo part, bá»™ Ä‘á», cÃ¢u há»i vÃ  Ä‘Ã¡p Ã¡n."
           />
         ),
       },
@@ -371,7 +362,7 @@ export const adminRoutes = [
         element: (
           <AdminPlaceholderPage
             title={route.title}
-            description="Chức năng CRM / Sales đang được xây dựng."
+            description="Chá»©c nÄƒng CRM / Sales Ä‘ang Ä‘Æ°á»£c xÃ¢y dá»±ng."
           />
         ),
       })),
@@ -384,7 +375,7 @@ export const adminRoutes = [
         element: (
           <AdminPlaceholderPage
             title={route.title}
-            description="Chức năng Cost / Expense đang được xây dựng."
+            description="Chá»©c nÄƒng Cost / Expense Ä‘ang Ä‘Æ°á»£c xÃ¢y dá»±ng."
           />
         ),
       })),
@@ -397,7 +388,7 @@ export const adminRoutes = [
         element: (
           <AdminPlaceholderPage
             title={route.title}
-            description="Chức năng HRM đang được xây dựng."
+            description="Chá»©c nÄƒng HRM Ä‘ang Ä‘Æ°á»£c xÃ¢y dá»±ng."
           />
         ),
       })),
@@ -406,7 +397,7 @@ export const adminRoutes = [
         element: (
           <AdminPlaceholderPage
             title={route.title}
-            description="Chức năng LMS đang được xây dựng."
+            description="Chá»©c nÄƒng LMS Ä‘ang Ä‘Æ°á»£c xÃ¢y dá»±ng."
           />
         ),
       })),
@@ -415,7 +406,7 @@ export const adminRoutes = [
         element: (
           <AdminPlaceholderPage
             title="Footer"
-            description="Quản lý nội dung footer, liên kết nhanh, thông tin liên hệ và các khối hiển thị cuối trang."
+            description="Quáº£n lÃ½ ná»™i dung footer, liÃªn káº¿t nhanh, thÃ´ng tin liÃªn há»‡ vÃ  cÃ¡c khá»‘i hiá»ƒn thá»‹ cuá»‘i trang."
           />
         ),
       },
@@ -424,7 +415,7 @@ export const adminRoutes = [
         element: (
           <AdminPlaceholderPage
             title="Slider"
-            description="Quản lý slider, banner, hình ảnh, CTA và thứ tự hiển thị trên các trang public."
+            description="Quáº£n lÃ½ slider, banner, hÃ¬nh áº£nh, CTA vÃ  thá»© tá»± hiá»ƒn thá»‹ trÃªn cÃ¡c trang public."
           />
         ),
       },
@@ -433,7 +424,7 @@ export const adminRoutes = [
         element: (
           <AdminPlaceholderPage
             title="Navbar"
-            description="Quản lý navbar, menu điều hướng, liên kết chính và trạng thái hiển thị."
+            description="Quáº£n lÃ½ navbar, menu Ä‘iá»u hÆ°á»›ng, liÃªn káº¿t chÃ­nh vÃ  tráº¡ng thÃ¡i hiá»ƒn thá»‹."
           />
         ),
       },
@@ -442,7 +433,7 @@ export const adminRoutes = [
         element: (
           <AdminPlaceholderPage
             title="Dropdown"
-            description="Quản lý dropdown, nhóm liên kết con và nội dung menu mở rộng trên website."
+            description="Quáº£n lÃ½ dropdown, nhÃ³m liÃªn káº¿t con vÃ  ná»™i dung menu má»Ÿ rá»™ng trÃªn website."
           />
         ),
       },
@@ -612,8 +603,8 @@ export const adminRoutes = [
         path: "settings/config",
         element: (
           <AdminPlaceholderPage
-            title="Cấu Hình"
-            description="Thiết lập cấu hình hệ thống, quy tắc vận hành và các tham số dùng chung."
+            title="Cáº¥u HÃ¬nh"
+            description="Thiáº¿t láº­p cáº¥u hÃ¬nh há»‡ thá»‘ng, quy táº¯c váº­n hÃ nh vÃ  cÃ¡c tham sá»‘ dÃ¹ng chung."
           />
         ),
       },
@@ -621,8 +612,8 @@ export const adminRoutes = [
         path: "settings/permissions",
         element: (
           <AdminPlaceholderPage
-            title="Phân Quyền"
-            description="Quản lý vai trò, quyền truy cập và phạm vi thao tác trong hệ thống."
+            title="PhÃ¢n Quyá»n"
+            description="Quáº£n lÃ½ vai trÃ², quyá»n truy cáº­p vÃ  pháº¡m vi thao tÃ¡c trong há»‡ thá»‘ng."
           />
         ),
       },
@@ -630,8 +621,8 @@ export const adminRoutes = [
         path: "settings/logs",
         element: (
           <AdminPlaceholderPage
-            title="Nhật Ký Hệ Thống"
-            description="Theo dõi lịch sử đăng nhập, thao tác quản trị và các thay đổi dữ liệu quan trọng."
+            title="Nháº­t KÃ½ Há»‡ Thá»‘ng"
+            description="Theo dÃµi lá»‹ch sá»­ Ä‘Äƒng nháº­p, thao tÃ¡c quáº£n trá»‹ vÃ  cÃ¡c thay Ä‘á»•i dá»¯ liá»‡u quan trá»ng."
           />
         ),
       },
@@ -650,3 +641,5 @@ export const adminRoutes = [
     ],
   },
 ];
+
+

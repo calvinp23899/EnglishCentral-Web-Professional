@@ -1,7 +1,9 @@
+using EnglishCentral.Application.Features.Identity.Commands.Login;
 using EnglishCentral.Application.Features.Identity.Commands.Logout;
 using EnglishCentral.Application.Features.Identity.Commands.RefreshToken;
 using EnglishCentral.Application.Features.Identity.DTOs;
 using EnglishCentral.Application.Features.Identity.Queries.GetAdminMeProfile;
+using EnglishCentral.Contracts.Requests.Identity;
 using EnglishCentral.Contracts.Responses.Identity;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Infrastructure.Services.Identity.Models;
@@ -43,6 +45,16 @@ namespace EnglishCentral.API.Controllers.Admin.Identity
             return result.IsSuccess
                 ? Ok(result.Data)
                 : StatusCode(result.StatusCode, new { error = result.Error });
+        }
+
+        [AllowAnonymous]
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
+        {
+            var command = new LoginCommand(request.Email, request.Password);
+            var result = await _mediator.Send(command, ct);
+
+            return ToAuthResponse(result);
         }
 
         [HttpPost("logout")]

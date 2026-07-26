@@ -11,7 +11,7 @@ namespace EnglishCentral.API.Controllers.Admin
     [Authorize]
     public class AdminBaseController : ControllerBase
     {
-        protected const string RefreshTokenCookieName = "refreshToken";
+        protected const string RefreshTokenCookieName = "adminRefreshToken";
         protected Guid? CurrentUserPublicId
         {
             get

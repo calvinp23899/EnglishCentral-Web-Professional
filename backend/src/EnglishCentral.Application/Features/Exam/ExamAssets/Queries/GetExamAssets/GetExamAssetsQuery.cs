@@ -12,6 +12,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamAssets.Queries.GetExamAss
         public int PageSize { get; init; } = 10;
         public string? Keyword { get; init; }
         public EExamAssetType? AssetType { get; init; }
+        public EExamTypeUpload? TypeExam { get; init; }
         public EExamAssetProvider? Provider { get; init; }
         public EExamAssetStatus? Status { get; init; }
         public string? ContentType { get; init; }

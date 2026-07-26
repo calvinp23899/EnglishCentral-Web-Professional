@@ -63,7 +63,7 @@ export function AdminLoginPage() {
     setIsSubmitting(true);
 
     try {
-      const session = await authApi.login({
+      const session = await authApi.adminLogin({
         email,
         password,
       });
@@ -74,7 +74,7 @@ export function AdminLoginPage() {
         return;
       }
 
-      saveAdminAuthSession(session, formData.get("rememberLogin") === "on");
+      saveAdminAuthSession(session);
 
       const fromPath =
         typeof location.state === "object" &&

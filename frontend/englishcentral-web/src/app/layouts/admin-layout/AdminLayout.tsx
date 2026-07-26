@@ -22,8 +22,12 @@ import {
   UsersRound,
   WalletCards,
 } from "lucide-react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
+import {
+  authApi,
+  clearAdminAuthSession,
+} from "@/features/public/auth/api/auth-api";
 import styles from "./AdminLayout.module.scss";
 
 type NavigationItem = {
@@ -256,6 +260,7 @@ const isNavigationChildActive = (child: NavigationChild, pathname: string): bool
 
 export function AdminLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const breadcrumbItems = getBreadcrumbItems(location.pathname);
   const [isProfileMenuOpen, setProfileMenuOpen] = useState(false);
   const [openNavGroups, setOpenNavGroups] = useState<Record<string, boolean>>({});
@@ -263,6 +268,17 @@ export function AdminLayout() {
   const settingsMenuRef = useRef<HTMLDivElement>(null);
   const isSettingsActive = location.pathname.startsWith("/admin/settings");
   const isSettingsOpen = openNavGroups["/admin/settings"] ?? isSettingsActive;
+
+  const handleAdminLogout = async () => {
+    try {
+      await authApi.adminLogout();
+    } catch {
+      // Local cleanup still has to happen even if the refresh cookie is already expired.
+    } finally {
+      clearAdminAuthSession();
+      navigate("/admin/login", { replace: true });
+    }
+  };
 
   useEffect(() => {
     if (!isProfileMenuOpen && !isSettingsOpen) {
@@ -585,6 +601,10 @@ export function AdminLayout() {
                   </Link>
                   <Link
                     className={styles.logoutItem}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      void handleAdminLogout();
+                    }}
                     role="menuitem"
                     to="/admin/login"
                   >
