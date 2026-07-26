@@ -13,7 +13,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CreateE
         int? DurationMinutes,
         decimal? TotalScore,
         EExamScoringMode ScoringMode,
-        string? RuntimeConfigJson,
+        object? RuntimeConfigJson,
         string? ScoringConfigJson,
         List<CreateExamSectionRequest> Sections,
         List<CreateExamScoringRuleRequest>? ScoringRules) : IRequest<Result<ExamVersionResponse>>;

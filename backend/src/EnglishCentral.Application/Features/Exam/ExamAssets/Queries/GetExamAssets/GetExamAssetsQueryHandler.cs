@@ -29,8 +29,13 @@ namespace EnglishCentral.Application.Features.Exam.ExamAssets.Queries.GetExamAss
                     x.PublicUrl.ToLower().Contains(keyword));
             }
 
-            if (request.AssetType.HasValue)
-                query = query.Where(x => x.AssetType == request.AssetType.Value);
+            var assetTypes = (request.AssetTypes ?? [])
+                .Concat(request.AssetType ?? [])
+                .Distinct()
+                .ToList();
+
+            if (assetTypes.Count > 0)
+                query = query.Where(x => assetTypes.Contains(x.AssetType));
             if (request.TypeExam.HasValue)
             {
                 var typeExam = request.TypeExam.Value.ToString();

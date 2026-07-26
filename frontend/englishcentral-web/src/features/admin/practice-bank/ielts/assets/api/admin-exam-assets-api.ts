@@ -42,7 +42,7 @@ export type ExamAssetListParams = {
   page?: number;
   pageSize?: number;
   keyword?: string;
-  assetType?: string | number;
+  assetType?: string | number | Array<string | number>;
   provider?: string | number;
   status?: string | number;
 };
@@ -125,14 +125,34 @@ const normalizePaged = <T>(
   };
 };
 
-const buildListParams = (params: ExamAssetListParams) => ({
-  Page: params.page ?? 1,
-  PageSize: params.pageSize ?? 10,
-  ...(params.keyword ? { Search: params.keyword, Keyword: params.keyword } : {}),
-  ...(params.assetType ? { AssetType: params.assetType } : {}),
-  ...(params.provider ? { Provider: params.provider } : {}),
-  ...(params.status ? { Status: params.status } : {}),
-});
+const appendListParam = (
+  query: URLSearchParams,
+  key: string,
+  value?: string | number | null,
+) => {
+  if (value === undefined || value === null || value === "") return;
+  query.append(key, String(value));
+};
+
+const buildListParams = (params: ExamAssetListParams) => {
+  const query = new URLSearchParams();
+
+  appendListParam(query, "Page", params.page ?? 1);
+  appendListParam(query, "PageSize", params.pageSize ?? 10);
+
+  if (params.keyword) {
+    appendListParam(query, "Search", params.keyword);
+    appendListParam(query, "Keyword", params.keyword);
+  }
+
+  const assetTypes = Array.isArray(params.assetType) ? params.assetType : [params.assetType];
+  assetTypes.forEach((assetType) => appendListParam(query, "AssetType", assetType));
+
+  appendListParam(query, "Provider", params.provider);
+  appendListParam(query, "Status", params.status);
+
+  return query;
+};
 
 export const adminExamAssetsApi = {
   async getAssetTypes() {

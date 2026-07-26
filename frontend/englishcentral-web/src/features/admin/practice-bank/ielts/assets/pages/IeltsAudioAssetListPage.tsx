@@ -30,6 +30,40 @@ const optionMatches = (option: MetadataOption, target: string) =>
     (value) => String(value ?? "").toLowerCase() === target.toLowerCase(),
   );
 
+const assetTypeMatchesValue = (
+  value: string | number | null | undefined,
+  target: "Audio" | "Image",
+  options: MetadataOption[],
+) => {
+  if (value === undefined || value === null || value === "") return false;
+
+  const stringValue = String(value);
+
+  if (stringValue.toLowerCase() === target.toLowerCase()) return true;
+
+  return options.some(
+    (option) => getOptionValue(option) === stringValue && optionMatches(option, target),
+  );
+};
+
+const ensureAssetTypeOption = (options: MetadataOption[], target: "Audio" | "Image") =>
+  options.find((option) => optionMatches(option, target)) ?? { label: target, value: target };
+
+const getUploadAssetTypeOptions = (options: MetadataOption[]) => {
+  const uploadOptions = [
+    ensureAssetTypeOption(options, "Audio"),
+    ensureAssetTypeOption(options, "Image"),
+  ];
+  const seenValues = new Set<string>();
+
+  return uploadOptions.filter((option) => {
+    const optionValue = getOptionValue(option);
+    if (!optionValue || seenValues.has(optionValue)) return false;
+    seenValues.add(optionValue);
+    return true;
+  });
+};
+
 const findOptionLabel = (options: MetadataOption[], value?: string | number | null) => {
   if (value === undefined || value === null || value === "") return "-";
 
@@ -241,27 +275,34 @@ const buildEditForm = (asset: ExamAsset): EditFormState => {
   };
 };
 
-const buildUploadMetadataJson = (metadata: UploadMetadataFormState) =>
-  JSON.stringify({
-    TypeExam: metadata.typeExam,
-    Speaker: metadata.speaker.trim(),
-    TotalSection: Math.max(1, Number(metadata.totalSection) || 1),
-    StopPoint: metadata.stopPoints
-      .filter((point) => point.title.trim() || point.startTime.trim() || point.endTime.trim())
-      .map((point) => ({
-        title: point.title.trim(),
-        StartTime: point.startTime.trim(),
-        EndTime: point.endTime.trim(),
-      })),
-  });
+const buildUploadMetadataJson = (metadata: UploadMetadataFormState, onlyTypeExam = false) =>
+  JSON.stringify(
+    onlyTypeExam
+      ? { TypeExam: metadata.typeExam }
+      : {
+          TypeExam: metadata.typeExam,
+          Speaker: metadata.speaker.trim(),
+          TotalSection: Math.max(1, Number(metadata.totalSection) || 1),
+          StopPoint: metadata.stopPoints
+            .filter((point) => point.title.trim() || point.startTime.trim() || point.endTime.trim())
+            .map((point) => ({
+              title: point.title.trim(),
+              StartTime: point.startTime.trim(),
+              EndTime: point.endTime.trim(),
+            })),
+        },
+  );
 
-const buildEditMetadataJson = (metadata: EditFormState) =>
-  buildUploadMetadataJson({
-    speaker: metadata.speaker,
-    totalSection: metadata.totalSection,
-    typeExam: "IELTS",
-    stopPoints: metadata.stopPoints,
-  });
+const buildEditMetadataJson = (metadata: EditFormState, onlyTypeExam = false) =>
+  buildUploadMetadataJson(
+    {
+      speaker: metadata.speaker,
+      totalSection: metadata.totalSection,
+      typeExam: "IELTS",
+      stopPoints: metadata.stopPoints,
+    },
+    onlyTypeExam,
+  );
 
 const getMetadataValue = (asset: ExamAsset, keys: string[], fallback = "-") => {
   const metadata = parseMetadataJson(asset.metadataJson);
@@ -312,10 +353,22 @@ export const IeltsAudioAssetListPage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const audioLabel = useMemo(
-    () => findOptionLabel(assetTypes, audioAssetType) || "Audio",
-    [assetTypes, audioAssetType],
+  const uploadAssetTypeOptions = useMemo(() => getUploadAssetTypeOptions(assetTypes), [assetTypes]);
+  const listAssetTypes = useMemo(
+    () => uploadAssetTypeOptions.map((option) => getOptionValue(option)).filter(Boolean),
+    [uploadAssetTypeOptions],
   );
+  const selectedUploadAssetType = uploadAssetTypeOptions.find(
+    (option) => getOptionValue(option) === uploadForm.assetType,
+  );
+  const isUploadImage = selectedUploadAssetType ? optionMatches(selectedUploadAssetType, "Image") : false;
+  const uploadFileAccept = selectedUploadAssetType
+    ? optionMatches(selectedUploadAssetType, "Image")
+      ? "image/*"
+      : optionMatches(selectedUploadAssetType, "Audio")
+        ? "audio/*"
+        : "audio/*,image/*"
+    : "audio/*,image/*";
 
   const loadAssets = async () => {
     if (!audioAssetType) return;
@@ -327,7 +380,7 @@ export const IeltsAudioAssetListPage = () => {
         page,
         pageSize: DEFAULT_PAGE_SIZE,
         keyword: searchTerm.trim() || undefined,
-        assetType: audioAssetType,
+        assetType: listAssetTypes.length > 0 ? listAssetTypes : audioAssetType,
         provider: filters.provider || undefined,
         status: filters.status || undefined,
       });
@@ -532,12 +585,12 @@ export const IeltsAudioAssetListPage = () => {
     if (isSubmitting) return;
 
     if (!uploadFile) {
-      toastDanger("Vui lòng chọn file audio.");
+      toastDanger("Vui lòng chọn file.");
       return;
     }
 
     if (!uploadForm.assetType) {
-      toastDanger("Không tìm thấy metadata asset type Audio.");
+      toastDanger("Vui lòng chọn asset type.");
       return;
     }
 
@@ -548,14 +601,14 @@ export const IeltsAudioAssetListPage = () => {
       formData.append("file", uploadFile);
       formData.append("assetType", uploadForm.assetType);
 
-      if (uploadForm.durationSeconds.trim()) {
+      if (!isUploadImage && uploadForm.durationSeconds.trim()) {
         formData.append("durationSeconds", uploadForm.durationSeconds.trim());
       }
 
-      formData.append("metadataJson", buildUploadMetadataJson(uploadMetadata));
+      formData.append("metadataJson", buildUploadMetadataJson(uploadMetadata, isUploadImage));
 
       await adminExamAssetsApi.uploadAsset(formData);
-      toastSuccess("Upload audio thành công.");
+      toastSuccess("Upload file thành công.");
       closePanel();
       setPage(1);
       await loadAssets();
@@ -576,11 +629,15 @@ export const IeltsAudioAssetListPage = () => {
     setIsSubmitting(true);
 
     try {
+      const isEditImage = assetTypeMatchesValue(editForm.assetType, "Image", assetTypes);
       const payload: ExamAssetUpdatePayload = {
         assetType: editForm.assetType || audioAssetType,
+        provider: editForm.provider || null,
         status: editForm.status || null,
-        durationSeconds: editForm.durationSeconds.trim() ? Number(editForm.durationSeconds) : null,
-        metadataJson: buildEditMetadataJson(editForm),
+        ...(!isEditImage
+          ? { durationSeconds: editForm.durationSeconds.trim() ? Number(editForm.durationSeconds) : null }
+          : {}),
+        metadataJson: buildEditMetadataJson(editForm, isEditImage),
       };
 
       await adminExamAssetsApi.updateAsset(selectedAsset.id, payload);
@@ -621,11 +678,16 @@ export const IeltsAudioAssetListPage = () => {
   const renderPanel = () => {
     if (!panelMode) return null;
 
+    const selectedAssetIsImage = selectedAsset
+      ? assetTypeMatchesValue(selectedAsset.assetType, "Image", assetTypes)
+      : false;
+    const editAssetIsImage = assetTypeMatchesValue(editForm.assetType, "Image", assetTypes);
+
     const title =
-      panelMode === "upload" ? "Upload audio" : panelMode === "edit" ? "Cập nhật audio" : "Chi tiết audio";
+      panelMode === "upload" ? "Upload File" : panelMode === "edit" ? "Cập nhật audio" : "Chi tiết audio";
     const description =
       panelMode === "upload"
-        ? "Chọn file audio và metadata tương ứng từ BE."
+        ? "Chọn file và metadata tương ứng từ BE."
         : panelMode === "edit"
           ? "Cập nhật metadata của audio."
           : "Xem thông tin file audio đã upload.";
@@ -635,8 +697,14 @@ export const IeltsAudioAssetListPage = () => {
         <aside aria-label={title} className={styles.panel}>
           <header className={styles.panelHeader}>
             <div>
-              <h2>{title}</h2>
-              <p>{description}</p>
+              <h2>{panelMode === "view" ? "Chi tiết file" : panelMode === "edit" ? "Cập nhật file" : title}</h2>
+              <p>
+                {panelMode === "view"
+                  ? "Xem thông tin file đã upload."
+                  : panelMode === "edit"
+                    ? "Cập nhật metadata của file."
+                    : description}
+              </p>
             </div>
             <button className={teacherStyles.iconButton} onClick={closePanel} title="Đóng" type="button">
               <X aria-hidden="true" size={20} />
@@ -644,70 +712,86 @@ export const IeltsAudioAssetListPage = () => {
           </header>
 
           {panelMode === "upload" && (
-            <form className={styles.panelBody} onSubmit={handleUploadSubmit}>
+            <form className={`${styles.panelBody} ${styles.uploadPanelBody}`} onSubmit={handleUploadSubmit}>
               <div className={styles.formGrid}>
                 <label className={`${styles.formField} ${styles.fullSpan}`}>
                   <span>
-                    File audio <span className={styles.requiredMark}>*</span>
+                    File <span className={styles.requiredMark}>*</span>
                   </span>
                   <span className={styles.filePicker}>
                     <Upload aria-hidden="true" size={16} />
                     <span className={styles.filePickerAction}>Chọn file</span>
                     <span className={styles.filePickerName}>
-                      {uploadFile ? uploadFile.name : "Chưa chọn file audio"}
+                      {uploadFile ? uploadFile.name : "Chưa chọn file"}
                     </span>
-                    <input accept="audio/*" onChange={handleFileChange} type="file" />
+                    <input accept={uploadFileAccept} onChange={handleFileChange} type="file" />
                   </span>
                 </label>
                 <label className={styles.formField}>
                   <span>
                     Asset type <span className={styles.requiredMark}>*</span>
                   </span>
-                  <select className={styles.selectControl} disabled value={uploadForm.assetType}>
-                    <option value={uploadForm.assetType}>{audioLabel}</option>
+                  <select
+                    className={styles.selectControl}
+                    value={uploadForm.assetType}
+                    onChange={(event) => {
+                      setUploadFile(null);
+                      setUploadForm((current) => ({ ...current, assetType: event.target.value }));
+                    }}
+                  >
+                    {uploadAssetTypeOptions.map((option) => (
+                      <option key={getOptionValue(option)} value={getOptionValue(option)}>
+                        {getOptionLabel(option)}
+                      </option>
+                    ))}
                   </select>
                 </label>
-                <label className={styles.formField}>
-                  Total Duration Seconds
-                  <input
-                    className={styles.inputControl}
-                    min={0}
-                    onChange={(event) =>
-                      setUploadForm((current) => ({ ...current, durationSeconds: event.target.value }))
-                    }
-                    placeholder="Optional"
-                    type="number"
-                    value={uploadForm.durationSeconds}
-                  />
-                </label>
-                <label className={styles.formField}>
-                  Speaker
-                  <input
-                    className={styles.inputControl}
-                    onChange={(event) =>
-                      setUploadMetadata((current) => ({ ...current, speaker: event.target.value }))
-                    }
-                    placeholder="Speaker name"
-                    type="text"
-                    value={uploadMetadata.speaker}
-                  />
-                </label>
-                <label className={styles.formField}>
-                  TotalSection
-                  <input
-                    className={styles.inputControl}
-                    min={1}
-                    onChange={(event) => handleUploadTotalSectionChange(event.target.value)}
-                    step={1}
-                    type="number"
-                    value={uploadMetadata.totalSection}
-                  />
-                </label>
+                {!isUploadImage && (
+                  <>
+                    <label className={styles.formField}>
+                      Total Duration Seconds
+                      <input
+                        className={styles.inputControl}
+                        min={0}
+                        onChange={(event) =>
+                          setUploadForm((current) => ({ ...current, durationSeconds: event.target.value }))
+                        }
+                        placeholder="Optional"
+                        type="number"
+                        value={uploadForm.durationSeconds}
+                      />
+                    </label>
+                    <label className={styles.formField}>
+                      Speaker
+                      <input
+                        className={styles.inputControl}
+                        onChange={(event) =>
+                          setUploadMetadata((current) => ({ ...current, speaker: event.target.value }))
+                        }
+                        placeholder="Speaker name"
+                        type="text"
+                        value={uploadMetadata.speaker}
+                      />
+                    </label>
+                    <label className={styles.formField}>
+                      TotalSection
+                      <input
+                        className={styles.inputControl}
+                        min={1}
+                        onChange={(event) => handleUploadTotalSectionChange(event.target.value)}
+                        step={1}
+                        type="number"
+                        value={uploadMetadata.totalSection}
+                      />
+                    </label>
+                  </>
+                )}
                 <label className={styles.formField}>
                   TypeExam
                   <input className={styles.inputControl} readOnly type="text" value={uploadMetadata.typeExam} />
                 </label>
-                <div className={`${styles.stopPointSection} ${styles.fullSpan}`}>
+                {!isUploadImage && (
+                  <div className={`${styles.stopPointSection} ${styles.fullSpan}`}>
                   <div className={styles.stopPointHeader}>
                     <div>
                       <h3>StopPoint</h3>
@@ -771,7 +855,8 @@ export const IeltsAudioAssetListPage = () => {
                       ))}
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
               </div>
               <footer className={styles.panelFooter}>
                 <button className={teacherStyles.columnsButton} disabled={isSubmitting} onClick={closePanel} type="button">
@@ -783,7 +868,7 @@ export const IeltsAudioAssetListPage = () => {
                   ) : (
                     <Upload aria-hidden="true" size={18} />
                   )}
-                  {isSubmitting ? "Đang upload..." : "Upload audio"}
+                  {isSubmitting ? "Đang upload..." : "Upload file"}
                 </button>
               </footer>
             </form>
@@ -791,13 +876,13 @@ export const IeltsAudioAssetListPage = () => {
 
           {panelMode === "view" && selectedAsset && (
             <div className={`${styles.panelBody} ${styles.detailPanelBody}`}>
-              {getAssetUrl(selectedAsset) ? (
+              {!selectedAssetIsImage && getAssetUrl(selectedAsset) ? (
                 <audio className={styles.audioPlayer} controls src={getAssetUrl(selectedAsset)}>
                   <track kind="captions" />
                 </audio>
-              ) : (
+              ) : !selectedAssetIsImage ? (
                 <p className={styles.emptyHint}>Audio này chưa có URL để preview.</p>
-              )}
+              ) : null}
               <div className={styles.infoBox}>
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>Tên file</span>
@@ -815,10 +900,12 @@ export const IeltsAudioAssetListPage = () => {
                   <span className={styles.infoLabel}>Trạng thái</span>
                   <span className={styles.infoValue}>{findOptionLabel(statuses, selectedAsset.status)}</span>
                 </div>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Duration</span>
-                  <span className={styles.infoValue}>{formatDuration(selectedAsset.durationSeconds)}</span>
-                </div>
+                {!selectedAssetIsImage && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Duration</span>
+                    <span className={styles.infoValue}>{formatDuration(selectedAsset.durationSeconds)}</span>
+                  </div>
+                )}
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>Size</span>
                   <span className={styles.infoValue}>{formatBytes(selectedAsset.fileSize)}</span>
@@ -840,38 +927,24 @@ export const IeltsAudioAssetListPage = () => {
                   </span>
                 </div>
                 <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Metadata</span>
-                  <span className={styles.infoValue}>{stringifyMetadataJson(selectedAsset.metadataJson) || "-"}</span>
-                </div>
-                <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>TypeExam</span>
                   <span className={styles.infoValue}>{getMetadataValue(selectedAsset, ["TypeExam", "typeExam"])}</span>
                 </div>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Speaker</span>
-                  <span className={styles.infoValue}>{getMetadataValue(selectedAsset, ["Speaker", "speaker"])}</span>
-                </div>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>TotalSection</span>
-                  <span className={styles.infoValue}>{getMetadataValue(selectedAsset, ["TotalSection", "totalSection"])}</span>
-                </div>
-                <div className={`${styles.infoRow} ${styles.stopPointDetailRow}`}>
-                  <span className={styles.infoLabel}>StopPoint</span>
-                  <span className={styles.infoValue}>
-                    {getMetadataStopPoints(selectedAsset).length === 0 ? "-" : (
-                      <span className={styles.stopPointDetailList}>
-                        {getMetadataStopPoints(selectedAsset).map((point, index) => (
-                          <span className={styles.stopPointDetailItem} key={`${point.title}-${index}`}>
-                            <strong>{point.title || `Stop point ${index + 1}`}</strong>
-                            <span>{point.startTime} - {point.endTime}</span>
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                  </span>
-                </div>
+                {!selectedAssetIsImage && (
+                  <>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Speaker</span>
+                      <span className={styles.infoValue}>{getMetadataValue(selectedAsset, ["Speaker", "speaker"])}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>TotalSection</span>
+                      <span className={styles.infoValue}>{getMetadataValue(selectedAsset, ["TotalSection", "totalSection"])}</span>
+                    </div>
+                  </>
+                )}
               </div>
-              <section className={styles.stopPointDetailPanel}>
+              {!selectedAssetIsImage && (
+                <section className={styles.stopPointDetailPanel}>
                 <div className={styles.stopPointDetailPanelHeader}>
                   <span>StopPoint</span>
                   <strong>{getMetadataStopPoints(selectedAsset).length}</strong>
@@ -888,7 +961,8 @@ export const IeltsAudioAssetListPage = () => {
                     ))}
                   </div>
                 )}
-              </section>
+                </section>
+              )}
               <footer className={styles.panelFooter}>
                 <button className={teacherStyles.columnsButton} onClick={closePanel} type="button">
                   Đóng
@@ -940,52 +1014,57 @@ export const IeltsAudioAssetListPage = () => {
                     ))}
                   </select>
                 </label>
-                <label className={styles.formField}>
-                  Duration seconds
-                  <input
-                    className={styles.inputControl}
-                    min={0}
-                    onChange={(event) =>
-                      setEditForm((current) => ({ ...current, durationSeconds: event.target.value }))
-                    }
-                    type="number"
-                    value={editForm.durationSeconds}
-                  />
-                </label>
-                <label className={`${styles.formField} ${styles.fullSpan}`}>
-                  Metadata JSON
-                  <textarea
-                    className={styles.textareaControl}
-                    onChange={(event) => setEditForm((current) => ({ ...current, metadataJson: event.target.value }))}
-                    value={editForm.metadataJson}
-                  />
-                </label>
-                <label className={`${styles.formField} ${styles.fullSpan}`}>
-                  Speaker
-                  <input
-                    className={styles.inputControl}
-                    onChange={(event) => setEditForm((current) => ({ ...current, speaker: event.target.value }))}
-                    placeholder="Speaker name"
-                    type="text"
-                    value={editForm.speaker}
-                  />
-                </label>
-                <label className={styles.formField}>
-                  TotalSection
-                  <input
-                    className={styles.inputControl}
-                    min={1}
-                    onChange={(event) => handleEditTotalSectionChange(event.target.value)}
-                    step={1}
-                    type="number"
-                    value={editForm.totalSection}
-                  />
-                </label>
+                {!editAssetIsImage && (
+                  <>
+                    <label className={styles.formField}>
+                      Duration seconds
+                      <input
+                        className={styles.inputControl}
+                        min={0}
+                        onChange={(event) =>
+                          setEditForm((current) => ({ ...current, durationSeconds: event.target.value }))
+                        }
+                        type="number"
+                        value={editForm.durationSeconds}
+                      />
+                    </label>
+                    <label className={`${styles.formField} ${styles.fullSpan}`}>
+                      Metadata JSON
+                      <textarea
+                        className={styles.textareaControl}
+                        onChange={(event) => setEditForm((current) => ({ ...current, metadataJson: event.target.value }))}
+                        value={editForm.metadataJson}
+                      />
+                    </label>
+                    <label className={`${styles.formField} ${styles.fullSpan}`}>
+                      Speaker
+                      <input
+                        className={styles.inputControl}
+                        onChange={(event) => setEditForm((current) => ({ ...current, speaker: event.target.value }))}
+                        placeholder="Speaker name"
+                        type="text"
+                        value={editForm.speaker}
+                      />
+                    </label>
+                    <label className={styles.formField}>
+                      TotalSection
+                      <input
+                        className={styles.inputControl}
+                        min={1}
+                        onChange={(event) => handleEditTotalSectionChange(event.target.value)}
+                        step={1}
+                        type="number"
+                        value={editForm.totalSection}
+                      />
+                    </label>
+                  </>
+                )}
                 <label className={styles.formField}>
                   TypeExam
                   <input className={styles.inputControl} readOnly type="text" value={editForm.typeExam || "IELTS"} />
                 </label>
-                <div className={`${styles.stopPointSection} ${styles.fullSpan}`}>
+                {!editAssetIsImage && (
+                  <div className={`${styles.stopPointSection} ${styles.fullSpan}`}>
                   <div className={styles.stopPointHeader}>
                     <div>
                       <h3>StopPoint</h3>
@@ -1049,7 +1128,8 @@ export const IeltsAudioAssetListPage = () => {
                       ))}
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
               </div>
               <footer className={styles.panelFooter}>
                 <button className={teacherStyles.columnsButton} onClick={closePanel} type="button">
@@ -1079,13 +1159,13 @@ export const IeltsAudioAssetListPage = () => {
           <Link className={styles.backLink} to="/admin/practice-bank/ielts/listening">
             ← Quay lại danh sách Listening
           </Link>
-          <h1>Danh Sách Audio</h1>
+          <h1>Danh Sách Audio/Image</h1>
           <p>Quản lý audio assets dùng cho IELTS Listening. File upload sử dụng asset type từ metadata BE.</p>
         </div>
         <div className={styles.headerActions}>
           <button className={styles.createButton} disabled={!audioAssetType} onClick={openUploadPanel} type="button">
             <Upload aria-hidden="true" size={18} />
-            Upload file audio
+            Upload file
           </button>
         </div>
       </section>

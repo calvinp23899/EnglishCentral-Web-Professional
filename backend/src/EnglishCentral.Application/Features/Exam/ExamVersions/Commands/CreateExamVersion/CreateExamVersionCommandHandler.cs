@@ -49,7 +49,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.CreateE
                 DurationMinutes = request.DurationMinutes,
                 TotalScore = request.TotalScore,
                 ScoringMode = request.ScoringMode,
-                RuntimeConfigJson = request.RuntimeConfigJson,
+                RuntimeConfigJson = ExamJsonConfigNormalizer.NormalizeToString(request.RuntimeConfigJson),
                 ScoringConfigJson = request.ScoringConfigJson,
             };
 

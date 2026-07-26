@@ -148,7 +148,7 @@ const skillListConfig: Record<
     emptyText: "Không có đề IELTS Listening phù hợp.",
     createLabel: "Tạo đề Listening",
     createPath: "/admin/practice-bank/ielts/listening/create",
-    audioListLabel: "Danh Sách Audio",
+    audioListLabel: "Danh Sách Audio/Image",
     audioListPath: "/admin/practice-bank/ielts/listening/audio",
     actionBasePath: "/admin/practice-bank/ielts/listening",
     examTemplateId: 2,

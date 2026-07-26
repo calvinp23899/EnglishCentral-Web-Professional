@@ -469,6 +469,22 @@
   }
 }
 
+.groupImagePicker {
+  grid-column: 1 / -1;
+  margin-top: 0;
+  padding: 0;
+}
+
+.selectedImagePreview {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #fff;
+  object-fit: cover;
+}
+
 .transcriptField {
   margin: 18px 22px 22px;
 }
