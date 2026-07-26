@@ -432,6 +432,10 @@
   margin-top: 0;
 }
 
+.uploadPanelBody .panelFooter {
+  margin-top: auto;
+}
+
 .editPanelBody .formGrid > label:nth-of-type(2),
 .editPanelBody .formGrid > label:nth-of-type(5) {
   display: none;

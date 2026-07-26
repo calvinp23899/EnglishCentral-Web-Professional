@@ -56,7 +56,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamVersions.Commands.UpdateE
             version.DurationMinutes = request.DurationMinutes;
             version.TotalScore = request.TotalScore;
             version.ScoringMode = request.ScoringMode;
-            version.RuntimeConfigJson = request.RuntimeConfigJson;
+            version.RuntimeConfigJson = ExamJsonConfigNormalizer.NormalizeToString(request.RuntimeConfigJson);
             version.ScoringConfigJson = request.ScoringConfigJson;
             version.UpdatedAt = DateTimeOffset.UtcNow;
 

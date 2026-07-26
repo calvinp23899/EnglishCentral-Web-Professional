@@ -64,7 +64,8 @@ namespace EnglishCentral.Domain.Enums.Exam
         Essay = 10,
         SpeakingPrompt = 11,
         Ordering = 12,
-        //TableOptions = 13
+        MapPlanDiagramSelectGrid = 13,
+        //TableOptions = 14
     }
 
     public enum EIELTSListeningQuestionType
@@ -72,11 +73,11 @@ namespace EnglishCentral.Domain.Enums.Exam
         [Description("Multiple Choice")]
         MultipleChoice = 1,
 
-        [Description("Matching")]
+        [Description("Matching Options")]
         Matching = 2,
 
-        [Description("Map/Plan/Diagram")]
-        MapPlanDiagram = 3,
+        [Description("Map/Plan/Diagram - Select Grid Options")]
+        MapPlanDiagramSelectGrid = 3,
 
         [Description("Form/Note/Table/Summary Completion")]
         FormNoteTableSummaryCompletion = 4,
@@ -85,7 +86,7 @@ namespace EnglishCentral.Domain.Enums.Exam
         SentenceCompletion = 5,
 
         [Description("Short Answer")]
-        ShortAnswer = 6
+        ShortAnswer = 6,
     }
 
     public enum EExamAssetType

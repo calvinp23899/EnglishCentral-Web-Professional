@@ -86,6 +86,7 @@ namespace EnglishCentral.Application.Features.Metadata.Queries.GetExamQuestionTy
                 EExamQuestionType.MatchingInformationTableSelectGrid,
                 EExamQuestionType.GapFill,
                 EExamQuestionType.ShortAnswer,
+                EExamQuestionType.MapPlanDiagramSelectGrid,
                 EExamQuestionType.Essay,
                 EExamQuestionType.SpeakingPrompt
             ],
@@ -155,7 +156,8 @@ namespace EnglishCentral.Application.Features.Metadata.Queries.GetExamQuestionTy
                 EExamQuestionType.MultipleChoice,
                 EExamQuestionType.GapFill,
                 EExamQuestionType.ShortAnswer,
-                EExamQuestionType.MatchingHeadingDragDrop
+                EExamQuestionType.MatchingHeadingDragDrop,
+                EExamQuestionType.MapPlanDiagramSelectGrid
             ],
             EExamSkill.Reading =>
             [
