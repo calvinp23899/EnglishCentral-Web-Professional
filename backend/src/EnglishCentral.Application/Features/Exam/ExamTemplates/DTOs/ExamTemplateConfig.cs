@@ -10,6 +10,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamTemplates.DTOs
         public string? Level { get; init; }
 
         public int? TotalParts { get; init; }
+        public string? Skill { get; init; }
 
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? ExtensionData { get; init; }

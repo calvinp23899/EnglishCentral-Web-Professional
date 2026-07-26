@@ -76,10 +76,13 @@ export type ExamSectionSummary = {
       title?: string | null;
     }>;
     stimuli?: Array<{
+      assetUrl?: string | null;
       content?: string | null;
       id?: number;
       metadataJson?: string | null;
       publicId?: string;
+      transcript?: string | null;
+      type?: string | number | null;
     }>;
   }>;
   skill?: string | number | null;

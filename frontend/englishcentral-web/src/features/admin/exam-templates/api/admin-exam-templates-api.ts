@@ -40,6 +40,8 @@ export type AdminExamTemplate = {
 export type ExamTemplateConfig = {
   sourceLabel?: string | null;
   SourceLabel?: string | null;
+  skill?: string | number | null;
+  Skill?: string | number | null;
   level?: string | null;
   Level?: string | null;
   totalParts?: number | string | null;

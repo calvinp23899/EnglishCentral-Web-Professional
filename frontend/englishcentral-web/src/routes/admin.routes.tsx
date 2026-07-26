@@ -32,6 +32,7 @@ import { AdminProfilePage } from "@/features/admin/profile/pages/AdminProfilePag
 import { IeltsAudioAssetListPage } from "@/features/admin/practice-bank/ielts/assets/pages/IeltsAudioAssetListPage";
 import { IeltsHubPage } from "@/features/admin/practice-bank/ielts/pages/IeltsHubPage";
 import { IeltsListeningCreatePage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsListeningCreatePage";
+import { IeltsListeningViewPage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsListeningViewPage";
 import { IeltsReadingCreatePage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingCreatePage";
 import { IeltsReadingListPage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingListPage";
 import { IeltsReadingViewPage } from "@/features/admin/practice-bank/ielts/reading/pages/IeltsReadingViewPage";
@@ -316,12 +317,7 @@ export const adminRoutes = [
       },
       {
         path: "practice-bank/ielts/listening/:recordId/view",
-        element: (
-          <AdminPlaceholderPage
-            title="Chi tiáº¿t Ä‘á» IELTS Listening"
-            description="MÃ n hÃ¬nh chi tiáº¿t IELTS Listening sáº½ Ä‘Æ°á»£c triá»ƒn khai sau."
-          />
-        ),
+        element: <IeltsListeningViewPage />,
       },
       {
         path: "practice-bank/ielts/listening/:recordId/edit",

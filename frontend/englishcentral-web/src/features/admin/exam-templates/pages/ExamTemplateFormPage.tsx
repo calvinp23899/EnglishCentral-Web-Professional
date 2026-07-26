@@ -3,6 +3,10 @@ import { ArrowLeft, Save } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { ErrorMessage, toastDanger, toastSuccess } from "@/components/ui";
+import {
+  adminMetadataApi,
+  type MetadataOption,
+} from "@/features/admin/shared/api/admin-metadata-api";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 import {
   adminExamTemplatesApi,
@@ -21,6 +25,7 @@ type FormState = {
   totalScore: string;
   description: string;
   sourceLabel: string;
+  skill: string;
   level: string;
   numberPassages: string;
   isActive: boolean;
@@ -35,6 +40,7 @@ const defaultForm: FormState = {
   totalScore: "40",
   description: "",
   sourceLabel: "IELTS Academic Reading - Original Mock Test",
+  skill: "Reading",
   level: "Academic",
   numberPassages: "3",
   isActive: true,
@@ -86,12 +92,38 @@ const getConfigNumberString = (
   return String(parsed || fallback);
 };
 
+const getMetadataOptionValue = (option: MetadataOption) =>
+  String(option.value ?? option.code ?? option.label ?? "");
+
+const getMetadataOptionLabel = (option: MetadataOption) =>
+  String(option.label ?? option.value ?? option.code ?? "");
+
+const findSkillOption = (options: MetadataOption[], target: string) =>
+  options.find((option) =>
+    [option.label, option.value, option.code].some(
+      (value) => String(value ?? "").toLowerCase() === target.toLowerCase(),
+    ),
+  );
+
+const inferSkillValue = (options: MetadataOption[], source: string) => {
+  const normalizedSource = source.toLowerCase();
+  const target = normalizedSource.includes("listening")
+    ? "Listening"
+    : normalizedSource.includes("reading")
+      ? "Reading"
+      : "";
+  const matchedOption = target ? findSkillOption(options, target) : undefined;
+
+  return matchedOption ? getMetadataOptionValue(matchedOption) : "";
+};
+
 export function ExamTemplateFormPage({ mode }: Props) {
   const navigate = useNavigate();
   const { recordId } = useParams();
   const isEditMode = mode === "edit";
   const [form, setForm] = useState<FormState>(defaultForm);
   const [examTypes, setExamTypes] = useState<AdminExamType[]>([]);
+  const [skillOptions, setSkillOptions] = useState<MetadataOption[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,19 +134,28 @@ export function ExamTemplateFormPage({ mode }: Props) {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const typesResult = await adminExamTemplatesApi.getTypes({ pageSize: 100, isActive: true });
+        const [typesResult, skillResult] = await Promise.all([
+          adminExamTemplatesApi.getTypes({ pageSize: 100, isActive: true }),
+          adminMetadataApi.getExamSkillOptions(),
+        ]);
         if (!isMounted) return;
         setExamTypes(typesResult.items);
+        setSkillOptions(skillResult);
         const ieltsType = typesResult.items.find(isIeltsType);
+        const defaultSkill = findSkillOption(skillResult, "Reading") ?? skillResult[0];
         setForm((current) => ({
           ...current,
           examTypeId: current.examTypeId || (ieltsType?.id ? String(ieltsType.id) : ""),
+          skill: current.skill || (defaultSkill ? getMetadataOptionValue(defaultSkill) : ""),
         }));
 
         if (isEditMode && recordId) {
           const record = await adminExamTemplatesApi.getById(recordId);
           if (!isMounted) return;
           const templateConfig = parseTemplateConfig(record.templateConfigJson);
+          const fallbackSkill =
+            inferSkillValue(skillResult, `${record.code} ${record.name}`) ||
+            (defaultSkill ? getMetadataOptionValue(defaultSkill) : "");
           setForm({
             examTypeId: String(record.examTypeId),
             code: record.code,
@@ -123,6 +164,7 @@ export function ExamTemplateFormPage({ mode }: Props) {
             totalScore: String(record.totalScore ?? 40),
             description: record.description ?? "",
             sourceLabel: getConfigString(templateConfig, ["SourceLabel", "sourceLabel"]),
+            skill: getConfigString(templateConfig, ["Skill", "skill"], fallbackSkill),
             level: getConfigString(templateConfig, ["Level", "level"], "Academic"),
             numberPassages: getConfigNumberString(
               templateConfig,
@@ -197,6 +239,7 @@ export function ExamTemplateFormPage({ mode }: Props) {
         totalScore: toPositiveNumber(form.totalScore),
         templateConfigJson: {
           SourceLabel: form.sourceLabel.trim(),
+          Skill: form.skill,
           Level: form.level,
           TotalParts: toPositiveInteger(form.numberPassages),
         },
@@ -325,6 +368,21 @@ export function ExamTemplateFormPage({ mode }: Props) {
                     value={form.sourceLabel}
                     onChange={(event) => updateField("sourceLabel", event.target.value)}
                   />
+                </label>
+
+                <label className={styles.field}>
+                  <span>Skill</span>
+                  <select value={form.skill} onChange={(event) => updateField("skill", event.target.value)}>
+                    {skillOptions.length === 0 ? (
+                      <option value={form.skill}>{form.skill || "Không có metadata skill"}</option>
+                    ) : (
+                      skillOptions.map((option) => (
+                        <option key={getMetadataOptionValue(option)} value={getMetadataOptionValue(option)}>
+                          {getMetadataOptionLabel(option)}
+                        </option>
+                      ))
+                    )}
+                  </select>
                 </label>
 
                 <label className={styles.field}>

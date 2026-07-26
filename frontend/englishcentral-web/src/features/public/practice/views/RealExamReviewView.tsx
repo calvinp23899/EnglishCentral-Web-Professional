@@ -41,6 +41,11 @@ const truthChoiceTypes = new Set([
 const gridChoiceTypes = new Set(["matching-information"]);
 const summaryOptionTypes = new Set(["summary-completion-options"]);
 const singleChoiceTypes = new Set(["single-choice"]);
+const matchingOptionReviewTypes = new Set([
+  "matching-headings",
+  "matching-features",
+  "matching-sentence-ending",
+]);
 
 const splitAnswer = (value?: string) =>
   (value ?? "")
@@ -59,6 +64,14 @@ const normalizeAnswer = (value?: string) =>
     .map((item) => item.toLowerCase())
     .sort()
     .join("|");
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 const matchesOptionAnswer = (
   values: string[],
@@ -142,26 +155,35 @@ export function RealExamReviewView({
   onBackToResult,
 }: RealExamReviewViewProps) {
   const allQuestions = getAllQuestions(test);
+  const passagesWithQuestions = test.passages.filter(
+    (passage) => getPassageQuestions(passage).length > 0
+  );
   const [activeQuestionId, setActiveQuestionId] = useState(allQuestions[0]?.id ?? "");
   const [explanationTooltip, setExplanationTooltip] =
     useState<ExplanationTooltip | null>(null);
   const [passageWidth, setPassageWidth] = useState(48);
+  const [activeReviewPassageId, setActiveReviewPassageId] = useState(
+    passagesWithQuestions[0]?.id ?? test.passages[0]?.id ?? ""
+  );
   const passageRefs = useRef<Record<number, HTMLParagraphElement | null>>({});
   const activeQuestion =
     allQuestions.find((question) => question.id === activeQuestionId) ??
     allQuestions[0];
-  const activePassage =
+  const activeQuestionPassage =
     test.passages.find((passage) =>
       passage.questionGroups.some((group) =>
         group.questions.some((question) => question.id === activeQuestion?.id)
       )
     ) ?? test.passages[0];
+  const activePassage =
+    test.skill === "listening"
+      ? test.passages.find((passage) => passage.id === activeReviewPassageId) ??
+        activeQuestionPassage
+      : activeQuestionPassage;
   const activePassageRefIndex = activeQuestion
     ? getPassageRefIndex(activeQuestion)
     : undefined;
-  const passagesWithQuestions = test.passages.filter(
-    (passage) => getPassageQuestions(passage).length > 0
-  );
+  const isListeningReview = test.skill === "listening";
 
   const getQuestionStatus = (question: IELTSReadingQuestion) => {
     const userAnswer = answers[question.id];
@@ -237,23 +259,22 @@ export function RealExamReviewView({
     </button>
   );
 
-  const renderAnswerInput = (question: IELTSReadingQuestion) => {
+  const renderAnswerInputHtml = (question: IELTSReadingQuestion) => {
     const status = getQuestionStatus(question);
     const userAnswer = answers[question.id];
+    const statusClass = styles[`${status}InlineInput`] ?? "";
 
-    return (
-      <span
-        className={`${styles.reviewInlineInput} ${styles[`${status}InlineInput`]}`}
-      >
-        <span>{question.number}</span>
-        <strong>{userAnswer || "x"}</strong>
-      </span>
-    );
+    return `<span class="${styles.reviewInlineInput} ${statusClass}"><span>${question.number}</span><strong>${escapeHtml(
+      userAnswer || "x"
+    )}</strong></span>`;
   };
 
   const renderInputQuestion = (question: IELTSReadingQuestion) => {
-    const promptParts = question.text.split(/\{blank\}|_{3,}/i);
-    const hasBlank = promptParts.length > 1;
+    const hasBlank = /\{blank\}|_{3,}/i.test(question.text);
+    const answerInputHtml = renderAnswerInputHtml(question);
+    const promptHtml = hasBlank
+      ? question.text.replace(/\{blank\}|_{3,}/gi, answerInputHtml)
+      : `${question.text} ${answerInputHtml}`;
 
     return (
       <>
@@ -263,21 +284,7 @@ export function RealExamReviewView({
           </h4>
         )}
 
-        <div className={styles.reviewInputPrompt}>
-          {hasBlank ? (
-            promptParts.map((part, index) => (
-              <Fragment key={`${question.id}-${index}`}>
-                {index > 0 && renderAnswerInput(question)}
-                {part}
-              </Fragment>
-            ))
-          ) : (
-            <>
-              <RichText html={question.text} />
-              {renderAnswerInput(question)}
-            </>
-          )}
-        </div>
+        <RichText className={styles.reviewInputPrompt} html={promptHtml} />
 
         <div className={styles.reviewCorrectAnswerLine}>
           <span>Correct answer</span>
@@ -448,13 +455,18 @@ export function RealExamReviewView({
       passage
     ) ?? [];
 
-    return (
+    const gridTable = (
       <div className={styles.reviewGridWrap}>
-        <table className={styles.reviewGridTable}>
+        <table
+          className={
+            questionGroup.imageUrl
+              ? styles.listeningGridTable
+              : styles.reviewGridTable
+          }
+        >
           <thead>
             <tr>
-              <th />
-              <th />
+              {questionGroup.imageUrl ? <th aria-label="Question" /> : <><th /><th /></>}
               {options.map((option) => (
                 <th key={option.label}>{option.label}</th>
               ))}
@@ -467,11 +479,23 @@ export function RealExamReviewView({
 
               return (
                 <tr key={question.id}>
-                  <td>{formatQuestionLabel(question)}</td>
                   <td>
-                    <RichText html={question.text} />
-                    {renderExplanationButton(question)}
+                    {questionGroup.imageUrl ? (
+                      <>
+                        <strong>{formatQuestionLabel(question)}</strong>
+                        <span>{question.text}</span>
+                        {renderExplanationButton(question)}
+                      </>
+                    ) : (
+                      formatQuestionLabel(question)
+                    )}
                   </td>
+                  {!questionGroup.imageUrl && (
+                    <td>
+                      <RichText html={question.text} />
+                      {renderExplanationButton(question)}
+                    </td>
+                  )}
                   {options.map((option) => {
                     const isCorrect = matchesOptionAnswer(correctValues, option);
                     const isWrong =
@@ -497,6 +521,20 @@ export function RealExamReviewView({
             })}
           </tbody>
         </table>
+      </div>
+    );
+
+    if (!questionGroup.imageUrl) {
+      return gridTable;
+    }
+
+    return (
+      <div className={styles.listeningImageGridLayout}>
+        <div className={styles.listeningMapImageWrap}>
+          <img src={questionGroup.imageUrl} alt={questionGroup.title} />
+        </div>
+
+        <div className={styles.listeningGridTableWrap}>{gridTable}</div>
       </div>
     );
   };
@@ -599,6 +637,65 @@ export function RealExamReviewView({
     );
   };
 
+  const renderMatchingOptionGroup = (
+    passage: IELTSMockTest["passages"][number],
+    questionGroup: IELTSReadingQuestionGroup
+  ) => {
+    const options = getQuestionOptions(
+      questionGroup.questions[0],
+      questionGroup,
+      passage
+    );
+
+    return (
+      <div className={styles.reviewMatchingOptionList}>
+        {questionGroup.questions.map((question) => {
+          const status = getQuestionStatus(question);
+          const userAnswer = answers[question.id];
+          const userDisplay = getOptionDisplay(userAnswer, options) || userAnswer || "";
+          const correctDisplay =
+            getOptionDisplay(question.correctAnswer, options) ||
+            formatAnswer(question.correctAnswer);
+
+          return (
+            <article
+              key={`${question.id}-matching-option-review`}
+              className={styles.reviewMatchingOptionRow}
+            >
+              <div className={styles.reviewMatchingOptionPrompt}>
+                <RichText html={question.text} />
+                {status !== "correct" && (
+                  <p>
+                    Đáp án: <strong>{correctDisplay}</strong>
+                    {renderExplanationButton(question)}
+                  </p>
+                )}
+              </div>
+
+              <div className={styles.reviewMatchingOptionAnswer}>
+                <span className={`${styles.reviewQuestionNumber} ${styles[status]}`}>
+                  {formatQuestionLabel(question)}
+                </span>
+                <div
+                  className={`${styles.reviewMatchingOptionValue} ${
+                    status === "correct"
+                      ? styles.correctMatchingOptionValue
+                      : status === "wrong"
+                        ? styles.wrongMatchingOptionValue
+                        : styles.skippedMatchingOptionValue
+                  }`}
+                >
+                  {userDisplay ? <span>{userDisplay}</span> : <em />}
+                  {status !== "correct" && <strong>×</strong>}
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderReviewGroup = (
     passage: IELTSMockTest["passages"][number],
     questionGroup: IELTSMockTest["passages"][number]["questionGroups"][number]
@@ -628,10 +725,12 @@ export function RealExamReviewView({
 
         </div>
 
-        {gridChoiceTypes.has(type ?? "") ? (
+        {gridChoiceTypes.has(type ?? "") || Boolean(questionGroup.imageUrl) ? (
           renderGridGroup(passage, questionGroup)
         ) : summaryOptionTypes.has(type ?? "") ? (
           renderSummaryCompletionGroup(questionGroup)
+        ) : matchingOptionReviewTypes.has(type ?? "") ? (
+          renderMatchingOptionGroup(passage, questionGroup)
         ) : (
           <div className={styles.reviewQuestionList}>
             {questions.map((question) => renderQuestionReview(question, passage))}
@@ -661,6 +760,211 @@ export function RealExamReviewView({
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
   };
+
+  const switchReviewPassage = (
+    passage: IELTSMockTest["passages"][number]
+  ) => {
+    setActiveReviewPassageId(passage.id);
+    const firstQuestion = getPassageQuestions(passage)[0];
+
+    if (firstQuestion) {
+      setActiveQuestionId(firstQuestion.id);
+    }
+  };
+
+  if (isListeningReview) {
+    return (
+      <div className={`${styles.reviewPage} ${styles.listeningReviewPage}`}>
+        <header className={styles.reviewHeader}>
+          <div>
+            <button onClick={onBackToResult} aria-label="Back to result">
+              <ArrowLeft size={22} />
+            </button>
+            <div>
+              <span>Review answers</span>
+              <h1>{test.title}</h1>
+            </div>
+          </div>
+
+          <div className={styles.reviewHeaderMeta}>
+            <div className={styles.reviewHeaderLegend}>
+              <span>
+                <i className={styles.correctDot} /> Correct
+              </span>
+              <span>
+                <i className={styles.wrongDot} /> Wrong
+              </span>
+              <span>
+                <i className={styles.skipDot} /> Skipped
+              </span>
+            </div>
+
+            <div className={styles.reviewStats}>
+              <div>
+                <span>Score</span>
+                <strong>{result.bandScore.toFixed(1)}</strong>
+              </div>
+              <div>
+                <span>Time</span>
+                <strong>{time}</strong>
+              </div>
+              <div>
+                <span>Correct</span>
+                <strong>
+                  {result.correctQuestions}/{result.totalQuestions}
+                </strong>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className={styles.listeningReviewBody}>
+          <section
+            className={styles.listeningTranscriptPane}
+            style={{ flexBasis: `${passageWidth}%` }}
+          >
+            <div className={styles.reviewSectionTitle}>
+              <span>Part {activePassage.part}</span>
+              <h2>Transcript</h2>
+            </div>
+
+            <div className={styles.listeningTranscriptText}>
+              {activePassage.paragraphs.length ? (
+                activePassage.paragraphs.map((paragraph, index) => (
+                  <div key={`${activePassage.id}-transcript-${paragraph.id || index}`}>
+                    <RichText html={paragraph.content} />
+                  </div>
+                ))
+              ) : (
+                <p>Chưa có transcript cho part này.</p>
+              )}
+            </div>
+
+            <div className={styles.listeningReviewAudio}>
+              <strong>Audio Part {activePassage.part}</strong>
+              {activePassage.audioUrl ? (
+                <audio controls src={activePassage.audioUrl}>
+                  Trình duyệt của bạn không hỗ trợ audio.
+                </audio>
+              ) : (
+                <p>Chưa có audio cho part này.</p>
+              )}
+            </div>
+          </section>
+
+          <div
+            className={styles.reviewResizeHandle}
+            onMouseDown={handleResizeStart}
+            role="separator"
+            aria-orientation="vertical"
+          >
+            <span>
+              <GripVertical size={14} />
+            </span>
+          </div>
+
+          <section
+            className={styles.listeningReviewQuestionsPane}
+            style={{ flexBasis: `${100 - passageWidth}%` }}
+          >
+            <div className={styles.reviewAllParts}>
+              <section key={activePassage.id} className={styles.reviewPartBlock}>
+                <div className={styles.reviewPartHeader}>
+                  <span>Part {activePassage.part}</span>
+                  <strong>
+                    {activePassage.instruction || activePassage.title || "Questions"}
+                  </strong>
+                </div>
+
+                {activePassage.questionGroups.map((questionGroup) =>
+                  renderReviewGroup(activePassage, questionGroup)
+                )}
+              </section>
+            </div>
+          </section>
+        </main>
+
+        {explanationTooltip && (
+          <div
+            className={styles.reviewExplanationOverlay}
+            onClick={() => setExplanationTooltip(null)}
+          >
+            <article
+              className={`${styles.reviewExplanationTooltip} ${
+                explanationTooltip.placement === "top"
+                  ? styles.tooltipTop
+                  : styles.tooltipBottom
+              }`}
+              style={{
+                left: explanationTooltip.left,
+                top: explanationTooltip.top,
+              }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <strong>
+                Question {formatQuestionLabel(explanationTooltip.question)}
+              </strong>
+              <span>
+                Your answer:{" "}
+                {getQuestionDisplayAnswer(
+                  explanationTooltip.question,
+                  answers[explanationTooltip.question.id]
+                )}{" "}
+                | Correct answer:{" "}
+                {getQuestionDisplayAnswer(
+                  explanationTooltip.question,
+                  explanationTooltip.question.correctAnswer
+                )}
+              </span>
+              <p>
+                {explanationTooltip.question.explanation?.trim() ||
+                  "Chưa có giải thích cho câu hỏi này."}
+              </p>
+            </article>
+          </div>
+        )}
+
+        <footer className={styles.reviewFooter}>
+          <div className={styles.listeningReviewPartTabs}>
+            {passagesWithQuestions.map((passage) => (
+              <button
+                key={`${passage.id}-listening-review-tab`}
+                type="button"
+                className={
+                  activePassage.id === passage.id
+                    ? styles.activeListeningReviewPartTab
+                    : ""
+                }
+                onClick={() => switchReviewPassage(passage)}
+              >
+                Part {passage.part}
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.listeningReviewQuestionNav}>
+            {getPassageQuestions(activePassage).map((question) => {
+              const status = getQuestionStatus(question);
+
+              return (
+                <button
+                  key={`${question.id}-listening-review-nav`}
+                  className={`${styles.reviewNavButton} ${styles[status]} ${
+                    activeQuestionId === question.id
+                      ? styles.activeReviewQuestion
+                      : ""
+                  }`}
+                  onClick={() => setActiveQuestionId(question.id)}
+                >
+                  {formatQuestionLabel(question)}
+                </button>
+              );
+            })}
+          </div>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.reviewPage}>

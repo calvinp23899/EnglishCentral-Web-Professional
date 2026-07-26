@@ -1,11 +1,23 @@
-import { useRef, useState } from "react";
-import { Bell, Bookmark, Eraser, Highlighter, Menu, MessageSquare, Wifi } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bell,
+  Bookmark,
+  Eraser,
+  Highlighter,
+  Menu,
+  MessageSquare,
+  Play,
+  Volume2,
+  Wifi,
+} from "lucide-react";
 import { getPassageQuestions } from "../components/QuestionBlock";
+import { RichText } from "../components/RichText/RichText";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
 import type {
   AnswerMap,
   IELTSMockTest,
-  IELTSReadingPassage,
   IELTSReadingQuestion,
   IELTSReadingQuestionGroup,
   IELTSReadingOption,
@@ -13,10 +25,12 @@ import type {
 import styles from "../pages/PracticeDetailPage.module.scss";
 
 type RealTestListeningViewProps = {
+  activePartIndex: number;
   test: IELTSMockTest;
   answers: AnswerMap;
   questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
   onAnswer: (questionId: string, value: string) => void;
+  onActivePartIndexChange: (partIndex: number) => void;
   onScrollToQuestion: (questionId: string) => void;
   onSubmit: () => void;
 };
@@ -34,6 +48,71 @@ type SelectionPopover = {
 
 function getOptions(question: IELTSReadingQuestion, group: IELTSReadingQuestionGroup) {
   return question.options ?? group.options ?? [];
+}
+
+const getQuestionLabel = (question: IELTSReadingQuestion) =>
+  question.numberLabel || String(question.number);
+
+function ListeningHtml({ className, html }: { className?: string; html?: string }) {
+  if (!html) return null;
+
+  return <RichText className={className} html={html} />;
+}
+
+const shouldShowListeningSectionTitle = (value?: string) =>
+  Boolean(value && !/^<p>\s*part\s+\d+\s*<\/p>$/i.test(value.trim()) && !/^part\s+\d+$/i.test(value.trim()));
+
+const normalizeListeningInlineHtml = (value: string) =>
+  value.replace(/(Activities)\s*•\s*/gi, "$1<br />• ");
+
+const stripDangerousInlineHtml = (value: string) =>
+  normalizeListeningInlineHtml(value)
+    .replace(/<\s*ul[^>]*>\s*<\s*li[^>]*>/gi, "• ")
+    .replace(/<\s*ol[^>]*>\s*<\s*li[^>]*>/gi, "• ")
+    .replace(/<\s*\/\s*li\s*>\s*<\s*li[^>]*>/gi, "<br />• ")
+    .replace(/<\s*\/\s*li\s*>\s*<\s*\/\s*(ul|ol)\s*>/gi, "")
+    .replace(/<\s*\/?\s*(ul|ol|li)[^>]*>/gi, "")
+    .replace(/<\s*\/?\s*p[^>]*>/gi, "")
+    .replace(/<\s*\/?\s*div[^>]*>/gi, "")
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
+    .replace(/\son\w+="[^"]*"/gi, "")
+    .replace(/\son\w+='[^']*'/gi, "")
+    .replace(/\s(href|src)=["']javascript:[^"']*["']/gi, "");
+
+const trimInlineHtmlBeforeBlank = (value: string) =>
+  stripDangerousInlineHtml(value)
+    .replace(/(?:<br\s*\/?>|\r?\n|\s)+$/gi, " ")
+    .replace(/(?:&nbsp;)+$/gi, " ");
+
+const trimInlineHtmlAfterBlank = (value: string) =>
+  stripDangerousInlineHtml(value)
+    .replace(/^(?:<br\s*\/?>|\r?\n|\s)+/gi, " ")
+    .replace(/^(?:&nbsp;)+/gi, " ");
+
+const normalizeBlankPromptHtml = (value: string) =>
+  value
+    .replace(
+      /<\s*p[^>]*>\s*(Activities:?)\s*<\s*\/\s*p\s*>\s*<\s*ul[^>]*>\s*<\s*li[^>]*>/gi,
+      "$1<br />• ",
+    )
+    .replace(
+      /<\s*p[^>]*>\s*(Activities:?)\s*<\s*\/\s*p\s*>/gi,
+      "$1<br />",
+    )
+    .replace(/<\s*\/\s*p\s*>\s*<\s*p[^>]*>/gi, "<br />")
+    .replace(/<\s*p[^>]*>/gi, "")
+    .replace(/<\s*\/\s*p\s*>/gi, "");
+
+function ListeningInlineHtml({ html }: { html: string }) {
+  if (!html) return null;
+
+  return (
+    <span
+      className={styles.listeningInlineHtml}
+      dangerouslySetInnerHTML={{ __html: stripDangerousInlineHtml(html) }}
+    />
+  );
 }
 
 function MarkButton({
@@ -61,14 +140,17 @@ function MarkButton({
 }
 
 export function RealTestListeningView({
+  activePartIndex,
   test,
   answers,
   questionRefs,
   onAnswer,
+  onActivePartIndexChange,
   onScrollToQuestion,
   onSubmit,
 }: RealTestListeningViewProps) {
-  const [activePartIndex, setActivePartIndex] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [activeAudioPartIndex, setActiveAudioPartIndex] = useState(0);
   const [markedQuestionIds, setMarkedQuestionIds] = useState<Record<string, boolean>>({});
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [notes, setNotes] = useState<ListeningNote[]>([]);
@@ -76,11 +158,25 @@ export function RealTestListeningView({
     null
   );
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const activePart = test.passages[activePartIndex] ?? test.passages[0];
+  const activeAudioPart = test.passages[activeAudioPartIndex] ?? test.passages[0];
   const { formattedTime } = useCountdownTimer({
+    enabled: hasStarted,
     minutes: test.durationMinutes,
     onTimeUp: onSubmit,
   });
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!hasStarted || !audio) return;
+
+    audio.pause();
+    audio.currentTime = 0;
+    audio.load();
+    void audio.play().catch(() => undefined);
+  }, [activeAudioPart?.audioUrl, activeAudioPartIndex, hasStarted]);
 
   const toggleMark = (questionId: string) => {
     setMarkedQuestionIds((prev) => ({
@@ -199,8 +295,44 @@ export function RealTestListeningView({
     onScrollToQuestion(question.id);
   };
 
+  const goToPart = (partIndex: number) => {
+    const nextPartIndex = Math.min(Math.max(partIndex, 0), test.passages.length - 1);
+
+    onActivePartIndexChange(nextPartIndex);
+    setActiveQuestionId(null);
+    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleStartListening = () => {
+    const audio = audioRef.current;
+
+    setHasStarted(true);
+
+    if (!audio) return;
+
+    audio.currentTime = 0;
+    audio.load();
+    void audio.play().catch(() => undefined);
+  };
+
+  const handleAudioEnded = () => {
+    if (activeAudioPartIndex < test.passages.length - 1) {
+      const nextPartIndex = activeAudioPartIndex + 1;
+
+      setActiveAudioPartIndex(nextPartIndex);
+      goToPart(nextPartIndex);
+    }
+  };
+
   return (
     <div className={`${styles.realPage} ${styles.listeningRealPage}`}>
+      <audio
+        ref={audioRef}
+        src={activeAudioPart?.audioUrl}
+        preload="auto"
+        onEnded={handleAudioEnded}
+      />
+
       <header className={styles.realHeader}>
         <div>
           <h1>{test.title}</h1>
@@ -216,7 +348,12 @@ export function RealTestListeningView({
 
       <section className={styles.realInstruction}>
         <strong>Part {activePart.part}</strong>
-        <span>{activePart.instruction}</span>
+        <span>
+          {activePart.instruction ||
+            `Read the text and answer questions ${
+              getPassageQuestions(activePart)[0]?.number ?? ""
+            }-${getPassageQuestions(activePart).at(-1)?.number ?? ""}`}
+        </span>
       </section>
 
       <main className={styles.listeningBody}>
@@ -253,7 +390,6 @@ export function RealTestListeningView({
           {activePart.questionGroups.map((group) => (
             <ListeningQuestionGroup
               key={group.id}
-              part={activePart}
               group={group}
               answers={answers}
               markedQuestionIds={markedQuestionIds}
@@ -262,6 +398,25 @@ export function RealTestListeningView({
               onToggleMark={toggleMark}
             />
           ))}
+
+          <div className={styles.listeningFloatingArrows}>
+            <button
+              type="button"
+              disabled={activePartIndex === 0}
+              onClick={() => goToPart(activePartIndex - 1)}
+              aria-label="Previous part"
+            >
+              <ArrowLeft aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              disabled={activePartIndex === test.passages.length - 1}
+              onClick={() => goToPart(activePartIndex + 1)}
+              aria-label="Next part"
+            >
+              <ArrowRight aria-hidden="true" />
+            </button>
+          </div>
         </section>
 
         {notes.length > 0 && (
@@ -302,17 +457,17 @@ export function RealTestListeningView({
               className={styles.realPartGroup}
               role="button"
               tabIndex={0}
-              onClick={() => setActivePartIndex(index)}
+              onClick={() => goToPart(index)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  setActivePartIndex(index);
+                  goToPart(index);
                 }
               }}
             >
               <button
                 className={activePartIndex === index ? styles.activePartButton : ""}
-                onClick={() => setActivePartIndex(index)}
+                onClick={() => goToPart(index)}
               >
                 <strong>Part {part.part}</strong>
               </button>
@@ -331,7 +486,7 @@ export function RealTestListeningView({
                       handleQuestionNav(question);
                     }}
                   >
-                    {question.number}
+                    {getQuestionLabel(question)}
                   </button>
                 ))
               ) : (
@@ -347,12 +502,28 @@ export function RealTestListeningView({
           ✓
         </button>
       </footer>
+
+      {!hasStarted && (
+        <div className={styles.listeningStartOverlay} role="dialog" aria-modal="true">
+          <div className={styles.listeningStartCard}>
+            <Volume2 aria-hidden="true" />
+            <p>
+              You will be listening to an audio clip during this test. You will not
+              be permitted to pause or rewind the audio while answering the questions.
+            </p>
+            <span>To continue, click Play</span>
+            <button type="button" onClick={handleStartListening}>
+              <Play aria-hidden="true" />
+              Play
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function ListeningQuestionGroup({
-  part,
   group,
   answers,
   markedQuestionIds,
@@ -360,7 +531,6 @@ function ListeningQuestionGroup({
   onAnswer,
   onToggleMark,
 }: {
-  part: IELTSReadingPassage;
   group: IELTSReadingQuestionGroup;
   answers: AnswerMap;
   markedQuestionIds: Record<string, boolean>;
@@ -368,7 +538,26 @@ function ListeningQuestionGroup({
   onAnswer: (questionId: string, value: string) => void;
   onToggleMark: (questionId: string) => void;
 }) {
-  if (group.type === "matching-features") {
+  const isDragDropMatchingGroup =
+    group.type === "matching-features" ||
+    group.type === "matching-headings" ||
+    group.type === "matching-information" ||
+    group.type === "matching-sentence-ending";
+
+  if (group.imageUrl) {
+    return (
+      <ListeningImageGridGroup
+        group={group}
+        answers={answers}
+        markedQuestionIds={markedQuestionIds}
+        questionRefs={questionRefs}
+        onAnswer={onAnswer}
+        onToggleMark={onToggleMark}
+      />
+    );
+  }
+
+  if (isDragDropMatchingGroup) {
     return (
       <ListeningDragGroup
         group={group}
@@ -397,10 +586,10 @@ function ListeningQuestionGroup({
   return (
     <section className={styles.listeningQuestionGroup}>
       <h3>{group.title}</h3>
-      <p>{group.instruction}</p>
+      <ListeningHtml className={styles.listeningGroupInstruction} html={group.instruction} />
+      <ListeningHtml className={styles.listeningGroupHeading} html={group.heading} />
 
       <div className={styles.listeningNotesPanel}>
-        <h4>{part.title}</h4>
         {group.questions.map((question) => (
           <ListeningBlankQuestion
             key={question.id}
@@ -412,6 +601,88 @@ function ListeningQuestionGroup({
             onToggleMark={onToggleMark}
           />
         ))}
+      </div>
+    </section>
+  );
+}
+
+function ListeningImageGridGroup({
+  group,
+  answers,
+  markedQuestionIds,
+  questionRefs,
+  onAnswer,
+  onToggleMark,
+}: {
+  group: IELTSReadingQuestionGroup;
+  answers: AnswerMap;
+  markedQuestionIds: Record<string, boolean>;
+  questionRefs: React.MutableRefObject<Record<string, HTMLElement | null>>;
+  onAnswer: (questionId: string, value: string) => void;
+  onToggleMark: (questionId: string) => void;
+}) {
+  const options =
+    group.options?.length
+      ? group.options
+      : Array.from({ length: 10 }, (_, index) => {
+          const label = String.fromCharCode(65 + index);
+
+          return { content: label, label };
+        });
+
+  return (
+    <section className={styles.listeningQuestionGroup}>
+      <h3>{group.title}</h3>
+      <ListeningHtml className={styles.listeningGroupInstruction} html={group.instruction} />
+
+      <div className={styles.listeningImageGridLayout}>
+        <div className={styles.listeningMapImageWrap}>
+          <img src={group.imageUrl} alt={group.title} />
+        </div>
+
+        <div className={styles.listeningGridTableWrap}>
+          <table className={styles.listeningGridTable}>
+            <thead>
+              <tr>
+                <th aria-label="Question" />
+                {options.map((option) => (
+                  <th key={option.label}>{option.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {group.questions.map((question) => (
+                <tr
+                  key={question.id}
+                  ref={(element) => {
+                    questionRefs.current[question.id] = element;
+                  }}
+                >
+                  <td>
+                    <strong>{getQuestionLabel(question)}</strong>
+                    <span>{question.text}</span>
+                    <MarkButton
+                      questionId={question.id}
+                      marked={Boolean(markedQuestionIds[question.id])}
+                      onToggle={onToggleMark}
+                    />
+                  </td>
+                  {options.map((option) => (
+                    <td key={option.label}>
+                      <input
+                        type="radio"
+                        name={`listening-grid-question-${question.id}`}
+                        checked={answers[question.id] === option.label}
+                        onChange={() => onAnswer(question.id, option.label)}
+                        aria-label={`Question ${getQuestionLabel(question)} option ${option.label}`}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   );
@@ -432,7 +703,19 @@ function ListeningBlankQuestion({
   onAnswer: (questionId: string, value: string) => void;
   onToggleMark: (questionId: string) => void;
 }) {
-  const parts = question.text.split(/_{2,}/);
+  const blankPattern = /(?:_{2,}|\{blank\}|\{q?\d+\})/i;
+  const promptHtml = normalizeBlankPromptHtml(question.text);
+  const parts = promptHtml.split(blankPattern);
+  const input = (
+    <label className={styles.listeningBlank}>
+      <strong>{question.number}</strong>
+      <input
+        value={value ?? ""}
+        onChange={(event) => onAnswer(question.id, event.target.value)}
+        aria-label={`Question ${question.number}`}
+      />
+    </label>
+  );
 
   return (
     <div
@@ -441,18 +724,26 @@ function ListeningBlankQuestion({
       }}
       className={styles.listeningBlankRow}
     >
-      <span>
-        {parts[0]}
-        <label className={styles.listeningBlank}>
-          <strong>{question.number}</strong>
-          <input
-            value={value ?? ""}
-            onChange={(event) => onAnswer(question.id, event.target.value)}
-            aria-label={`Question ${question.number}`}
+      <div>
+        {shouldShowListeningSectionTitle(question.sectionTitle) && (
+          <ListeningHtml
+            className={styles.listeningSectionTitle}
+            html={question.sectionTitle}
           />
-        </label>
-        {parts.slice(1).join("")}
-      </span>
+        )}
+        {parts.length > 1 ? (
+          <span className={styles.listeningInlinePrompt}>
+            <ListeningInlineHtml html={trimInlineHtmlBeforeBlank(parts[0])} />
+            {input}
+            <ListeningInlineHtml html={trimInlineHtmlAfterBlank(parts.slice(1).join(""))} />
+          </span>
+        ) : (
+          <span className={styles.listeningInlinePrompt}>
+            <ListeningInlineHtml html={question.text} />
+            {input}
+          </span>
+        )}
+      </div>
       <MarkButton questionId={question.id} marked={marked} onToggle={onToggleMark} />
     </div>
   );
@@ -473,48 +764,44 @@ function ListeningChoiceGroup({
   onAnswer: (questionId: string, value: string) => void;
   onToggleMark: (questionId: string) => void;
 }) {
-  const isMultiQuestionGroup = group.instruction.toLowerCase().includes("two");
-  const visibleQuestions = isMultiQuestionGroup ? [group.questions[0]] : group.questions;
+  const isMultiAnswerQuestion = (question: IELTSReadingQuestion) =>
+    getQuestionLabel(question).includes("-") ||
+    question.correctAnswer.split(",").filter(Boolean).length > 1 ||
+    group.instruction.toLowerCase().includes("two");
 
-  const toggleMultiAnswer = (optionLabel: string) => {
-    const primaryQuestion = group.questions[0];
-    const currentAnswers = answers[primaryQuestion.id]?.split(",").filter(Boolean) ?? [];
+  const toggleMultiAnswer = (question: IELTSReadingQuestion, optionLabel: string) => {
+    const maxAnswers =
+      question.correctAnswer.split(",").filter(Boolean).length ||
+      Math.max(getQuestionLabel(question).split("-").length, 2);
+    const currentAnswers = answers[question.id]?.split(",").filter(Boolean) ?? [];
     const nextAnswers = currentAnswers.includes(optionLabel)
       ? currentAnswers.filter((answer) => answer !== optionLabel)
-      : [...currentAnswers, optionLabel].slice(-2);
-    const value = nextAnswers.join(",");
+      : [...currentAnswers, optionLabel].slice(-maxAnswers);
 
-    group.questions.forEach((question) => onAnswer(question.id, value));
+    onAnswer(question.id, nextAnswers.join(","));
   };
 
   return (
     <section className={styles.listeningQuestionGroup}>
       <h3>{group.title}</h3>
-      <p>{group.instruction}</p>
+      <ListeningHtml className={styles.listeningGroupInstruction} html={group.instruction} />
 
-      {visibleQuestions.map((question) => {
+      {group.questions.map((question) => {
         const options = getOptions(question, group);
         const selectedAnswers = answers[question.id]?.split(",").filter(Boolean) ?? [];
+        const isMultiQuestion = isMultiAnswerQuestion(question);
 
         return (
           <article
             key={question.id}
             ref={(element) => {
-              group.questions.forEach((item) => {
-                if (isMultiQuestionGroup || item.id === question.id) {
-                  questionRefs.current[item.id] = element;
-                }
-              });
+              questionRefs.current[question.id] = element;
             }}
             className={styles.listeningChoiceItem}
           >
             <div className={styles.listeningQuestionTitle}>
-              <strong>
-                {isMultiQuestionGroup
-                  ? `${group.questions[0].number}-${group.questions[group.questions.length - 1].number}`
-                  : question.number}
-              </strong>
-              <span>{question.text}</span>
+              <strong>{getQuestionLabel(question)}</strong>
+              <ListeningHtml html={question.text} />
               <MarkButton
                 questionId={question.id}
                 marked={Boolean(markedQuestionIds[question.id])}
@@ -526,16 +813,16 @@ function ListeningChoiceGroup({
               {options.map((option) => (
                 <label key={option.label}>
                   <input
-                    type={isMultiQuestionGroup ? "checkbox" : "radio"}
+                    type={isMultiQuestion ? "checkbox" : "radio"}
                     name={`listening-question-${question.id}`}
                     checked={
-                      isMultiQuestionGroup
+                      isMultiQuestion
                         ? selectedAnswers.includes(option.label)
                         : answers[question.id] === option.label
                     }
                     onChange={() =>
-                      isMultiQuestionGroup
-                        ? toggleMultiAnswer(option.label)
+                      isMultiQuestion
+                        ? toggleMultiAnswer(question, option.label)
                         : onAnswer(question.id, option.label)
                     }
                   />
@@ -566,6 +853,14 @@ function ListeningDragGroup({
   onToggleMark: (questionId: string) => void;
 }) {
   const options = group.options ?? [];
+  const usedOptionLabels = new Set(
+    group.questions
+      .map((question) => answers[question.id])
+      .filter((value): value is string => Boolean(value)),
+  );
+  const availableOptions = options.filter(
+    (option) => !usedOptionLabels.has(option.label),
+  );
 
   const handleDragStart = (
     event: React.DragEvent<HTMLButtonElement>,
@@ -590,7 +885,7 @@ function ListeningDragGroup({
   return (
     <section className={styles.listeningQuestionGroup}>
       <h3>{group.title}</h3>
-      <p>{group.instruction}</p>
+      <ListeningHtml className={styles.listeningGroupInstruction} html={group.instruction} />
 
       <div className={styles.listeningDragLayout}>
         <div className={styles.listeningDragRows}>
@@ -638,7 +933,7 @@ function ListeningDragGroup({
 
         <div className={styles.listeningOptionBank}>
           <strong>List of options</strong>
-          {options.map((option: IELTSReadingOption) => (
+          {availableOptions.map((option: IELTSReadingOption) => (
             <button
               key={option.label}
               draggable
@@ -656,6 +951,11 @@ function ListeningDragGroup({
               {option.content}
             </button>
           ))}
+          {!availableOptions.length && (
+            <span className={styles.listeningOptionBankEmpty}>
+              All options have been used.
+            </span>
+          )}
         </div>
       </div>
     </section>

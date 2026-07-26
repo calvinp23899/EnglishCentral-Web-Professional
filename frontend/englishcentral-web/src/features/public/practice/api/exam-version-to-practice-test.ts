@@ -98,6 +98,26 @@ const normalizeQuestionNumberLabel = (label: string, answerSlots?: number[]) => 
 const normalizeType = (value: string | number | null | undefined) =>
   String(value ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
 
+const getVersionSkill = (version: ExamVersionSummary) => {
+  if (version.examTemplateId === 2) return "listening";
+
+  const haystack = [
+    version.sections?.[0]?.skill,
+    version.sections?.[0]?.name,
+    version.versionCode,
+    version.name,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (haystack.includes("listening") || haystack === "1") return "listening";
+  if (haystack.includes("writing") || haystack === "3") return "writing";
+  if (haystack.includes("reading") || haystack === "2") return "reading";
+
+  return "reading";
+};
+
 const toUiQuestionType = (
   type: string | number,
   configJson?: string | null,
@@ -112,6 +132,12 @@ const toUiQuestionType = (
 
   if (
     normalizedType.includes("matchinginformation") ||
+    normalizedType.includes("selectgridoption") ||
+    normalizedType.includes("mapplandiagramselectgrid") ||
+    normalizedType.includes("mapplandiagram") ||
+    displayType.includes("select_grid") ||
+    displayType.includes("selectgrid") ||
+    displayType.includes("map_plan_diagram") ||
     displayType.includes("matching_information")
   ) {
     return "matching-information";
@@ -156,15 +182,54 @@ const getCorrectAnswer = (question: ExamVersionQuestion) => {
     .join(", ");
 };
 
+const getStringField = (source: unknown, keys: string[]) => {
+  if (!source || typeof source !== "object") return "";
+
+  const record = source as Record<string, unknown>;
+
+  for (const key of keys) {
+    const value = record[key];
+
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
+};
+
+const getStimulusAudioUrl = (stimulus: unknown) =>
+  getStringField(stimulus, [
+    "assetUrl",
+    "AssetUrl",
+    "audioUrl",
+    "AudioUrl",
+    "publicUrl",
+    "PublicUrl",
+    "url",
+    "Url",
+    "fileUrl",
+    "FileUrl",
+  ]);
+
 export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTSMockTest => {
   const versionIdentity =
     version.slug?.trim() ||
     version.versionCode?.trim() ||
     `exam-version-${version.id}`;
-  const readingSection =
+  const versionSkill = getVersionSkill(version);
+  const targetSection =
     version.sections?.find((section) => {
       const skill = normalizeType(section.skill);
       const name = normalizeType(section.name);
+
+      if (versionSkill === "listening") {
+        return (
+          skill === "1" ||
+          skill.includes("listening") ||
+          name.includes("listening")
+        );
+      }
 
       return skill === "2" || skill.includes("reading") || name.includes("reading");
     }) ?? version.sections?.[0];
@@ -172,18 +237,35 @@ export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTS
   return {
     category: "ielts",
     description: version.description ?? "",
-    durationMinutes: version.durationMinutes ?? readingSection?.durationMinutes ?? 60,
+    durationMinutes: version.durationMinutes ?? targetSection?.durationMinutes ?? 60,
     id: String(version.id),
     level: "IELTS",
     note: "",
     passages:
-      readingSection?.parts?.map((part, partIndex) => {
-        const stimulus = part.stimuli?.[0];
+      targetSection?.parts?.map((part, partIndex) => {
+        const stimulus =
+          part.stimuli?.find((item) => {
+            const type = normalizeType(item.type);
+            return type.includes("audio") || Boolean(getStimulusAudioUrl(item));
+          }) ?? part.stimuli?.[0];
+        const audioUrl = getStimulusAudioUrl(stimulus);
         const metadata = parseJson<{ paragraphs?: Array<{ content: string; id: string; isHiddenLabel?: boolean; label: string }> }>(
           stimulus?.metadataJson,
           {},
         );
-        const paragraphs = metadata.paragraphs?.length
+        const stimulusMetadata = parseJson<{ audioName?: string | null }>(
+          stimulus?.metadataJson,
+          {},
+        );
+        const transcript = htmlToDisplayContent(stimulus?.transcript);
+        const paragraphs = transcript
+          ? [{
+              content: transcript,
+              id: `${part.id || partIndex + 1}-transcript`,
+              isHiddenLabel: false,
+              label: "",
+            }]
+          : metadata.paragraphs?.length
           ? metadata.paragraphs.map((paragraph) => ({
               ...paragraph,
               content: htmlToDisplayContent(paragraph.content),
@@ -197,6 +279,8 @@ export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTS
 
         return {
           id: String(part.id ?? part.publicId ?? partIndex + 1),
+          audioName: stimulusMetadata.audioName ?? undefined,
+          audioUrl: audioUrl || undefined,
           instruction: htmlToDisplayContent(part.instructions),
           isDragHeadingOnParagraph: part.questionGroups?.some((group) => toUiQuestionType(group.questionType, group.configJson) === "matching-headings") ?? false,
           paragraphs,
@@ -206,6 +290,7 @@ export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTS
               const type = toUiQuestionType(group.questionType, group.configJson);
               const groupConfig = parseJson<{
                 heading?: string | null;
+                imageUrl?: string | null;
                 summaryTemplate?: string | null;
                 template?: string | null;
               }>(group.configJson, {});
@@ -216,6 +301,7 @@ export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTS
 
               return {
                 id: String(group.id ?? group.publicId ?? `${partIndex + 1}-${groupIndex + 1}`),
+                imageUrl: groupConfig.imageUrl ?? undefined,
                 instruction: htmlToDisplayContent(group.instructions),
                 options: groupOptions?.length ? groupOptions : undefined,
                 questions:
@@ -245,9 +331,13 @@ export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTS
                       numberLabel,
                       questionMetadata.answerSlots,
                     );
-                    const sectionTitle = htmlToReadableText(
-                      questionMetadata.sectionTitle ?? questionMetadata.title ?? question.title,
-                    );
+                    const sectionTitle = versionSkill === "listening"
+                      ? htmlToDisplayContent(
+                          questionMetadata.sectionTitle ?? questionMetadata.title ?? question.title,
+                        )
+                      : htmlToReadableText(
+                          questionMetadata.sectionTitle ?? questionMetadata.title ?? question.title,
+                        );
                     const optionBackendIds = Object.fromEntries(
                       (question.answerOptions ?? [])
                         .filter((option) => option.id !== undefined)
@@ -270,27 +360,38 @@ export const mapExamVersionToPracticeTest = (version: ExamVersionSummary): IELTS
                       optionBackendIds,
                       passageRef: questionMetadata.paragraph ?? questionMetadata.passageRef ?? "",
                       sectionTitle: sectionTitle || undefined,
-                      text: htmlToReadableText(
-                        questionIndex === 0
-                          ? groupConfig.summaryTemplate ??
-                            groupConfig.template ??
-                            questionMetadata.promptTemplate ??
-                            question.prompt
-                          : questionMetadata.promptTemplate ?? question.prompt,
-                      ),
+                      text: versionSkill === "listening"
+                        ? htmlToDisplayContent(
+                            questionIndex === 0
+                              ? groupConfig.summaryTemplate ??
+                                groupConfig.template ??
+                                questionMetadata.promptTemplate ??
+                                question.prompt
+                              : questionMetadata.promptTemplate ?? question.prompt,
+                          )
+                        : htmlToReadableText(
+                            questionIndex === 0
+                              ? groupConfig.summaryTemplate ??
+                                groupConfig.template ??
+                                questionMetadata.promptTemplate ??
+                                question.prompt
+                              : questionMetadata.promptTemplate ?? question.prompt,
+                          ),
                       type,
                       wordLimit: questionMetadata.wordLimit,
                     };
                   }) ?? [],
                 title: group.title ?? `Questions ${groupIndex + 1}`,
                 type,
-                heading: htmlToReadableText(groupConfig.heading) || undefined,
+                heading: versionSkill === "listening"
+                  ? htmlToDisplayContent(groupConfig.heading) || undefined
+                  : htmlToReadableText(groupConfig.heading) || undefined,
               };
             }) ?? [],
           title: part.name,
         };
       }) ?? [],
-    skill: "reading",
+    skill: versionSkill,
     slug: versionIdentity.toLowerCase(),
     sourceLabel: version.versionCode || versionIdentity,
     title: version.name || version.versionCode || versionIdentity,
