@@ -11,28 +11,6 @@ import {
 } from "@/features/public/auth/api/auth-api";
 import styles from "./UserProfilePage.module.scss";
 
-const latestSkillResults = [
-  { skill: "Reading", band: 4.5 },
-  { skill: "Listening", band: 6.0 },
-  { skill: "Writing", band: 7.5 },
-];
-
-const getEncouragement = (band: number) => {
-  if (band < 5) {
-    return "Đừng nản chí, bạn đang xây nền rất quan trọng. Cứ đều tay thêm một chút mỗi ngày nhé.";
-  }
-
-  if (band > 7) {
-    return "Tuyệt vời, phong độ rất đáng tự hào. Giữ nhịp luyện tập để bứt phá thêm nhé.";
-  }
-
-  if (band > 6.5) {
-    return "Rất tốt, bạn đã chạm vùng điểm mạnh. Tập trung sửa lỗi nhỏ là sẽ lên thêm nữa.";
-  }
-
-  return "Có tiến bộ rõ rệt rồi, tiếp tục giữ nhịp và luyện kỹ phần còn yếu nhé.";
-};
-
 const getInitial = (name: string) => name.trim().charAt(0).toUpperCase() || "E";
 
 type PasswordErrors = {
@@ -192,35 +170,6 @@ export function UserProfilePage() {
                   </button>
                 </span>
               </p>
-            </div>
-          </section>
-
-          <section className={`${styles.card} ${styles.overallCard}`}>
-            <h2>Tiến độ luyện tập</h2>
-            <div className={styles.skillCharts}>
-              {latestSkillResults.map((item) => {
-                const percent = Math.min(100, (item.band / 9) * 100);
-
-                return (
-                  <article key={item.skill} className={styles.skillChartCard}>
-                    <div
-                      className={styles.pieChart}
-                      style={{
-                        background: `conic-gradient(#0ea5a4 ${percent}%, #e2e8f0 0)`,
-                      }}
-                    >
-                      <div>
-                        <strong>{item.band.toFixed(1)}</strong>
-                        <span>Band</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3>{item.skill}</h3>
-                      <p>{getEncouragement(item.band)}</p>
-                    </div>
-                  </article>
-                );
-              })}
             </div>
           </section>
         </div>

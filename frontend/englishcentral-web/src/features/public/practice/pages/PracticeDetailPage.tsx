@@ -443,10 +443,12 @@ export function PracticeDetailPage() {
     if (test.category === "ielts" && test.skill === "listening") {
       return (
         <RealTestListeningView
+          activePartIndex={realActivePartIndex}
           test={test}
           answers={answers}
           questionRefs={questionRefs}
           onAnswer={handleAnswer}
+          onActivePartIndexChange={setRealActivePartIndex}
           onScrollToQuestion={scrollToQuestion}
           onSubmit={() => setRealSubmitStep("continue")}
         />

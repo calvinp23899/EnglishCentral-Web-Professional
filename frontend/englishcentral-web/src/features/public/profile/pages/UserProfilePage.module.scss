@@ -44,7 +44,7 @@
 .grid {
   margin-top: 24px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
 }
 
@@ -230,69 +230,3 @@
   }
 }
 
-.overallCard {
-  h2 {
-    color: #0f766e;
-  }
-}
-
-.skillCharts {
-  display: grid;
-  gap: 14px;
-}
-
-.skillChartCard {
-  min-height: 122px;
-  padding: 14px;
-  border: 1px solid #dbeafe;
-  border-radius: 16px;
-  background: #f8fbff;
-  display: grid;
-  grid-template-columns: 94px 1fr;
-  align-items: center;
-  gap: 14px;
-
-  h3 {
-    margin: 0 0 6px;
-    color: #102033;
-    font-size: 15px;
-  }
-
-  p {
-    margin: 0;
-    color: #64748b;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.45;
-  }
-}
-
-.pieChart {
-  width: 86px;
-  height: 86px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-
-  > div {
-    width: 62px;
-    height: 62px;
-    border-radius: 50%;
-    background: #ffffff;
-    display: grid;
-    place-items: center;
-    align-content: center;
-  }
-
-  strong {
-    color: #0f766e;
-    font-size: 19px;
-    line-height: 1;
-  }
-
-  span {
-    color: #64748b;
-    font-size: 11px;
-    font-weight: 800;
-  }
-}

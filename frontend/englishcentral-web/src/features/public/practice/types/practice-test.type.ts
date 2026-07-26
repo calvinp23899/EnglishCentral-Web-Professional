@@ -48,6 +48,7 @@ export type IELTSReadingQuestionGroup = {
   title: string;
   type: IELTSReadingQuestionType;
   heading?: string;
+  imageUrl?: string;
   instruction: string;
   options?: IELTSReadingOption[];
   questions: IELTSReadingQuestion[];
@@ -58,6 +59,8 @@ export type IELTSReadingPassage = {
   part: number;
   title: string;
   instruction: string;
+  audioName?: string;
+  audioUrl?: string;
   isDragHeadingOnParagraph?: boolean;
   paragraphs: {
     id: string;

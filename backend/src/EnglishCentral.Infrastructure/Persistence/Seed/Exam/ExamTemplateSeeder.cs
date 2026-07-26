@@ -1,6 +1,8 @@
 using EnglishCentral.Application.Features.Exam.ExamTemplates.DTOs;
 using EnglishCentral.Domain.Entities.Exam;
+using EnglishCentral.Domain.Enums.Exam;
 using EnglishCentral.Infrastructure.Persistence.Context;
+using EnglishCentral.Shared.Common.Helpers;
 using EnglishCentral.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +27,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Exam
                 {
                     SourceLabel = "IELTS Academic Reading",
                     Level = "Academic",
-                    TotalParts = 3
+                    TotalParts = 3,
+                    Skill = EExamSkill.Reading.ToDescription(),
                 });
 
             await EnsureTemplateAsync(
@@ -39,7 +42,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Exam
                 {
                     SourceLabel = "IELTS Academic Listening",
                     Level = "Academic",
-                    TotalParts = 4
+                    TotalParts = 4,
+                    Skill = EExamSkill.Listening.ToDescription(),
                 });
 
             await context.SaveChangesAsync();

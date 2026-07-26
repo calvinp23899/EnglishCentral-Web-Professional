@@ -14,6 +14,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamTemplates.Commands.Create
             RuleFor(x => x.TotalScore).GreaterThan(0).When(x => x.TotalScore.HasValue);
             RuleFor(x => x.TemplateConfigJson!.SourceLabel).MaximumLength(255).When(x => x.TemplateConfigJson is not null);
             RuleFor(x => x.TemplateConfigJson!.Level).MaximumLength(100).When(x => x.TemplateConfigJson is not null);
+            RuleFor(x => x.TemplateConfigJson!.Skill).MaximumLength(50).When(x => x.TemplateConfigJson is not null);
             RuleFor(x => x.TemplateConfigJson!.TotalParts).GreaterThan(0).When(x => x.TemplateConfigJson?.TotalParts is not null);
         }
     }
