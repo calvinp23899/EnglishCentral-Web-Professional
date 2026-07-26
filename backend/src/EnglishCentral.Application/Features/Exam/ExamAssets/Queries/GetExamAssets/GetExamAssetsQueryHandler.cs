@@ -31,6 +31,11 @@ namespace EnglishCentral.Application.Features.Exam.ExamAssets.Queries.GetExamAss
 
             if (request.AssetType.HasValue)
                 query = query.Where(x => x.AssetType == request.AssetType.Value);
+            if (request.TypeExam.HasValue)
+            {
+                var typeExam = request.TypeExam.Value.ToString();
+                query = query.Where(x => x.MetadataJson != null && x.MetadataJson.Contains($"\"typeExam\":\"{typeExam}\""));
+            }
             if (request.Provider.HasValue)
                 query = query.Where(x => x.Provider == request.Provider.Value);
             if (request.Status.HasValue)

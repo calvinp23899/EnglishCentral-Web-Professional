@@ -21,10 +21,16 @@ namespace EnglishCentral.Application.Features.Exam.ExamAssets.Commands.UpdateExa
             if (entity is null)
                 return Result<ExamAssetResponse>.Failure("Exam asset is not found.", 404);
 
-            entity.OriginalFileName = request.OriginalFileName.Trim();
+            var metadataResult = ExamAssetMetadataHelper.Normalize(request.MetadataJson);
+            if (!metadataResult.IsSuccess)
+                return Result<ExamAssetResponse>.Failure(metadataResult.Error ?? "MetadataJson is invalid.", 400);
+
+            if (!string.IsNullOrWhiteSpace(request.OriginalFileName))
+                entity.OriginalFileName = request.OriginalFileName.Trim();
+
             entity.Status = request.Status;
             entity.DurationSeconds = request.DurationSeconds;
-            entity.MetadataJson = request.MetadataJson;
+            entity.MetadataJson = metadataResult.NormalizedJson;
             entity.UpdatedAt = DateTimeOffset.UtcNow;
 
             return Result<ExamAssetResponse>.Success(entity.ToResponse());

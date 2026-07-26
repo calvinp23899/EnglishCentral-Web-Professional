@@ -7,7 +7,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamAssets.Commands.UpdateExa
 {
     public record UpdateExamAssetCommand(
         long Id,
-        string OriginalFileName,
+        string? OriginalFileName,
         EExamAssetStatus Status,
         int? DurationSeconds,
         string? MetadataJson) : IRequest<Result<ExamAssetResponse>>;

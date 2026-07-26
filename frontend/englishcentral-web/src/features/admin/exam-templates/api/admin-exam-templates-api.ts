@@ -32,9 +32,21 @@ export type AdminExamTemplate = {
   description?: string | null;
   durationMinutes?: number | null;
   totalScore?: number | null;
-  templateConfigJson?: string | null;
+  templateConfigJson?: ExamTemplateConfig | string | null;
   status: string | number;
   isActive: boolean;
+};
+
+export type ExamTemplateConfig = {
+  sourceLabel?: string | null;
+  SourceLabel?: string | null;
+  level?: string | null;
+  Level?: string | null;
+  totalParts?: number | string | null;
+  TotalParts?: number | string | null;
+  numberOfPassages?: number | string | null;
+  numberPassages?: number | string | null;
+  [key: string]: unknown;
 };
 
 export type ExamTypePayload = {
@@ -52,7 +64,7 @@ export type ExamTemplatePayload = {
   description?: string | null;
   durationMinutes?: number | null;
   totalScore?: number | null;
-  templateConfigJson?: string | null;
+  templateConfigJson?: ExamTemplateConfig | string | null;
   isActive: boolean;
 };
 

@@ -1,4 +1,5 @@
 using EnglishCentral.Application.Features.Exam.DTOs;
+using EnglishCentral.Application.Features.Exam.ExamTemplates.DTOs;
 using EnglishCentral.Application.Interfaces.Exam;
 using EnglishCentral.Domain.Entities.Exam;
 using EnglishCentral.Shared.Results;
@@ -30,6 +31,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamTemplates.Commands.Update
             entity.Description = request.Description?.Trim();
             entity.DurationMinutes = request.DurationMinutes;
             entity.TotalScore = request.TotalScore;
+            entity.TemplateConfigJson = ExamTemplateConfigJson.Serialize(request.TemplateConfigJson);
             entity.IsActive = request.IsActive;
             entity.UpdatedAt = DateTimeOffset.UtcNow;
 

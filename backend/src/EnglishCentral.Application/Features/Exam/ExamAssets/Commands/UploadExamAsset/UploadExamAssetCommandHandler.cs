@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using EnglishCentral.Application.Features.Exam.DTOs;
 using EnglishCentral.Application.Interfaces.Exam;
 using EnglishCentral.Application.Interfaces.Storage;
@@ -26,14 +27,30 @@ namespace EnglishCentral.Application.Features.Exam.ExamAssets.Commands.UploadExa
             var contentType = string.IsNullOrWhiteSpace(request.ContentType)
                 ? ResolveContentType(extension)
                 : request.ContentType.Trim();
-            var objectKey = BuildObjectKey(request.AssetType, extension);
+            var metadataResult = ExamAssetMetadataHelper.Normalize(request.MetadataJson);
+            if (!metadataResult.IsSuccess || metadataResult.Metadata is null)
+                return Result<ExamAssetResponse>.Failure(metadataResult.Error ?? "MetadataJson is invalid.", 400);
+
+            var objectKey = BuildObjectKey(request.AssetType, metadataResult.Metadata.TypeExam, request.FileName, extension);
+            var isDuplicatedKey = await _repository.ExistsAsync(x => x.ObjectKey == objectKey && x.Status != EExamAssetStatus.Deleted, ct);
+            if (isDuplicatedKey)
+                return Result<ExamAssetResponse>.Failure("An asset with the same file name already exists in this exam upload folder.", 409);
 
             await using var uploadStream = new MemoryStream();
             await request.FileStream.CopyToAsync(uploadStream, ct);
             var checksum = Convert.ToHexString(SHA256.HashData(uploadStream.ToArray())).ToLowerInvariant();
             uploadStream.Position = 0;
 
-            var uploadResult = await _storageService.UploadAsync(uploadStream, objectKey, contentType, ct);
+            CloudflareR2UploadResult uploadResult;
+            try
+            {
+                uploadResult = await _storageService.UploadAsync(uploadStream, objectKey, contentType, ct);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Result<ExamAssetResponse>.Failure(ex.Message, 502);
+            }
+
             var entity = new ExamAsset
             {
                 AssetType = request.AssetType,
@@ -47,17 +64,34 @@ namespace EnglishCentral.Application.Features.Exam.ExamAssets.Commands.UploadExa
                 FileSize = request.Size,
                 Checksum = checksum,
                 DurationSeconds = request.DurationSeconds,
-                MetadataJson = request.MetadataJson
+                MetadataJson = metadataResult.NormalizedJson
             };
 
             await _repository.AddAsync(entity, ct);
             return Result<ExamAssetResponse>.Success(entity.ToResponse(), 201);
         }
 
-        private static string BuildObjectKey(EExamAssetType assetType, string extension)
+        private static string BuildObjectKey(EExamAssetType assetType, EExamTypeUpload typeExam, string originalFileName, string extension)
         {
             var folder = assetType.ToString().ToLowerInvariant();
-            return $"exam/assets/{folder}/{DateTimeOffset.UtcNow:yyyy/MM}/{Guid.NewGuid():N}{extension}";
+            var examFolder = ExamAssetMetadataHelper.ToFolderSegment(typeExam);
+            var fileName = SanitizeFileName(originalFileName, extension);
+            return $"exam/assets/{folder}/{examFolder}/{fileName}";
+        }
+
+        private static string SanitizeFileName(string originalFileName, string extension)
+        {
+            var fileName = Path.GetFileName(originalFileName.Trim());
+            if (string.IsNullOrWhiteSpace(fileName))
+                return $"{Guid.NewGuid():N}{extension}";
+
+            fileName = Regex.Replace(fileName, @"[\\/]+", "_");
+            foreach (var invalidChar in Path.GetInvalidFileNameChars())
+            {
+                fileName = fileName.Replace(invalidChar, '_');
+            }
+
+            return fileName;
         }
 
         private static string ResolveContentType(string extension) => extension switch

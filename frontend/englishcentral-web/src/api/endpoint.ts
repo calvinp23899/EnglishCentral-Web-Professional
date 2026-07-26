@@ -8,7 +8,9 @@ export const ENDPOINTS = {
   },
 
   ADMIN_AUTH: {
+    LOGIN: "/admin/Auth/login",
     ME_PROFILE: "/admin/Auth/me-profile",
+    LOGOUT: "/admin/Auth/logout",
     REFRESH: "/admin/Auth/refresh",
   },
 

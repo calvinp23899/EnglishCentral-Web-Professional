@@ -1,3 +1,4 @@
+using EnglishCentral.Application.Features.Exam.ExamTemplates.DTOs;
 using EnglishCentral.Domain.Entities.Exam;
 using EnglishCentral.Infrastructure.Persistence.Context;
 using EnglishCentral.Shared.Constants;
@@ -19,7 +20,13 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Exam
                 code: "IELTS_ACADEMIC_R_3_PASSAGE",
                 name: "IELTS ACADEMIC READING 3 PASSAGES",
                 description: "Mẫu đề bài đọc tiếng Anh IELTS học thuật",
-                durationMinutes: 60);
+                durationMinutes: 60,
+                templateConfig: new ExamTemplateConfig
+                {
+                    SourceLabel = "IELTS Academic Reading",
+                    Level = "Academic",
+                    TotalParts = 3
+                });
 
             await EnsureTemplateAsync(
                 context,
@@ -27,7 +34,13 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Exam
                 code: "IELTS_ACADEMIC_L_3_PARTS",
                 name: "IELTS ACADEMIC LISTENING 3 PARTS",
                 description: "Mẫu đề bài nghe tiếng Anh IELTS học thuật",
-                durationMinutes: 30);
+                durationMinutes: 30,
+                templateConfig: new ExamTemplateConfig
+                {
+                    SourceLabel = "IELTS Academic Listening",
+                    Level = "Academic",
+                    TotalParts = 4
+                });
 
             await context.SaveChangesAsync();
         }
@@ -38,7 +51,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Exam
             string code,
             string name,
             string description,
-            int durationMinutes)
+            int durationMinutes,
+            ExamTemplateConfig templateConfig)
         {
             if (await context.ExamTemplates.AnyAsync(x => x.Code == code))
                 return;
@@ -53,6 +67,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Exam
                 IsActive = true,
                 DurationMinutes = durationMinutes,
                 TotalScore = 40,
+                TemplateConfigJson = ExamTemplateConfigJson.Serialize(templateConfig),
                 CreatedAt = DateTimeOffset.UtcNow,
                 CreatedBy = SystemDefault.DefaultSystemNumber
             };

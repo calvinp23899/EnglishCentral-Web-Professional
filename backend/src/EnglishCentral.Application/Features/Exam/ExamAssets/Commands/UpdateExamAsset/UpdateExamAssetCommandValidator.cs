@@ -8,7 +8,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamAssets.Commands.UpdateExa
         public UpdateExamAssetCommandValidator()
         {
             RuleFor(x => x.Id).GreaterThan(0);
-            RuleFor(x => x.OriginalFileName).NotEmpty().MaximumLength(255);
+            RuleFor(x => x.OriginalFileName).MaximumLength(255);
             RuleFor(x => x.Status).IsInEnum().NotEqual(EExamAssetStatus.Deleted);
             RuleFor(x => x.DurationSeconds).GreaterThan(0).When(x => x.DurationSeconds.HasValue);
         }

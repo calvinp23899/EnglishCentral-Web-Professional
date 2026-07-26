@@ -1,4 +1,5 @@
 ﻿using EnglishCentral.Application.Features.Identity.Queries.GetRoles;
+using EnglishCentral.Application.Features.Metadata.Queries.GetExamQuestionTypes;
 using EnglishCentral.Contracts.Responses.Metadata;
 using EnglishCentral.Domain.Enums.Academic;
 using EnglishCentral.Domain.Enums.Exam;
@@ -139,7 +140,16 @@ namespace EnglishCentral.API.Controllers.Admin.Metadata
         public IActionResult GetMetadataExamStimulusType() => Ok(GetEnumMetadata<EExamStimulusType>());
 
         [HttpGet("get-exam-question-type")]
-        public IActionResult GetMetadataExamQuestionType() => Ok(GetEnumMetadata<EExamQuestionType>());
+        public async Task<IActionResult> GetMetadataExamQuestionType(
+            [FromQuery] string? family = null,
+            [FromQuery] string? skill = null,
+            CancellationToken ct = default)
+        {
+            var result = await _mediator.Send(new GetExamQuestionTypesQuery(family, skill), ct);
+            return result.IsSuccess
+                ? Ok(result.Data)
+                : StatusCode(result.StatusCode, result.Error);
+        }
 
         [HttpGet("get-ielts-listening-question-type")]
         public IActionResult GetMetadataIeltsListeningQuestionType() => Ok(GetEnumDescriptionMetadata<EIELTSListeningQuestionType>());
@@ -152,6 +162,9 @@ namespace EnglishCentral.API.Controllers.Admin.Metadata
 
         [HttpGet("get-exam-asset-status")]
         public IActionResult GetMetadataExamAssetStatus() => Ok(GetEnumMetadata<EExamAssetStatus>());
+
+        [HttpGet("get-exam-type-upload")]
+        public IActionResult GetMetadataExamTypeUpload() => Ok(GetEnumMetadata<EExamTypeUpload>());
 
         [HttpGet("get-exam-attempt-status")]
         public IActionResult GetMetadataExamAttemptStatus() => Ok(GetEnumMetadata<EExamAttemptStatus>());

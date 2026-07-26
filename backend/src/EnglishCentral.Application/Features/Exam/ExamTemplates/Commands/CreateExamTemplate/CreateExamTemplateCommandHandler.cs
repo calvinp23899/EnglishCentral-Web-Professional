@@ -1,4 +1,5 @@
 using EnglishCentral.Application.Features.Exam.DTOs;
+using EnglishCentral.Application.Features.Exam.ExamTemplates.DTOs;
 using EnglishCentral.Application.Interfaces.Exam;
 using EnglishCentral.Domain.Entities.Exam;
 using EnglishCentral.Domain.Enums.Exam;
@@ -37,7 +38,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamTemplates.Commands.Create
                 TotalScore = request.TotalScore,
                 Status = EExamTemplateStatus.Draft,
                 IsActive = request.IsActive,
-                TemplateConfigJson = request.TemplateConfigJson,
+                TemplateConfigJson = ExamTemplateConfigJson.Serialize(request.TemplateConfigJson),
                 CreatedAt = DateTimeOffset.UtcNow
             };
 

@@ -7,6 +7,7 @@ import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 import {
   adminExamTemplatesApi,
   type AdminExamType,
+  type ExamTemplateConfig,
   type ExamTemplatePayload,
 } from "../api/admin-exam-templates-api";
 import styles from "@/features/admin/students/pages/StudentCreatePage.module.scss";
@@ -43,14 +44,46 @@ const toPositiveNumber = (value: string) => Number(value.replace(/[^\d.]/g, ""))
 const toPositiveInteger = (value: string) => Number(value.replace(/[^\d]/g, "")) || 0;
 const isIeltsType = (type: AdminExamType) =>
   `${type.code} ${type.name} ${type.family}`.toLowerCase().includes("ielts");
-const parseTemplateConfig = (value?: string | null) => {
+const parseTemplateConfig = (value?: ExamTemplateConfig | string | null): ExamTemplateConfig => {
   if (!value) return {};
+
+  if (typeof value === "object") {
+    return value;
+  }
+
   try {
-    const parsed = JSON.parse(value) as Record<string, unknown>;
+    const parsed = JSON.parse(value) as ExamTemplateConfig;
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
     return {};
   }
+};
+
+const getConfigString = (
+  config: ExamTemplateConfig,
+  keys: Array<keyof ExamTemplateConfig>,
+  fallback = "",
+) => {
+  for (const key of keys) {
+    const value = config[key];
+
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return String(value);
+    }
+  }
+
+  return fallback;
+};
+
+const getConfigNumberString = (
+  config: ExamTemplateConfig,
+  keys: Array<keyof ExamTemplateConfig>,
+  fallback: number,
+) => {
+  const value = getConfigString(config, keys, String(fallback));
+  const parsed = toPositiveInteger(value);
+
+  return String(parsed || fallback);
 };
 
 export function ExamTemplateFormPage({ mode }: Props) {
@@ -89,9 +122,13 @@ export function ExamTemplateFormPage({ mode }: Props) {
             durationMinutes: String(record.durationMinutes ?? 60),
             totalScore: String(record.totalScore ?? 40),
             description: record.description ?? "",
-            sourceLabel: String(templateConfig.sourceLabel ?? ""),
-            level: String(templateConfig.level ?? "Academic"),
-            numberPassages: String(templateConfig.numberOfPassages ?? templateConfig.numberPassages ?? 3),
+            sourceLabel: getConfigString(templateConfig, ["SourceLabel", "sourceLabel"]),
+            level: getConfigString(templateConfig, ["Level", "level"], "Academic"),
+            numberPassages: getConfigNumberString(
+              templateConfig,
+              ["TotalParts", "totalParts", "numberOfPassages", "numberPassages"],
+              3,
+            ),
             isActive: record.isActive,
           });
         }
@@ -158,14 +195,11 @@ export function ExamTemplateFormPage({ mode }: Props) {
         description: form.description.trim() || null,
         durationMinutes: toPositiveNumber(form.durationMinutes),
         totalScore: toPositiveNumber(form.totalScore),
-        templateConfigJson: JSON.stringify({
-          exam: "IELTS",
-          module: "Reading",
-          level: form.level,
-          mode: "CBT",
-          numberOfPassages: toPositiveInteger(form.numberPassages),
-          sourceLabel: form.sourceLabel.trim(),
-        }),
+        templateConfigJson: {
+          SourceLabel: form.sourceLabel.trim(),
+          Level: form.level,
+          TotalParts: toPositiveInteger(form.numberPassages),
+        },
         isActive: form.isActive,
       };
 
@@ -306,14 +340,13 @@ export function ExamTemplateFormPage({ mode }: Props) {
 
                 <label className={styles.field}>
                   <span>NumberPassage</span>
-                  <select
+                  <input
+                    min="1"
+                    step="1"
+                    type="number"
                     value={form.numberPassages}
                     onChange={(event) => updateField("numberPassages", event.target.value)}
-                  >
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                  </select>
+                  />
                   <ErrorMessage message={errors.numberPassages} />
                 </label>
               </div>
