@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Columns3, Download, Edit3, Eye, Funnel, Plus, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { ConfirmModal, Pagination, SidePanel, toastDanger, toastSuccess, toastWarning } from "@/components/ui";
+import { ConfirmModal, Pagination, SidePanel, toastDanger, toastSuccess } from "@/components/ui";
 import {
   adminMetadataApi,
   type MetadataOption,
@@ -19,7 +19,7 @@ import teacherStyles from "./TeacherListPage.module.scss";
 
 type SortKey = "teacherCode" | "fullName" | "email" | "phoneNumber" | "specialization" | "hireDate" | "status";
 type SortDirection = "asc" | "desc";
-type ColumnKey = SortKey | "actions";
+type ColumnKey = SortKey;
 type TeacherFilters = {
   status: string;
   role: string;
@@ -42,7 +42,6 @@ const columnLabels: Record<ColumnKey, string> = {
   specialization: "Chuyên môn",
   hireDate: "Ngày vào",
   status: "Trạng thái",
-  actions: "Action",
 };
 
 const initialVisibleColumns: Record<ColumnKey, boolean> = {
@@ -53,7 +52,6 @@ const initialVisibleColumns: Record<ColumnKey, boolean> = {
   specialization: true,
   hireDate: true,
   status: true,
-  actions: true,
 };
 
 const formatDate = (value?: string | null) =>
@@ -88,6 +86,20 @@ const getStatusTone = (status: AdminTeacher["status"]) => {
   return "pending";
 };
 
+const EXCEL_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+const downloadBlob = (blob: Blob, fileName: string) => {
+  const excelBlob = new Blob([blob], { type: EXCEL_MIME_TYPE });
+  const url = window.URL.createObjectURL(excelBlob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 500);
+};
+
 export function TeacherListPage() {
   const [records, setRecords] = useState<AdminTeacher[]>([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -96,6 +108,7 @@ export function TeacherListPage() {
   const [draftFilters, setDraftFilters] = useState<TeacherFilters>(emptyFilters);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
+  const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
   const [isColumnsMenuOpen, setIsColumnsMenuOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState(initialVisibleColumns);
   const [sortKey, setSortKey] = useState<SortKey>("hireDate");
@@ -184,6 +197,25 @@ export function TeacherListPage() {
     setVisibleColumns((current) => ({ ...current, [column]: !current[column] }));
   };
 
+  const handleDownloadExcel = async () => {
+    if (isDownloadingExcel) {
+      return;
+    }
+
+    setIsDownloadingExcel(true);
+    setIsDownloadMenuOpen(false);
+
+    try {
+      const { blob, fileName } = await adminTeachersApi.downloadExcel();
+      downloadBlob(blob, fileName || "teachers.xlsx");
+      toastSuccess("Đã tải file danh sách giáo viên.");
+    } catch (error) {
+      toastDanger(getAuthErrorMessage(error));
+    } finally {
+      setIsDownloadingExcel(false);
+    }
+  };
+
   const renderSortIcon = (key: SortKey) =>
     sortKey === key
       ? sortDirection === "asc"
@@ -263,13 +295,11 @@ export function TeacherListPage() {
               {isDownloadMenuOpen && (
                 <div className={teacherStyles.dropdownMenu}>
                   <button
+                    disabled={isDownloadingExcel}
                     type="button"
-                    onClick={() => {
-                      setIsDownloadMenuOpen(false);
-                      toastWarning("Chức năng xuất XLSX chưa được tích hợp.");
-                    }}
+                    onClick={() => void handleDownloadExcel()}
                   >
-                    XLSX
+                    {isDownloadingExcel ? "Đang tải..." : "XLSX"}
                   </button>
                 </div>
               )}
@@ -333,7 +363,7 @@ export function TeacherListPage() {
                       </button>
                     </th>
                   ))}
-                  {visibleColumns.actions && <th>Action</th>}
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -350,7 +380,7 @@ export function TeacherListPage() {
                         {getStatusLabel(teacher.status, statusOptions)}
                       </span>
                     </td>}
-                    {visibleColumns.actions && <td>
+                    <td>
                       <div className={styles.actions}>
                         <Link to={`/admin/teachers/${teacher.id}/view`} aria-label="Xem" title="Xem chi tiết"><Eye size={16} /></Link>
                         <Link to={`/admin/teachers/${teacher.id}/edit`} aria-label="Sửa" title="Chỉnh sửa"><Edit3 size={16} /></Link>
@@ -358,7 +388,7 @@ export function TeacherListPage() {
                           <Trash2 size={16} />
                         </button>
                       </div>
-                    </td>}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -1,4 +1,5 @@
-﻿using EnglishCentral.Application.Behaviors;
+using EnglishCentral.Application.Behaviors;
+using EnglishCentral.Application.Common.Excel;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,7 @@ namespace EnglishCentral.Application
                 cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
 
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+            services.AddScoped<IExcelExportService, ClosedXmlExcelExportService>();
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditBehavior<,>));

@@ -91,6 +91,11 @@ type ApiResult<T> = {
   error?: string;
 };
 
+export type DownloadFileResult = {
+  blob: Blob;
+  fileName?: string;
+};
+
 const unwrap = <T>(response: ApiResult<T>, fallbackMessage: string) => {
   if (!response.isSuccess || response.data === undefined) {
     throw new Error(response.error ?? fallbackMessage);
@@ -129,6 +134,22 @@ export const adminTeachersApi = {
     );
 
     return unwrap(response.data, "Không thể tải danh sách giáo viên.");
+  },
+
+  async downloadExcel(): Promise<DownloadFileResult> {
+    const response = await api.get<Blob>(
+      ENDPOINTS.ADMIN_TEACHERS.DOWNLOAD_EXCEL,
+      { responseType: "blob" },
+    );
+
+    const contentDisposition = response.headers["content-disposition"];
+    const fileNameMatch = contentDisposition?.match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
+    const fileName = fileNameMatch?.[1] || fileNameMatch?.[2];
+
+    return {
+      blob: response.data,
+      fileName: fileName ? decodeURIComponent(fileName) : undefined,
+    };
   },
 
   async getById(id: string | number) {

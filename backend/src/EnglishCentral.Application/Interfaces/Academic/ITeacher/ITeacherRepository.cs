@@ -24,5 +24,14 @@ namespace EnglishCentral.Application.Interfaces.Academic.ITeacher
             DateOnly? hireDate,
             string? role,
             CancellationToken ct = default);
+
+        Task<List<Teacher>> GetForExportAsync(
+            string? keyword,
+            EColumnSortGetTeacher? sortBy,
+            EOrderSort orderSort,
+            ETeacherStatus? status,
+            DateOnly? hireDate,
+            string? role,
+            CancellationToken ct = default);
     }
 }

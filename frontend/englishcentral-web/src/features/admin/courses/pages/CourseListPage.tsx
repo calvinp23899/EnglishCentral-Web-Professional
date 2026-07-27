@@ -13,7 +13,7 @@ import toolbarStyles from "@/features/admin/teachers/pages/TeacherListPage.modul
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 type SortKey = "code" | "name" | "tuitionFee" | "displayOrder";
-type ColumnKey = "code" | "name" | "category" | "level" | "tuitionFee" | "status" | "actions";
+type ColumnKey = "code" | "name" | "category" | "level" | "tuitionFee" | "status";
 type Filters = { categoryId: string; status: "all" | "active" | "inactive" };
 
 const emptyFilters: Filters = { categoryId: "all", status: "all" };
@@ -25,10 +25,9 @@ const labels: Record<ColumnKey, string> = {
   level: "Cấp độ",
   tuitionFee: "Học phí",
   status: "Trạng thái",
-  actions: "Action",
 };
 const initialVisibleColumns = Object.fromEntries(
-  [...columns, "actions"].map((column) => [column, true]),
+  columns.map((column) => [column, true]),
 ) as Record<ColumnKey, boolean>;
 const sortableColumns: Partial<Record<ColumnKey, SortKey>> = {
   code: "code",
@@ -157,7 +156,7 @@ export function CourseListPage() {
               </button>
               {isColumnsMenuOpen && (
                 <div className={`${toolbarStyles.dropdownMenu} ${toolbarStyles.columnsMenu}`}>
-                  {([...columns, "actions"] as ColumnKey[]).map((column) => (
+                  {columns.map((column) => (
                     <label key={column}>
                       <input
                         checked={visibleColumns[column]}
@@ -186,7 +185,7 @@ export function CourseListPage() {
                     ) : labels[column]}
                   </th>
                 ))}
-                {visibleColumns.actions && <th>Action</th>}
+                <th>Action</th>
               </tr></thead>
               <tbody>
                 {records.map((record) => (
@@ -197,11 +196,11 @@ export function CourseListPage() {
                     {visibleColumns.level && <td>{record.level || "Chưa cập nhật"}</td>}
                     {visibleColumns.tuitionFee && <td>{formatMoney(record.tuitionFee)} đ</td>}
                     {visibleColumns.status && <td><span className={`${listStyles.statusBadge} ${record.isActive ? listStyles.active : listStyles.inactive}`}>{record.isActive ? "Hoạt động" : "Ngừng hoạt động"}</span></td>}
-                    {visibleColumns.actions && <td><div className={listStyles.actions}>
+                    <td><div className={listStyles.actions}>
                       <Link aria-label="Xem" title="Xem chi tiết" to={`/admin/courses/${record.id}/view`}><Eye size={16} /></Link>
                       <Link aria-label="Sửa" title="Chỉnh sửa" to={`/admin/courses/${record.id}/edit`}><Edit3 size={16} /></Link>
                       <button aria-label="Xóa" title="Xóa" className={listStyles.deleteAction} type="button" onClick={() => setDeletingRecord(record)}><Trash2 size={16} /></button>
-                    </div></td>}
+                    </div></td>
                   </tr>
                 ))}
               </tbody>

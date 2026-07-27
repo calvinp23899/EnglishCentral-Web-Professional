@@ -11,10 +11,10 @@ import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 type SortKey = "code" | "name" | "capacity";
 type SortDirection = "asc" | "desc";
-type ColumnKey = SortKey | "building" | "floor" | "status" | "actions";
+type ColumnKey = SortKey | "building" | "floor" | "status";
 type StatusFilter = "all" | "active" | "inactive";
 
-const columns: ColumnKey[] = ["code", "name", "capacity", "building", "floor", "status", "actions"];
+const columns: ColumnKey[] = ["code", "name", "capacity", "building", "floor", "status"];
 
 const labels: Record<ColumnKey, string> = {
   code: "Mã phòng",
@@ -23,7 +23,6 @@ const labels: Record<ColumnKey, string> = {
   building: "Tòa nhà",
   floor: "Tầng",
   status: "Trạng thái",
-  actions: "Action",
 };
 
 const sortable: Partial<Record<ColumnKey, SortKey>> = {
@@ -208,6 +207,7 @@ export function RoomListPage() {
                       )}
                     </th>
                   ))}
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -215,17 +215,16 @@ export function RoomListPage() {
                   <tr key={`room-skeleton-${index}`}>
                     {columns.filter((column) => visibleColumns[column]).map((column) => (
                       <td key={column}>
-                        {column === "actions" ? (
-                          <div className={listStyles.actions}>
-                            <Skeleton borderRadius={8} height={34} width={34} />
-                            <Skeleton borderRadius={8} height={34} width={34} />
-                            <Skeleton borderRadius={8} height={34} width={34} />
-                          </div>
-                        ) : (
-                          <Skeleton height={18} width={column === "status" ? 110 : 140} />
-                        )}
+                        <Skeleton height={18} width={column === "status" ? 110 : 140} />
                       </td>
                     ))}
+                    <td>
+                      <div className={listStyles.actions}>
+                        <Skeleton borderRadius={8} height={34} width={34} />
+                        <Skeleton borderRadius={8} height={34} width={34} />
+                        <Skeleton borderRadius={8} height={34} width={34} />
+                      </div>
+                    </td>
                   </tr>
                 ))}
 
@@ -237,11 +236,11 @@ export function RoomListPage() {
                     {visibleColumns.building && <td>{record.building || "Chưa cập nhật"}</td>}
                     {visibleColumns.floor && <td>{record.floor ?? "Chưa cập nhật"}</td>}
                     {visibleColumns.status && <td><span className={`${listStyles.statusBadge} ${record.isActive ? listStyles.active : listStyles.inactive}`}>{record.isActive ? "Hoạt động" : "Ngừng hoạt động"}</span></td>}
-                    {visibleColumns.actions && <td><div className={listStyles.actions}>
+                    <td><div className={listStyles.actions}>
                       <Link aria-label={`Xem ${record.name}`} title="Xem chi tiết" to={`/admin/rooms/${record.id}/view`}><Eye aria-hidden="true" size={16} /></Link>
                       <Link aria-label={`Sửa ${record.name}`} title="Chỉnh sửa" to={`/admin/rooms/${record.id}/edit`}><Edit3 aria-hidden="true" size={16} /></Link>
                       <button aria-label={`Xóa ${record.name}`} title="Xóa" className={listStyles.deleteAction} type="button" onClick={() => setDeletingRecord(record)}><Trash2 aria-hidden="true" size={16} /></button>
-                    </div></td>}
+                    </div></td>
                   </tr>
                 ))}
               </tbody>

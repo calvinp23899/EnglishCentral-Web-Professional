@@ -1,6 +1,7 @@
-﻿using EnglishCentral.Application.Features.Academic.Teachers.Commands.CreateTeacher;
+using EnglishCentral.Application.Features.Academic.Teachers.Commands.CreateTeacher;
 using EnglishCentral.Application.Features.Academic.Teachers.Commands.DeleteTeacher;
 using EnglishCentral.Application.Features.Academic.Teachers.Commands.UpdateTeacher;
+using EnglishCentral.Application.Features.Academic.Teachers.Queries.ExportTeachersExcel;
 using EnglishCentral.Application.Features.Academic.Teachers.Queries.GetTeacher;
 using EnglishCentral.Application.Features.Academic.Teachers.Queries.GetTeacherById;
 using EnglishCentral.Contracts.Requests.Academic.Teacher;
@@ -21,6 +22,7 @@ namespace EnglishCentral.API.Controllers.Admin.Academic
         {
             _mediator = mediator;
         }
+
         [HttpGet("get-list")]
         [HasPermission(SystemPermissions.TeacherRead)]
         public async Task<IActionResult> GetTeachers([FromQuery] TeacherFilterRequest request, CancellationToken ct)
@@ -38,6 +40,27 @@ namespace EnglishCentral.API.Controllers.Admin.Academic
             };
             var result = await _mediator.Send(query, ct);
             return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpGet("download-excel")]
+        [HasPermission(SystemPermissions.TeacherRead)]
+        public async Task<IActionResult> DownloadExcel([FromQuery] TeacherFilterRequest request, CancellationToken ct)
+        {
+            var query = new ExportTeachersExcelQuery
+            {
+                Keyword = request.Keyword,
+                SortBy = request.SortBy,
+                OrderSort = request.OrderSort,
+                Status = request.Status,
+                Date = request.HireDate,
+                Role = request.Role,
+            };
+
+            var result = await _mediator.Send(query, ct);
+            if (!result.IsSuccess || result.Data is null)
+                return StatusCode(result.StatusCode, result);
+
+            return File(result.Data.Content, result.Data.ContentType, result.Data.FileName);
         }
 
         [HttpGet("{id:long}/get-by-id")]

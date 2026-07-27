@@ -103,33 +103,59 @@ const readStringArray = (source: RawObject, keys: string[]) => {
   return Array.from(new Set(values));
 };
 
-const readValidationErrorMessages = (value: unknown) => {
+const readValidationErrorMessages = (value: unknown): string[] => {
   if (!value) {
     return [];
   }
 
+  if (typeof value === "string" || typeof value === "number") {
+    return [String(value)].filter((item) => item.trim());
+  }
+
   if (Array.isArray(value)) {
-    return value
-      .filter((item): item is string | number => typeof item === "string" || typeof item === "number")
-      .map(String)
-      .filter((item) => item.trim());
+    return value.flatMap(readValidationErrorMessages);
   }
 
   if (!isObject(value)) {
     return [];
   }
 
-  return Object.values(value)
-    .flatMap((entry) => {
-      if (Array.isArray(entry)) {
-        return entry;
-      }
+  return Object.values(value).flatMap(readValidationErrorMessages);
+};
 
-      return typeof entry === "string" || typeof entry === "number" ? [entry] : [];
-    })
-    .filter((item): item is string | number => typeof item === "string" || typeof item === "number")
-    .map(String)
-    .filter((item) => item.trim());
+const readErrorPayload = (value: unknown): unknown[] => {
+  if (!isObject(value)) {
+    return [];
+  }
+
+  const payloads: unknown[] = [];
+  const keys = ["errors", "Errors", "validationErrors", "ValidationErrors"];
+
+  keys.forEach((key) => {
+    if (value[key]) {
+      payloads.push(value[key]);
+    }
+  });
+
+  ["data", "Data", "result", "Result", "error", "Error"].forEach((key) => {
+    const nestedValue = value[key];
+
+    if (isObject(nestedValue)) {
+      payloads.push(...readErrorPayload(nestedValue));
+    }
+  });
+
+  return payloads;
+};
+
+const readApiErrorMessages = (data: unknown): string[] => {
+  if (Array.isArray(data)) {
+    return Array.from(new Set(readValidationErrorMessages(data)));
+  }
+
+  const validationMessages = readErrorPayload(data).flatMap(readValidationErrorMessages);
+
+  return Array.from(new Set(validationMessages.map((item) => item.trim()).filter(Boolean)));
 };
 
 const decodeJwtPayload = (token?: string): RawObject | null => {
@@ -256,7 +282,7 @@ export const getAuthErrorMessage = (error: unknown) => {
     const data = error.response?.data;
 
     if (isObject(data)) {
-      const validationMessages = readValidationErrorMessages(data.errors);
+      const validationMessages = readApiErrorMessages(data);
 
       if (validationMessages.length > 0) {
         return validationMessages.join(", ");

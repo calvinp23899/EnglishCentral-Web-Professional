@@ -29,6 +29,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Exam
                     Level = "Academic",
                     TotalParts = 3,
                     Skill = EExamSkill.Reading.ToDescription(),
+                    IsDefaultSystem = true,
                 });
 
             await EnsureTemplateAsync(
@@ -44,6 +45,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Exam
                     Level = "Academic",
                     TotalParts = 4,
                     Skill = EExamSkill.Listening.ToDescription(),
+                    IsDefaultSystem = true,
                 });
 
             await context.SaveChangesAsync();
