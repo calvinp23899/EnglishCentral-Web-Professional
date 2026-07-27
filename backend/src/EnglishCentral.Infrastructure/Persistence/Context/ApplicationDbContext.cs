@@ -1,6 +1,7 @@
 using EnglishCentral.Domain.Common;
 using EnglishCentral.Domain.Entities.Academic;
 using EnglishCentral.Domain.Entities.Authentication;
+using EnglishCentral.Domain.Entities.CRM;
 using EnglishCentral.Domain.Entities.Exam;
 using EnglishCentral.Domain.Entities.Finance;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +51,18 @@ namespace EnglishCentral.Infrastructure.Persistence.Context
         public DbSet<ClassSession> ClassSessions => Set<ClassSession>();
 
         public DbSet<Attendance> Attendances => Set<Attendance>();
+
+        #endregion
+
+        #region ---- CRM Module ----
+
+        public DbSet<LeadSource> LeadSources => Set<LeadSource>();
+
+        public DbSet<Lead> Leads => Set<Lead>();
+
+        public DbSet<LeadActivity> LeadActivities => Set<LeadActivity>();
+
+        public DbSet<LeadConversion> LeadConversions => Set<LeadConversion>();
 
         #endregion
 

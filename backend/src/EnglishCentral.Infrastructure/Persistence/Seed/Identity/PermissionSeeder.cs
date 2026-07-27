@@ -74,7 +74,12 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Identity
                 new() { Name = SystemPermissions.ExamCreate, Description = "Create exams", CreatedBy = SystemDefault.DefaultSystemNumber },
                 new() { Name = SystemPermissions.ExamUpdate, Description = "Update exams", CreatedBy = SystemDefault.DefaultSystemNumber },
                 new() { Name = SystemPermissions.ExamDelete, Description = "Delete exams", CreatedBy = SystemDefault.DefaultSystemNumber },
-                new() { Name = SystemPermissions.ExamReview, Description = "Review exam attempts", CreatedBy = SystemDefault.DefaultSystemNumber }
+                new() { Name = SystemPermissions.ExamReview, Description = "Review exam attempts", CreatedBy = SystemDefault.DefaultSystemNumber },
+
+                new() { Name = SystemPermissions.CRMRead, Description = "View CRM data", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.CRMCreate, Description = "Create CRM records", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.CRMUpdate, Description = "Update CRM records", CreatedBy = SystemDefault.DefaultSystemNumber },
+                new() { Name = SystemPermissions.CRMDelete, Description = "Delete CRM records", CreatedBy = SystemDefault.DefaultSystemNumber }
             };
 
             var existingPermissionNames = await context.Permissions

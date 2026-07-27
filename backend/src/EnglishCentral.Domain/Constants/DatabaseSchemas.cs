@@ -12,6 +12,8 @@
 
         public const string Exam = "exam";
 
+        public const string CRM = "crm";
+
         public const string HRM = "hrm";
 
         public const string Notification = "notification";

@@ -89,5 +89,12 @@
         public const string ExamReview = "exam.review";
         #endregion
 
+        #region CRM Permissions
+        public const string CRMRead = "crm.read";
+        public const string CRMCreate = "crm.create";
+        public const string CRMUpdate = "crm.update";
+        public const string CRMDelete = "crm.delete";
+        #endregion
+
     }
 }
