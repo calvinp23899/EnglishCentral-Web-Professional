@@ -33,6 +33,8 @@ export type AdminExamTemplate = {
   durationMinutes?: number | null;
   totalScore?: number | null;
   templateConfigJson?: ExamTemplateConfig | string | null;
+  isDefaultSystem?: boolean | string | number | null;
+  IsDefaultSystem?: boolean | string | number | null;
   status: string | number;
   isActive: boolean;
 };
@@ -48,6 +50,8 @@ export type ExamTemplateConfig = {
   TotalParts?: number | string | null;
   numberOfPassages?: number | string | null;
   numberPassages?: number | string | null;
+  isDefaultSystem?: boolean | string | number | null;
+  IsDefaultSystem?: boolean | string | number | null;
   [key: string]: unknown;
 };
 

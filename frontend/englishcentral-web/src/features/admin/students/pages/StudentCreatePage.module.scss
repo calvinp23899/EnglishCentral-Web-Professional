@@ -262,6 +262,34 @@
   grid-column: 1 / -1;
 }
 
+.checkboxField {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border-radius: 5px;
+    accent-color: #2563eb;
+    cursor: pointer;
+  }
+
+  > span:first-child,
+  span {
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: none;
+  }
+}
+
 .runtimeConfigBox {
   grid-column: 1 / -1;
   padding: 18px;

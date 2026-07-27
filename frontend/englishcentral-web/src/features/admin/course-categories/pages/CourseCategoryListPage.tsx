@@ -16,14 +16,13 @@ import styles from "./CourseCategoryListPage.module.scss";
 
 type SortKey = "code" | "name";
 type SortDirection = "asc" | "desc";
-type ColumnKey = SortKey | "description" | "status" | "actions";
+type ColumnKey = SortKey | "description" | "status";
 
 const columnLabels: Record<ColumnKey, string> = {
   code: "Mã danh mục",
   name: "Tên danh mục",
   description: "Mô tả",
   status: "Trạng thái",
-  actions: "Action",
 };
 
 const initialVisibleColumns: Record<ColumnKey, boolean> = {
@@ -31,7 +30,6 @@ const initialVisibleColumns: Record<ColumnKey, boolean> = {
   name: true,
   description: true,
   status: true,
-  actions: true,
 };
 
 export function CourseCategoryListPage() {
@@ -225,7 +223,7 @@ export function CourseCategoryListPage() {
                   </th>}
                   {visibleColumns.description && <th>Mô tả</th>}
                   {visibleColumns.status && <th>Trạng thái</th>}
-                  {visibleColumns.actions && <th>Action</th>}
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -237,13 +235,13 @@ export function CourseCategoryListPage() {
                       {visibleColumns.name && <td><Skeleton height={18} width={180} /></td>}
                       {visibleColumns.description && <td><Skeleton height={18} width={260} /></td>}
                       {visibleColumns.status && <td><Skeleton borderRadius={999} height={28} width={110} /></td>}
-                      {visibleColumns.actions && <td>
+                      <td>
                         <div className={listStyles.actions}>
                           <Skeleton borderRadius={8} height={34} width={34} />
                           <Skeleton borderRadius={8} height={34} width={34} />
                           <Skeleton borderRadius={8} height={34} width={34} />
                         </div>
-                      </td>}
+                      </td>
                     </tr>
                   ))}
 
@@ -263,7 +261,7 @@ export function CourseCategoryListPage() {
                         {record.isActive ? "Hoạt động" : "Ngừng hoạt động"}
                       </span>
                     </td>}
-                    {visibleColumns.actions && <td>
+                    <td>
                       <div className={listStyles.actions}>
                         <Link
                           aria-label={`Xem ${record.name}`}
@@ -289,7 +287,7 @@ export function CourseCategoryListPage() {
                           <Trash2 aria-hidden="true" size={16} />
                         </button>
                       </div>
-                    </td>}
+                    </td>
                   </tr>
                 ))}
               </tbody>

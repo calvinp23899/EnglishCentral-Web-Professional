@@ -28,6 +28,7 @@ type FormState = {
   skill: string;
   level: string;
   numberPassages: string;
+  isDefaultSystem: boolean;
   isActive: boolean;
 };
 type FormErrors = Partial<Record<keyof FormState, string>>;
@@ -43,6 +44,7 @@ const defaultForm: FormState = {
   skill: "Reading",
   level: "Academic",
   numberPassages: "3",
+  isDefaultSystem: false,
   isActive: true,
 };
 
@@ -90,6 +92,30 @@ const getConfigNumberString = (
   const parsed = toPositiveInteger(value);
 
   return String(parsed || fallback);
+};
+
+const getConfigBoolean = (
+  config: ExamTemplateConfig,
+  keys: Array<keyof ExamTemplateConfig>,
+  fallback = false,
+) => {
+  for (const key of keys) {
+    const value = config[key];
+
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "number") {
+      return value === 1;
+    }
+
+    if (typeof value === "string" && value.trim()) {
+      return ["true", "1", "yes"].includes(value.trim().toLowerCase());
+    }
+  }
+
+  return fallback;
 };
 
 const getMetadataOptionValue = (option: MetadataOption) =>
@@ -171,6 +197,11 @@ export function ExamTemplateFormPage({ mode }: Props) {
               ["TotalParts", "totalParts", "numberOfPassages", "numberPassages"],
               3,
             ),
+            isDefaultSystem: getConfigBoolean(
+              templateConfig,
+              ["IsDefaultSystem", "isDefaultSystem"],
+              false,
+            ),
             isActive: record.isActive,
           });
         }
@@ -242,6 +273,7 @@ export function ExamTemplateFormPage({ mode }: Props) {
           Skill: form.skill,
           Level: form.level,
           TotalParts: toPositiveInteger(form.numberPassages),
+          IsDefaultSystem: form.isDefaultSystem,
         },
         isActive: form.isActive,
       };
@@ -406,6 +438,15 @@ export function ExamTemplateFormPage({ mode }: Props) {
                     onChange={(event) => updateField("numberPassages", event.target.value)}
                   />
                   <ErrorMessage message={errors.numberPassages} />
+                </label>
+
+                <label className={`${styles.field} ${styles.checkboxField}`}>
+                  <input
+                    checked={form.isDefaultSystem}
+                    type="checkbox"
+                    onChange={(event) => updateField("isDefaultSystem", event.target.checked)}
+                  />
+                  <span>Cấu hình mặc định hệ thống</span>
                 </label>
               </div>
             </section>

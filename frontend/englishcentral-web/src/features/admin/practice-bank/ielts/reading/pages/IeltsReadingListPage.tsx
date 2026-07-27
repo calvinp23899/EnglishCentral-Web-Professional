@@ -75,8 +75,7 @@ type ColumnKey =
   | "createdAt"
   | "createdBy"
   | "updatedAt"
-  | "updatedBy"
-  | "actions";
+  | "updatedBy";
 
 const columns: ColumnKey[] = [
   "name",
@@ -86,10 +85,9 @@ const columns: ColumnKey[] = [
   "createdBy",
   "updatedAt",
   "updatedBy",
-  "actions",
 ];
 
-const toggleableColumns: ColumnKey[] = columns.filter((column) => column !== "actions");
+const toggleableColumns: ColumnKey[] = columns;
 
 const columnLabels: Record<ColumnKey, string> = {
   name: "Name",
@@ -99,7 +97,6 @@ const columnLabels: Record<ColumnKey, string> = {
   createdBy: "Created by",
   updatedAt: "Updated date",
   updatedBy: "Updated by",
-  actions: "Action",
 };
 
 const initialVisibleColumns: Record<ColumnKey, boolean> = {
@@ -110,7 +107,6 @@ const initialVisibleColumns: Record<ColumnKey, boolean> = {
   createdBy: false,
   updatedAt: false,
   updatedBy: false,
-  actions: true,
 };
 
 type IeltsSkillList = "reading" | "listening";
@@ -174,7 +170,7 @@ export function IeltsReadingListPage({ skill = "reading" }: IeltsReadingListPage
   const [isColumnsMenuOpen, setIsColumnsMenuOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState(initialVisibleColumns);
 
-  const visibleColumnCount = Math.max(1, columns.filter((column) => visibleColumns[column]).length);
+  const visibleColumnCount = Math.max(1, columns.filter((column) => visibleColumns[column]).length + 1);
 
   const emptyMessage = useMemo(() => {
     if (isLoading) return config.loadingText;
@@ -328,6 +324,7 @@ export function IeltsReadingListPage({ skill = "reading" }: IeltsReadingListPage
                 {columns.filter((column) => visibleColumns[column]).map((column) => (
                   <th key={column}>{columnLabels[column]}</th>
                 ))}
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -348,7 +345,7 @@ export function IeltsReadingListPage({ skill = "reading" }: IeltsReadingListPage
                   {visibleColumns.createdBy && <td>{getCreatedBy(record)}</td>}
                   {visibleColumns.updatedAt && <td>{formatDateTime(record.updatedAt)}</td>}
                   {visibleColumns.updatedBy && <td>{getUpdatedBy(record)}</td>}
-                  {visibleColumns.actions && <td>
+                  <td>
                     <div className={listStyles.actions}>
                       {isDraft(record.status) ? (
                         <>
@@ -417,7 +414,7 @@ export function IeltsReadingListPage({ skill = "reading" }: IeltsReadingListPage
                         </>
                       )}
                     </div>
-                  </td>}
+                  </td>
                 </tr>
               ))}
 

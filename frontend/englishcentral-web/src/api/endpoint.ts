@@ -29,6 +29,7 @@ export const ENDPOINTS = {
 
   ADMIN_TEACHERS: {
     GET_LIST: "/admin/academic/teachers/get-list",
+    DOWNLOAD_EXCEL: "/admin/academic/teachers/download-excel",
     GET_BY_ID: (id: string | number) => `/admin/academic/teachers/${id}/get-by-id`,
     CREATE: "/admin/academic/teachers/insert",
     UPDATE: (id: string | number) => `/admin/academic/teachers/${id}/update`,

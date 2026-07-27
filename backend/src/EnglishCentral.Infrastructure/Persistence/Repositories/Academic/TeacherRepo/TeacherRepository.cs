@@ -51,6 +51,41 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic.Teache
             string? role,
             CancellationToken ct = default)
         {
+            var query = BuildFilteredQuery(keyword, status, hireDate, role);
+
+            query = ApplySorting(query, sortBy, orderSort);
+
+            var totalItems = await query.CountAsync(ct);
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+            return (items, totalItems);
+        }
+
+        public async Task<List<Teacher>> GetForExportAsync(
+            string? keyword,
+            EColumnSortGetTeacher? sortBy,
+            EOrderSort orderSort,
+            ETeacherStatus? status,
+            DateOnly? hireDate,
+            string? role,
+            CancellationToken ct = default)
+        {
+            var query = BuildFilteredQuery(keyword, status, hireDate, role);
+            query = ApplySorting(query, sortBy, orderSort);
+
+            return await query.ToListAsync(ct);
+        }
+
+        private IQueryable<Teacher> BuildFilteredQuery(
+            string? keyword,
+            ETeacherStatus? status,
+            DateOnly? hireDate,
+            string? role)
+        {
             var query = _dbContenxt.Teachers
                 .Include(x => x.User)
                     .ThenInclude(x => x.UserRoles)
@@ -72,23 +107,25 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic.Teache
             }
 
             if (status.HasValue)
-            {
                 query = query.Where(x => x.Status == status.Value);
-            }
 
             if (hireDate.HasValue)
-            {
                 query = query.Where(x => x.HireDate == hireDate.Value);
-            }
 
             if (!string.IsNullOrWhiteSpace(role))
-            {
                 query = query.Where(x => x.User.UserRoles.Any(userRole => userRole.Role.Name == role));
-            }
 
+            return query;
+        }
+
+        private static IQueryable<Teacher> ApplySorting(
+            IQueryable<Teacher> query,
+            EColumnSortGetTeacher? sortBy,
+            EOrderSort orderSort)
+        {
             var isDescending = orderSort == EOrderSort.Descending;
 
-            query = sortBy switch
+            return sortBy switch
             {
                 EColumnSortGetTeacher.TeacherCode => isDescending
                     ? query.OrderByDescending(x => x.TeacherCode)
@@ -118,15 +155,6 @@ namespace EnglishCentral.Infrastructure.Persistence.Repositories.Academic.Teache
                     ? query.OrderByDescending(x => x.CreatedAt)
                     : query.OrderBy(x => x.CreatedAt)
             };
-
-            var totalItems = await query.CountAsync(ct);
-
-            var items = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(ct);
-
-            return (items, totalItems);
         }
     }
 }

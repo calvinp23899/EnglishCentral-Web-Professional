@@ -8,17 +8,16 @@ import toolbarStyles from "@/features/admin/teachers/pages/TeacherListPage.modul
 
 import { formatDate, myClassRecords } from "./myClassesMock";
 
-type ColumnKey = "code" | "name" | "capacity" | "startDate" | "endDate" | "actions";
+type ColumnKey = "code" | "name" | "capacity" | "startDate" | "endDate";
 type CapacityFilter = "all" | "available" | "full";
 
-const columns: ColumnKey[] = ["code", "name", "capacity", "startDate", "endDate", "actions"];
+const columns: ColumnKey[] = ["code", "name", "capacity", "startDate", "endDate"];
 const labels: Record<ColumnKey, string> = {
   code: "Mã lớp",
   name: "Tên lớp",
   capacity: "Sĩ số",
   startDate: "Ngày bắt đầu",
   endDate: "Ngày kết thúc",
-  actions: "Action",
 };
 const initialVisibleColumns = Object.fromEntries(columns.map((column) => [column, true])) as Record<ColumnKey, boolean>;
 
@@ -122,6 +121,7 @@ export function MyClassListPage() {
                   {columns.filter((column) => visibleColumns[column]).map((column) => (
                     <th key={column}>{labels[column]}</th>
                   ))}
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -132,15 +132,13 @@ export function MyClassListPage() {
                     {visibleColumns.capacity && <td>{record.enrolledCount}/{record.capacity}</td>}
                     {visibleColumns.startDate && <td>{formatDate(record.startDate)}</td>}
                     {visibleColumns.endDate && <td>{formatDate(record.endDate)}</td>}
-                    {visibleColumns.actions && (
-                      <td>
-                        <div className={listStyles.actions}>
-                          <Link aria-label={`Xem ${record.name}`} title="Xem chi tiết" to={`/admin/my-classes/${record.id}/view`}>
-                            <Eye aria-hidden="true" size={16} />
-                          </Link>
-                        </div>
-                      </td>
-                    )}
+                    <td>
+                      <div className={listStyles.actions}>
+                        <Link aria-label={`Xem ${record.name}`} title="Xem chi tiết" to={`/admin/my-classes/${record.id}/view`}>
+                          <Eye aria-hidden="true" size={16} />
+                        </Link>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

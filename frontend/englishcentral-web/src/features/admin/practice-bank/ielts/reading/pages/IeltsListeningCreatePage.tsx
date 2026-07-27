@@ -147,14 +147,14 @@ const LISTENINGQuestionSubtypes: LISTENINGQuestionSubtype[] = [
     questionType: "MultipleChoice",
     displayType: "multiple_choice_single",
     interaction: "select",
-    description: "Ch?n m?t dáp án dúng cho m?i câu h?i.",
+    description: "Chọn một đáp án đúng cho mỗi câu hỏi.",
   },
   {
     label: "Multiple Choice - Multiple Answers",
     questionType: "MultipleChoiceMultiple",
     displayType: "multiple_choice_multiple",
     interaction: "checkbox",
-    description: "T?o 1 question cho m?i c?p s?, ví d? 23-24. User ch?n nhi?u dáp án dúng b?ng checkbox.",
+    description: "Tạo 1 question cho mỗi cặp số, ví dụ 23-24. User chọn nhiều đáp án đúng bằng checkbox.",
   },
   {
     label: "Matching Information Table Select Grid",
@@ -162,7 +162,7 @@ const LISTENINGQuestionSubtypes: LISTENINGQuestionSubtype[] = [
     displayType: "matching_information_table_select_grid",
     interaction: "select",
     optionsReusable: true,
-    description: "Ch?n dáp án trong b?ng matching information. Có th? b?t reuse d? dùng l?i option nhi?u l?n.",
+    description: "Chọn đáp án trong bảng matching information. Có thể bật reuse để dùng lại option nhiều lần.",
   },
   {
     label: "Summary Completion With Options",
@@ -170,7 +170,7 @@ const LISTENINGQuestionSubtypes: LISTENINGQuestionSubtype[] = [
     displayType: "summary_completion_with_options",
     interaction: "drag_drop",
     optionsReusable: false,
-    description: "Hoàn thành summary b?ng cách ch?n/kéo phrase A-J vào t?ng blank. M?i blank là m?t question.",
+    description: "Hoàn thành summary bằng cách chọn/kéo phrase A-J vào từng blank. Mỗi blank là một question.",
   },
   {
     label: "Matching Headings",
@@ -178,7 +178,7 @@ const LISTENINGQuestionSubtypes: LISTENINGQuestionSubtype[] = [
     displayType: "matching_headings",
     interaction: "drag_drop",
     optionsReusable: false,
-    description: "T?o danh sách headings dùng chung và ch?n heading dúng cho t?ng do?n/câu.",
+    description: "Tạo danh sách headings dùng chung và chọn heading đúng cho từng đoạn/câu.",
   },
   {
     label: "Matching Information",
@@ -186,7 +186,7 @@ const LISTENINGQuestionSubtypes: LISTENINGQuestionSubtype[] = [
     displayType: "matching_information",
     interaction: "drag_drop",
     optionsReusable: true,
-    description: "Matching thông tin; m?t l?a ch?n có th? dùng l?i nhi?u l?n.",
+    description: "Matching thông tin; một lựa chọn có thể dùng lại nhiều lần.",
   },
   {
     label: "Matching Features",
@@ -202,21 +202,21 @@ const LISTENINGQuestionSubtypes: LISTENINGQuestionSubtype[] = [
     displayType: "matching_sentence_endings",
     interaction: "drag_drop",
     optionsReusable: false,
-    description: "Ghép n?a câu v?i ending phù h?p.",
+    description: "Ghép nửa câu với ending phù hợp.",
   },
   {
     label: "True / False / Not Given",
     questionType: "TrueFalseNotGiven",
     displayType: "true_false_not_given",
     interaction: "select",
-    description: "FE t? t?o 3 l?a ch?n True, False, Not Given.",
+    description: "FE tự tạo 3 lựa chọn True, False, Not Given.",
   },
   {
     label: "Yes / No / Not Given",
     questionType: "YesNoNotGiven",
     displayType: "yes_no_not_given",
     interaction: "select",
-    description: "FE t? t?o 3 l?a ch?n Yes, No, Not Given.",
+    description: "FE tự tạo 3 lựa chọn Yes, No, Not Given.",
   },
   {
     label: "Short Answer",
@@ -224,7 +224,7 @@ const LISTENINGQuestionSubtypes: LISTENINGQuestionSubtype[] = [
     displayType: "short_answer",
     interaction: "text_input",
     answerLimit: "NO_MORE_THAN_THREE_WORDS",
-    description: "Nh?p dáp án ng?n. Có th? nh?p nhi?u dáp án dúng cách nhau b?ng d?u |.",
+    description: "Nhập đáp án ngắn. Có thể nhập nhiều đáp án đúng cách nhau bằng dấu |.",
   },
   {
     label: "Sentence / Summary / Table Completion",
@@ -232,7 +232,7 @@ const LISTENINGQuestionSubtypes: LISTENINGQuestionSubtype[] = [
     displayType: "gap_fill",
     interaction: "text_input",
     answerLimit: "ONE_WORD_ONLY",
-    description: "Nh?p dáp án text. Có th? nh?p nhi?u dáp án dúng cách nhau b?ng d?u |.",
+    description: "Nhập đáp án text. Có thể nhập nhiều đáp án đúng cách nhau bằng dấu |.",
   },
 ];
 
@@ -2258,8 +2258,8 @@ export function IeltsListeningCreatePage() {
             <FileText aria-hidden="true" size={34} />
             <h2>Chưa có template IELTS Listening</h2>
             <p>
-              Vui lòng t?o ExamType IELTS ? “D?ng Bài Ki?m Tra”, sau dó t?o
-              ExamTemplate IELTS Academic LISTENING ? “M?u Ð? Ki?m Tra” tru?c khi t?o d?.
+              Vui lòng tạo ExamType IELTS ở “Dạng Bài Kiểm Tra”, sau đó tạo
+              ExamTemplate IELTS Academic LISTENING ở “Mẫu Đề Kiểm Tra” trước khi tạo đề.
             </p>
             <div className={styles.headerActions}>
               <Link to="/admin/exam-types/create">Tạo dạng bài kiểm tra</Link>
@@ -2752,15 +2752,15 @@ export function IeltsListeningCreatePage() {
                                     Instruction
                                     <span className={styles.infoTooltip}>
                                       <span
-                                        aria-label="Hu?ng d?n instruction"
+                                        aria-label="Hướng dẫn instruction"
                                         className={styles.infoIcon}
                                         tabIndex={0}
                                       >
                                         i
                                       </span>
                                       <span className={styles.infoTooltipContent}>
-                                        Nh?p hu?ng d?n cho d?ng summary completion. N?i dung summary
-                                        và blank du?c c?u hình ? t?ng question bên du?i.
+                                        Nhập hướng dẫn cho dạng summary completion. Nội dung summary
+                                        và blank được cấu hình ở từng question bên dưới.
                                       </span>
                                     </span>
                                   </span>
@@ -2783,16 +2783,16 @@ export function IeltsListeningCreatePage() {
                                     Summary text
                                     <span className={styles.infoTooltip}>
                                       <span
-                                        aria-label="Hu?ng d?n Summary text"
+                                        aria-label="Hướng dẫn Summary text"
                                         className={styles.infoIcon}
                                         tabIndex={0}
                                       >
                                         i
                                       </span>
                                       <span className={styles.infoTooltipContent}>
-                                        Nh?p do?n summary hoàn ch?nh và d?t blank b?ng placeholder
-                                        theo s? câu, ví d? {"{Q27}"}, {"{Q28}"}. Khi thi th?t FE s?
-                                        thay các placeholder này b?ng ô kéo th? dáp án.
+                                        Nhập đoạn summary hoàn chỉnh và đặt blank bằng placeholder
+                                        theo số câu, ví dụ {"{Q27}"}, {"{Q28}"}. Khi thi thật FE sẽ
+                                        thay các placeholder này bằng ô kéo thả đáp án.
                                       </span>
                                     </span>
                                   </span>
@@ -2822,10 +2822,10 @@ export function IeltsListeningCreatePage() {
                                     {activeGroupIsMapPlanDiagramSelectGrid
                                       ? "Danh sách options A, B, C... dùng làm đáp án cho các câu hỏi bên dưới."
                                       : activeGroupIsMatchingHeading
-                                      ? "Label là s? La Mã h?c viên nhìn th?y. Heading text là n?i dung dáp án heading s? g?i xu?ng BE."
+                                      ? "Label là số La Mã học viên nhìn thấy. Heading text là nội dung đáp án heading sẽ gửi xuống BE."
                                       : activeGroupIsSummaryCompletionWithOptions
-                                        ? "Danh sách phrase A-J d? h?c viên kéo/ch?n vào các blank trong summary. M?c d?nh không dùng l?i option."
-                                      : "Dùng chung cho toàn b? câu trong group. FE s? duplicate options vào t?ng question khi g?i payload."}
+                                        ? "Danh sách phrase A-J để học viên kéo/chọn vào các blank trong summary. Mặc định không dùng lại option."
+                                      : "Dùng chung cho toàn bộ câu trong group. FE sẽ duplicate options vào từng question khi gửi payload."}
                                   </p>
                                 </div>
                                 <button type="button" onClick={() => addSharedOption(activeGroup.id)}>
@@ -3186,12 +3186,12 @@ export function IeltsListeningCreatePage() {
                                   )}
                                   {activeGroupIsMatchingHeading && !activeGroupUsesCompactMatchingOptions && (
                                     <div className={styles.helperText}>
-                                      Paragraph du?c g?i ý t? range c?a group, ví d? Questions 14-20 tuong ?ng Paragraph A-G.
+                                      Paragraph được gợi ý từ range của group, ví dụ Questions 14-20 tương ứng Paragraph A-G.
                                     </div>
                                   )}
                                   {activeGroupIsSummaryCompletionWithOptions && (
                                     <div className={styles.helperText}>
-                                      M?i blank là m?t question. Prompt nên là câu ng?n ch?a {"{blank}"} d? preview và scoring d? hi?u.
+                                      Mỗi blank là một question. Prompt nên là câu ngắn chứa {"{blank}"} để preview và scoring dễ hiểu.
                                     </div>
                                   )}
                                   {activeGroupIsMatching || activeGroupIsMapPlanDiagramSelectGrid ? (

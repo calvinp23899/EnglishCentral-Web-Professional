@@ -14,6 +14,34 @@ import styles from "@/features/admin/students/pages/StudentListPage.module.scss"
 const statusClassName = (isActive: boolean) =>
   `${styles.statusBadge} ${isActive ? styles.active : styles.inactive}`;
 
+const toBoolean = (value: unknown) =>
+  value === true ||
+  value === 1 ||
+  (typeof value === "string" && ["true", "1", "yes"].includes(value.trim().toLowerCase()));
+
+const parseTemplateConfig = (value: AdminExamTemplate["templateConfigJson"]) => {
+  if (!value) return {};
+
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  }
+
+  return value as Record<string, unknown>;
+};
+
+const isDefaultSystemTemplate = (record: AdminExamTemplate) => {
+  const config = parseTemplateConfig(record.templateConfigJson);
+
+  return toBoolean(record.isDefaultSystem) ||
+    toBoolean(record.IsDefaultSystem) ||
+    toBoolean(config.isDefaultSystem) ||
+    toBoolean(config.IsDefaultSystem);
+};
+
 export function ExamTemplateListPage() {
   const [records, setRecords] = useState<AdminExamTemplate[]>([]);
   const [examTypes, setExamTypes] = useState<AdminExamType[]>([]);
@@ -60,6 +88,12 @@ export function ExamTemplateListPage() {
 
   const handleDelete = async () => {
     if (!deletingRecord || isDeleting) return;
+    if (isDefaultSystemTemplate(deletingRecord)) {
+      setDeletingRecord(null);
+      toastDanger("Không thể xóa mẫu đề mặc định của hệ thống.");
+      return;
+    }
+
     setIsDeleting(true);
     try {
       await adminExamTemplatesApi.delete(deletingRecord.id);
@@ -118,6 +152,7 @@ export function ExamTemplateListPage() {
               <tbody>
                 {records.map((record) => {
                   const examType = examTypeById.get(record.examTypeId);
+                  const shouldHideDelete = isDefaultSystemTemplate(record);
 
                   return (
                     <tr key={record.id}>
@@ -140,15 +175,17 @@ export function ExamTemplateListPage() {
                           >
                             <Edit3 aria-hidden="true" size={16} />
                           </Link>
-                          <button
-                            aria-label="Xóa"
-                            className={styles.deleteAction}
-                            title="Xóa"
-                            type="button"
-                            onClick={() => setDeletingRecord(record)}
-                          >
-                            <Trash2 aria-hidden="true" size={16} />
-                          </button>
+                          {!shouldHideDelete && (
+                            <button
+                              aria-label="Xóa"
+                              className={styles.deleteAction}
+                              title="Xóa"
+                              type="button"
+                              onClick={() => setDeletingRecord(record)}
+                            >
+                              <Trash2 aria-hidden="true" size={16} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

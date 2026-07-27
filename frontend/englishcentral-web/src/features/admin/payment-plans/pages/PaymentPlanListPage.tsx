@@ -13,7 +13,7 @@ import listStyles from "@/features/admin/students/pages/StudentListPage.module.s
 import toolbarStyles from "@/features/admin/teachers/pages/TeacherListPage.module.scss";
 import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
-type ColumnKey = "id" | "enrollmentId" | "type" | "installments" | "totalAmount" | "status" | "actions";
+type ColumnKey = "id" | "enrollmentId" | "type" | "installments" | "totalAmount" | "status";
 type Filters = { type: "all" | PaymentPlanType; status: "all" | PaymentPlanStatus };
 
 const emptyFilters: Filters = { type: "all", status: "all" };
@@ -25,9 +25,8 @@ const labels: Record<ColumnKey, string> = {
   installments: "Số kỳ",
   totalAmount: "Tổng tiền",
   status: "Trạng thái",
-  actions: "Action",
 };
-const initialVisibleColumns = Object.fromEntries([...columns, "actions"].map((column) => [column, true])) as Record<ColumnKey, boolean>;
+const initialVisibleColumns = Object.fromEntries(columns.map((column) => [column, true])) as Record<ColumnKey, boolean>;
 const typeLabels: Record<string, string> = {
   "1": "Thanh toán đủ",
   "2": "Theo tháng",
@@ -154,7 +153,7 @@ export function PaymentPlanListPage() {
               <button className={toolbarStyles.columnsButton} type="button" onClick={() => { setIsColumnsMenuOpen((current) => !current); setIsDownloadMenuOpen(false); }}>
                 <Columns3 size={17} /> Columns
               </button>
-              {isColumnsMenuOpen && <div className={`${toolbarStyles.dropdownMenu} ${toolbarStyles.columnsMenu}`}>{([...columns, "actions"] as ColumnKey[]).map((column) => <label key={column}><input checked={visibleColumns[column]} type="checkbox" onChange={() => setVisibleColumns((current) => ({ ...current, [column]: !current[column] }))} />{labels[column]}</label>)}</div>}
+              {isColumnsMenuOpen && <div className={`${toolbarStyles.dropdownMenu} ${toolbarStyles.columnsMenu}`}>{columns.map((column) => <label key={column}><input checked={visibleColumns[column]} type="checkbox" onChange={() => setVisibleColumns((current) => ({ ...current, [column]: !current[column] }))} />{labels[column]}</label>)}</div>}
             </div>
           </div>
         </section>
@@ -162,7 +161,7 @@ export function PaymentPlanListPage() {
         <section className={listStyles.tablePanel}>
           <div className={listStyles.tableScroll}>
             <table className={listStyles.table}>
-              <thead><tr>{columns.filter((column) => visibleColumns[column]).map((column) => <th key={column}>{labels[column]}</th>)}{visibleColumns.actions && <th>Action</th>}</tr></thead>
+              <thead><tr>{columns.filter((column) => visibleColumns[column]).map((column) => <th key={column}>{labels[column]}</th>)}<th>Action</th></tr></thead>
               <tbody>{records.map((record) => <tr key={record.id}>
                 {visibleColumns.id && <td><strong>PP-{record.id}</strong></td>}
                 {visibleColumns.enrollmentId && <td>#{record.enrollmentId}</td>}
@@ -170,11 +169,11 @@ export function PaymentPlanListPage() {
                 {visibleColumns.installments && <td>{record.items.length}</td>}
                 {visibleColumns.totalAmount && <td>{formatMoney(record.totalAmount)}</td>}
                 {visibleColumns.status && <td><span className={`${listStyles.statusBadge} ${listStyles[statusTone(record.status)]}`}>{statusLabels[String(record.status)] ?? String(record.status)}</span></td>}
-                {visibleColumns.actions && <td><div className={listStyles.actions}>
+                <td><div className={listStyles.actions}>
                   <Link aria-label="Xem" title="Xem chi tiết" to={`/admin/finance/payment-plans/${record.id}/view`}><Eye size={16} /></Link>
                   <Link aria-label="Sửa" title="Chỉnh sửa" to={`/admin/finance/payment-plans/${record.id}/edit`}><Edit3 size={16} /></Link>
                   <button aria-label="Xóa" title="Xóa" className={listStyles.deleteAction} type="button" onClick={() => setDeletingRecord(record)}><Trash2 size={16} /></button>
-                </div></td>}
+                </div></td>
               </tr>)}</tbody>
             </table>
             {records.length === 0 && <div className={listStyles.emptyState}>Không có kế hoạch thanh toán phù hợp.</div>}
