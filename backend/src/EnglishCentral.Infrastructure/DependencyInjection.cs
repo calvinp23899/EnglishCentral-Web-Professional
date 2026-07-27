@@ -1,6 +1,7 @@
 using EnglishCentral.Application.Interfaces;
 using EnglishCentral.Application.Interfaces.Academic;
 using EnglishCentral.Application.Interfaces.Academic.ITeacher;
+using EnglishCentral.Application.Interfaces.CRM;
 using EnglishCentral.Application.Interfaces.Documents;
 using EnglishCentral.Application.Interfaces.Exam;
 using EnglishCentral.Application.Interfaces.Finance;
@@ -9,8 +10,10 @@ using EnglishCentral.Application.Interfaces.Storage;
 using EnglishCentral.Infrastructure.Authorization;
 using EnglishCentral.Infrastructure.Persistence;
 using EnglishCentral.Infrastructure.Persistence.Context;
+using EnglishCentral.Infrastructure.Persistence.Repositories;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Academic;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Academic.TeacherRepo;
+using EnglishCentral.Infrastructure.Persistence.Repositories.CRM;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Exam;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Finance;
 using EnglishCentral.Infrastructure.Persistence.Repositories.Identity;
@@ -82,6 +85,11 @@ namespace EnglishCentral.Infrastructure
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IStudentRepository, StudentRepository>();
             services.AddScoped<ITeacherRepository, TeacherRepository>();
+            services.AddScoped<ILeadSourceRepository, LeadSourceRepository>();
+            services.AddScoped<ILeadRepository, LeadRepository>();
+            services.AddScoped<ILeadActivityRepository, LeadActivityRepository>();
+            services.AddScoped<ILeadConversionRepository, LeadConversionRepository>();
+            services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped(typeof(IAcademicRepository<>), typeof(AcademicRepository<>));
             services.AddScoped(typeof(IFinanceRepository<>), typeof(FinanceRepository<>));
             services.AddScoped(typeof(IExamRepository<>), typeof(ExamRepository<>));
@@ -181,6 +189,11 @@ namespace EnglishCentral.Infrastructure
                 SystemPermissions.ExamUpdate,
                 SystemPermissions.ExamDelete,
                 SystemPermissions.ExamReview,
+
+                SystemPermissions.CRMRead,
+                SystemPermissions.CRMCreate,
+                SystemPermissions.CRMUpdate,
+                SystemPermissions.CRMDelete,
             ];
         }
     }

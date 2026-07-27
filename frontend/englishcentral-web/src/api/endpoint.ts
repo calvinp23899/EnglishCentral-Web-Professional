@@ -131,6 +131,30 @@ export const ENDPOINTS = {
     GET_BY_ID: (id: string | number) => `/admin/billing/receipts/${id}/get-by-id`,
   },
 
+  ADMIN_CRM: {
+    LEAD_SOURCES: {
+      GET_LIST: "/admin/crm/lead-sources/get-list",
+      GET_BY_ID: (id: string | number) => `/admin/crm/lead-sources/${id}/get-by-id`,
+      CREATE: "/admin/crm/lead-sources/insert",
+      UPDATE: (id: string | number) => `/admin/crm/lead-sources/${id}/update`,
+      DELETE: (id: string | number) => `/admin/crm/lead-sources/${id}/delete`,
+    },
+    LEADS: {
+      GET_LIST: "/admin/crm/leads/get-list",
+      GET_BY_ID: (id: string | number) => `/admin/crm/leads/${id}/get-by-id`,
+      CREATE: "/admin/crm/leads/insert",
+      UPDATE: (id: string | number) => `/admin/crm/leads/${id}/update`,
+      CREATE_ACTIVITY: (id: string | number) => `/admin/crm/leads/${id}/activities/insert`,
+      MARK_LOST: (id: string | number) => `/admin/crm/leads/${id}/mark-lost`,
+      CONVERT: (id: string | number) => `/admin/crm/leads/${id}/convert`,
+      DELETE: (id: string | number) => `/admin/crm/leads/${id}/delete`,
+    },
+    LEAD_CONVERSIONS: {
+      GET_LIST: "/admin/crm/lead-conversions/get-list",
+      GET_BY_ID: (id: string | number) => `/admin/crm/lead-conversions/${id}/get-by-id`,
+    },
+  },
+
   ADMIN_EXAM_TYPES: {
     GET_LIST: "/admin/exam/types/get-list",
     GET_BY_ID: (id: string | number) => `/admin/exam/types/${id}/get-by-id`,

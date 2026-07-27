@@ -14,6 +14,15 @@ import { CourseCategoryViewPage } from "@/features/admin/course-categories/pages
 import { CourseFormPage } from "@/features/admin/courses/pages/CourseFormPage";
 import { CourseListPage } from "@/features/admin/courses/pages/CourseListPage";
 import { CourseViewPage } from "@/features/admin/courses/pages/CourseViewPage";
+import { LeadActivityListPage } from "@/features/admin/crm/pages/LeadActivityListPage";
+import { LeadConversionListPage } from "@/features/admin/crm/pages/LeadConversionListPage";
+import { LeadConversionViewPage } from "@/features/admin/crm/pages/LeadConversionViewPage";
+import { LeadFormPage } from "@/features/admin/crm/pages/LeadFormPage";
+import { LeadListPage } from "@/features/admin/crm/pages/LeadListPage";
+import { LeadSourceFormPage } from "@/features/admin/crm/pages/LeadSourceFormPage";
+import { LeadSourceListPage } from "@/features/admin/crm/pages/LeadSourceListPage";
+import { LeadSourceViewPage } from "@/features/admin/crm/pages/LeadSourceViewPage";
+import { LeadViewPage } from "@/features/admin/crm/pages/LeadViewPage";
 import { AdminDashboardPage } from "@/features/admin/dashboard/pages/AdminDashboardPage";
 import { DiscountFormPage } from "@/features/admin/discounts/pages/DiscountFormPage";
 import { DiscountListPage } from "@/features/admin/discounts/pages/DiscountListPage";
@@ -171,13 +180,6 @@ const lmsRoutes = [
   { path: "lms/exercises", title: "Bài tập" },
   { path: "lms/quizzes", title: "Quiz" },
   { path: "lms/progress", title: "Tiến độ học tập" },
-];
-
-const crmSalesRoutes = [
-  { path: "crm-sales/leads", title: "Lead" },
-  { path: "crm-sales/lead-sources", title: "LeadSource" },
-  { path: "crm-sales/lead-activities", title: "LeadActivity" },
-  { path: "crm-sales/lead-conversions", title: "LeadConversion" },
 ];
 
 const costExpenseRoutes = [
@@ -353,15 +355,50 @@ export const adminRoutes = [
         path: "crm-sales",
         element: <Navigate to="/admin/crm-sales/leads" replace />,
       },
-      ...crmSalesRoutes.map((route) => ({
-        path: route.path,
-        element: (
-          <AdminPlaceholderPage
-            title={route.title}
-            description="Chức năng CRM / Sales đang được xây dựng."
-          />
-        ),
-      })),
+      {
+        path: "crm-sales/leads",
+        element: <LeadListPage />,
+      },
+      {
+        path: "crm-sales/leads/create",
+        element: <LeadFormPage mode="create" />,
+      },
+      {
+        path: "crm-sales/leads/:recordId/view",
+        element: <LeadViewPage />,
+      },
+      {
+        path: "crm-sales/leads/:recordId/edit",
+        element: <LeadFormPage mode="edit" />,
+      },
+      {
+        path: "crm-sales/lead-sources",
+        element: <LeadSourceListPage />,
+      },
+      {
+        path: "crm-sales/lead-sources/create",
+        element: <LeadSourceFormPage mode="create" />,
+      },
+      {
+        path: "crm-sales/lead-sources/:recordId/view",
+        element: <LeadSourceViewPage />,
+      },
+      {
+        path: "crm-sales/lead-sources/:recordId/edit",
+        element: <LeadSourceFormPage mode="edit" />,
+      },
+      {
+        path: "crm-sales/lead-activities",
+        element: <LeadActivityListPage />,
+      },
+      {
+        path: "crm-sales/lead-conversions",
+        element: <LeadConversionListPage />,
+      },
+      {
+        path: "crm-sales/lead-conversions/:recordId/view",
+        element: <LeadConversionViewPage />,
+      },
       {
         path: "cost-expense",
         element: <Navigate to="/admin/cost-expense/teacher-session-payrolls" replace />,
