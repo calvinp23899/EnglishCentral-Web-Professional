@@ -21,7 +21,8 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed.Exam
                     Description = "Dạng bài theo kiểu IELTS",
                     IsActive = true,
                     CreatedAt = DateTimeOffset.UtcNow,
-                    CreatedBy = SystemDefault.DefaultSystemNumber
+                    CreatedBy = SystemDefault.DefaultSystemNumber,
+                    IsSytemDefault = true,
                 };
 
                 await context.ExamTypes.AddAsync(ielts);

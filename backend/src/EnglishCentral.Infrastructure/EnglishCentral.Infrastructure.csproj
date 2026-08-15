@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\EnglishCentral.Application\EnglishCentral.Application.csproj" />
     <ProjectReference Include="..\EnglishCentral.Domain\EnglishCentral.Domain.csproj" />
+    <ProjectReference Include="..\EnglishCentral.Shared\EnglishCentral.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -27,7 +27,15 @@ const labels: Record<ColumnKey, string> = {
   isActive: "Trạng thái",
   createdAt: "Ngày tạo",
 };
-const initialVisibleColumns = Object.fromEntries(columns.map((column) => [column, true])) as Record<ColumnKey, boolean>;
+const initialVisibleColumns: Record<ColumnKey, boolean> = {
+  code: false,
+  name: true,
+  channel: true,
+  campaignName: false,
+  cost: false,
+  isActive: true,
+  createdAt: true,
+};
 const emptyFilters: Filters = { channel: "all", isActive: "all" };
 
 export function LeadSourceListPage() {

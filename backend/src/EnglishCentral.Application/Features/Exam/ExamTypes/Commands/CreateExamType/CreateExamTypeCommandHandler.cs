@@ -4,6 +4,7 @@ using EnglishCentral.Domain.Entities.Exam;
 using EnglishCentral.Domain.Enums.Exam;
 using EnglishCentral.Shared.Common.Helpers;
 using EnglishCentral.Shared.Results;
+using EnglishCentral.Shared.Utilities;
 using MediatR;
 
 namespace EnglishCentral.Application.Features.Exam.ExamTypes.Commands.CreateExamType
@@ -26,10 +27,9 @@ namespace EnglishCentral.Application.Features.Exam.ExamTypes.Commands.CreateExam
             }
             else
             {
-                //FAMILY = CUSTOM
-                name = request.Name.Trim().ToUpperInvariant();
+                name = request.Name.TrimAndUpperInvariantString();
             }
-            string code = request.Code.Trim().ToUpperInvariant();
+            string code = request.Code.TrimAndUpperInvariantString();
             if (await _repository.ExistsAsync(x => x.Code == code, ct))
                 return Result<ExamTypeResponse>.Failure("Exam type code already exists.", 409);
 
@@ -40,6 +40,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamTypes.Commands.CreateExam
                 Family = request.Family,
                 Description = request.Description?.Trim(),
                 IsActive = request.IsActive,
+                IsSytemDefault = request.IsSystemDefault ?? false,
             };
 
             await _repository.AddAsync(entity, ct);

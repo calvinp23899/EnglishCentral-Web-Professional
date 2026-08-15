@@ -7,7 +7,6 @@ using MediatR;
 namespace EnglishCentral.Application.Features.CRM.LeadSources.Commands.CreateLeadSource
 {
     public record CreateLeadSourceCommand(
-        string Code,
         string Name,
         ELeadSourceChannel Channel,
         string? CampaignName,
@@ -19,7 +18,6 @@ namespace EnglishCentral.Application.Features.CRM.LeadSources.Commands.CreateLea
     {
         public CreateLeadSourceCommandValidator()
         {
-            RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
             RuleFor(x => x.Name).NotEmpty().MaximumLength(255);
             RuleFor(x => x.Channel).IsInEnum();
             RuleFor(x => x.CampaignName).MaximumLength(255);

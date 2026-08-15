@@ -20,6 +20,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.Exam
             builder.Property(x => x.Name).HasMaxLength(255).IsRequired();
             builder.Property(x => x.Family).HasConversion<int>();
             builder.Property(x => x.Description).HasMaxLength(2000);
+            builder.Property(x => x.IsSytemDefault).HasDefaultValue(false);
         }
     }
 }

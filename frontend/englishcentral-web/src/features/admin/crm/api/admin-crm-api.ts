@@ -96,7 +96,6 @@ export type AdminLead = {
 };
 
 export type LeadSourcePayload = {
-  code: string;
   name: string;
   channel: string;
   campaignName?: string | null;

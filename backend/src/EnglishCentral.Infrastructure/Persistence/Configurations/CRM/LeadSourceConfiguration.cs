@@ -38,6 +38,9 @@ namespace EnglishCentral.Infrastructure.Persistence.Configurations.CRM
 
             builder.Property(x => x.Cost)
                 .HasPrecision(18, 2);
+
+            builder.Property(x => x.IsSystemDefault)
+                .HasDefaultValue(false);
         }
     }
 }

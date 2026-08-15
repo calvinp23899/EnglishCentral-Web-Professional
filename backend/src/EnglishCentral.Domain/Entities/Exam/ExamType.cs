@@ -14,6 +14,7 @@ namespace EnglishCentral.Domain.Entities.Exam
         public string? Description { get; set; }
 
         public bool IsActive { get; set; } = true;
+        public bool IsSytemDefault { get; set; } = false;
 
         public ICollection<ExamTemplate> Templates { get; set; } = [];
     }

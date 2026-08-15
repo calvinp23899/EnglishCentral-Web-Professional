@@ -18,6 +18,7 @@ namespace EnglishCentral.Domain.Entities.CRM
         public decimal? Cost { get; set; }
 
         public bool IsActive { get; set; } = true;
+        public bool IsSystemDefault { get; set; } = false;
 
         public ICollection<Lead> Leads { get; set; } = [];
     }
