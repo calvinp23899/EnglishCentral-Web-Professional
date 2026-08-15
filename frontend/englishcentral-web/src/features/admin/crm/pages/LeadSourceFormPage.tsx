@@ -15,7 +15,6 @@ import { getAuthErrorMessage } from "@/features/public/auth/api/auth-api";
 
 type Props = { mode: "create" | "edit" };
 type FormState = {
-  code: string;
   name: string;
   channel: string;
   campaignName: string;
@@ -26,7 +25,6 @@ type FormState = {
 type FormErrors = Partial<Record<keyof FormState, string>>;
 
 const initialForm: FormState = {
-  code: "",
   name: "",
   channel: "Ads",
   campaignName: "",
@@ -55,7 +53,6 @@ export function LeadSourceFormPage({ mode }: Props) {
       .then((record) => {
         if (!mounted) return;
         setForm({
-          code: record.code,
           name: record.name,
           channel: getLeadSourceChannelValue(record.channel) || "Ads",
           campaignName: record.campaignName ?? "",
@@ -80,7 +77,6 @@ export function LeadSourceFormPage({ mode }: Props) {
   const validate = () => {
     const nextErrors: FormErrors = {};
 
-    if (!form.code.trim()) nextErrors.code = "Vui lòng nhập mã nguồn.";
     if (!form.name.trim()) nextErrors.name = "Vui lòng nhập tên nguồn.";
     if (form.cost && Number(form.cost) < 0) nextErrors.cost = "Chi phí không được nhỏ hơn 0.";
 
@@ -93,7 +89,6 @@ export function LeadSourceFormPage({ mode }: Props) {
     if (!validate() || isSubmitting) return;
 
     const payload: LeadSourcePayload = {
-      code: form.code.trim(),
       name: form.name.trim(),
       channel: form.channel,
       campaignName: emptyToNull(form.campaignName),
@@ -132,7 +127,6 @@ export function LeadSourceFormPage({ mode }: Props) {
         <div className={styles.panelHeader}><div><h2>Thông tin nguồn lead</h2><p>Nguồn lead cho biết khách hàng đến từ kênh nào, chiến dịch nào và chi phí marketing tương ứng.</p></div></div>
         {isLoading ? <p className={styles.accountState}>Đang tải thông tin nguồn lead...</p> : (
           <div className={styles.formGrid}>
-            <label className={styles.field}><span>Mã nguồn <em className={styles.requiredMark}>*</em></span><input value={form.code} onChange={(event) => updateField("code", event.target.value)} /><ErrorMessage id="lead-source-code" message={errors.code} /></label>
             <label className={styles.field}><span>Tên nguồn <em className={styles.requiredMark}>*</em></span><input value={form.name} onChange={(event) => updateField("name", event.target.value)} /><ErrorMessage id="lead-source-name" message={errors.name} /></label>
             <label className={styles.field}><span>Kênh <em className={styles.requiredMark}>*</em></span><select value={form.channel} onChange={(event) => updateField("channel", event.target.value)}>{leadSourceChannelOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
             <label className={styles.field}><span>Trạng thái</span><select value={String(form.isActive)} onChange={(event) => updateField("isActive", event.target.value === "true")}><option value="true">Hoạt động</option><option value="false">Ngừng hoạt động</option></select></label>

@@ -31,6 +31,7 @@ namespace EnglishCentral.Application.Features.Exam.ExamTypes.Commands.UpdateExam
             entity.Description = request.Description?.Trim();
             entity.IsActive = request.IsActive;
             entity.UpdatedAt = DateTimeOffset.UtcNow;
+            entity.IsSytemDefault = request.IsSystemDefault ?? false;
 
             return Result<ExamTypeResponse>.Success(entity.ToResponse());
         }

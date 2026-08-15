@@ -2,6 +2,7 @@ using EnglishCentral.Application.Features.CRM.DTOs;
 using EnglishCentral.Application.Interfaces.CRM;
 using EnglishCentral.Domain.Entities.CRM;
 using EnglishCentral.Shared.Results;
+using EnglishCentral.Shared.Utilities;
 using MediatR;
 
 namespace EnglishCentral.Application.Features.CRM.LeadSources.Commands.CreateLeadSource
@@ -17,7 +18,7 @@ namespace EnglishCentral.Application.Features.CRM.LeadSources.Commands.CreateLea
 
         public async Task<Result<LeadSourceResponse>> Handle(CreateLeadSourceCommand request, CancellationToken ct)
         {
-            var code = NormalizeCode(request.Code);
+            var code = request.Name.ConvertNameToCode();
             if (await _repository.ExistsByCodeAsync(code, ct: ct))
                 return Result<LeadSourceResponse>.Failure("Lead source code already exists.", 409);
 
@@ -37,6 +38,5 @@ namespace EnglishCentral.Application.Features.CRM.LeadSources.Commands.CreateLea
             return Result<LeadSourceResponse>.Success(source.ToResponse(), 201);
         }
 
-        private static string NormalizeCode(string code) => code.Trim().ToUpper();
     }
 }

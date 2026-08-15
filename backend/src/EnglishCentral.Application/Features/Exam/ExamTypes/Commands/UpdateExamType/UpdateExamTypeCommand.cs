@@ -11,5 +11,6 @@ namespace EnglishCentral.Application.Features.Exam.ExamTypes.Commands.UpdateExam
         string Name,
         EExamFamily Family,
         string? Description,
-        bool IsActive) : IRequest<Result<ExamTypeResponse>>;
+        bool IsActive,
+        bool? IsSystemDefault) : IRequest<Result<ExamTypeResponse>>;
 }

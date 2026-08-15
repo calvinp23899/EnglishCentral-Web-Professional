@@ -1,4 +1,5 @@
-﻿using EnglishCentral.Infrastructure.Persistence.Context;
+using EnglishCentral.Infrastructure.Persistence.Context;
+using EnglishCentral.Infrastructure.Persistence.Seed.CRM;
 using EnglishCentral.Infrastructure.Persistence.Seed.Exam;
 using EnglishCentral.Infrastructure.Persistence.Seed.Finance;
 using EnglishCentral.Infrastructure.Persistence.Seed.Identity;
@@ -32,6 +33,7 @@ namespace EnglishCentral.Infrastructure.Persistence.Seed
             await BillingPolicySeeder.SeedAsync(context);
             await ExamTypeSeeder.SeedAsync(context);
             await ExamTemplateSeeder.SeedAsync(context);
+            await LeadSourceSeeder.SeedAsync(context);
         }
     }
 }
